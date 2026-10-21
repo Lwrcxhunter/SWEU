@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Counseling Office Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{--primary:#174a5b;--primary-dark:#123b49;--sidebar:#153f4d;--bg:#f4f7f9;--border:#e2eaed;--text:#263238;--muted:#6c7b82}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    .layout{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:260px;background:var(--sidebar);color:#fff;z-index:1050;display:flex;flex-direction:column;transition:.25s}.sidebar-header{padding:24px;border-bottom:1px solid rgba(255,255,255,.12)}.brand-icon{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:20px}.brand-title{font-weight:700;font-size:1rem}.brand-sub{font-size:.72rem;color:rgba(255,255,255,.62)}.nav-area{padding:22px 14px}.nav-label{font-size:.7rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;padding:0 11px;margin-bottom:8px}.nav-link-staff{display:flex;gap:12px;align-items:center;color:rgba(255,255,255,.78);padding:11px 12px;border-radius:9px;margin-bottom:4px;cursor:pointer}.nav-link-staff:hover,.nav-link-staff.active{background:rgba(255,255,255,.13);color:#fff}.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.12)}.avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-weight:700}.main{margin-left:260px;min-height:100vh}.topbar{height:72px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:1000}.page{padding:28px}.mobile-menu{display:none}.welcome h1{font-size:1.65rem;font-weight:700;margin:0 0 4px}.welcome p{color:var(--muted);margin:0}.metric-card,.panel{background:#fff;border:1px solid var(--border);border-radius:14px}.metric-card{padding:20px;height:100%}.metric-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:15px}.metric-icon.pending{background:#fff3cd;color:#856404}.metric-icon.today{background:#cff4fc;color:#055160}.metric-icon.clients{background:#d1e7dd;color:#146c43}.metric-label{font-size:.8rem;color:var(--muted)}.metric-number{font-weight:700;font-size:1.75rem}.panel{overflow:hidden}.panel-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;gap:15px;align-items:center;justify-content:space-between}.panel-title{font-weight:650}.panel-sub{color:var(--muted);font-size:.78rem}.table-wrap{overflow:auto}.table{margin:0;min-width:900px}.table thead th{font-size:.72rem;text-transform:uppercase;color:#718188;letter-spacing:.03em;background:#f7f9fa;padding:13px 16px;border-bottom:1px solid var(--border)}.table tbody td{font-size:.84rem;padding:15px 16px;vertical-align:middle;border-bottom:1px solid #eef2f4}.student-name{font-weight:650}.student-email{color:var(--muted);font-size:.73rem}.status{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:30px;font-size:.7rem;font-weight:650;white-space:nowrap}.status.pending{background:#fff3cd;color:#856404}.status.scheduled{background:#d1e7dd;color:#146c43}.status.reviewed{background:#cff4fc;color:#055160}.dot{width:6px;height:6px;border-radius:50%;background:currentColor}.review-btn{border:1px solid #cad8dd;background:#fff;color:var(--primary);border-radius:8px;padding:7px 11px;font-size:.77rem}.review-btn:hover{background:var(--primary);color:#fff}.client-summary{background:#eef6f8;border-radius:12px;padding:18px}.detail-title{font-size:.9rem;color:var(--primary);font-weight:700;border-bottom:1px solid var(--border);padding-bottom:9px;margin:24px 0 14px}.detail-label{font-size:.7rem;color:#7b8b92;text-transform:uppercase;letter-spacing:.03em}.detail-value{font-size:.85rem;margin-bottom:13px}.condition{display:inline-block;background:#edf5f7;color:var(--primary);padding:6px 10px;border-radius:20px;font-size:.73rem;margin:0 5px 5px 0}.highlight{background:#f8fafb;border-left:4px solid var(--primary);padding:13px;border-radius:0 8px 8px 0;margin-bottom:12px}.highlight-title{font-size:.7rem;text-transform:uppercase;color:#7b8b92;margin-bottom:5px}.highlight-text{font-size:.84rem;line-height:1.6}.substance{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf1f3;font-size:.82rem}.substance:last-child{border-bottom:0}.modal-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.action-row{display:flex;gap:8px;flex-wrap:wrap}.btn-primary-custom{background:var(--primary);border-color:var(--primary);color:#fff}.btn-primary-custom:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}.btn-secondary-custom{background:#edf2f4;border-color:#edf2f4;color:#40545c}.sidebar-overlay{display:none}
+    @media(max-width:991px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sidebar-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1040}.main{margin-left:0}.mobile-menu{display:inline-flex}.page{padding:20px}.topbar{padding:0 18px}}
+    @media(max-width:575px){.panel-header{align-items:flex-start;flex-direction:column}.modal-footer{flex-direction:column}.action-row{width:100%}.action-row button{width:100%}}
+    @media print{.sidebar,.topbar,.modal-footer{display:none!important}.main{margin-left:0}.page{padding:0}.modal{position:static!important}.modal-dialog{max-width:none!important;margin:0!important}.modal-content{border:0!important}}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-icon"><i class="bi bi-heart-pulse"></i></div>
+        <div><div class="brand-title">Counseling Office</div><div class="brand-sub">Staff Portal</div></div>
+      </div>
+    </div>
+    <div class="nav-area">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-link-staff active" data-view="dashboard"><i class="bi bi-grid-1x2"></i>Dashboard</div>
+      <div class="nav-link-staff" data-view="intakes"><i class="bi bi-clipboard2-check"></i>Intake Submissions</div>
+      <div class="nav-link-staff" data-view="appointments"><i class="bi bi-calendar3"></i>Appointments</div>
+      <div class="nav-link-staff" data-view="clients"><i class="bi bi-people"></i>Active Clients</div>
+      <div class="nav-label mt-4">Administration</div>
+      <div class="nav-link-staff" data-view="reports"><i class="bi bi-file-earmark-bar-graph"></i>Reports</div>
+      <div class="nav-link-staff" data-view="settings"><i class="bi bi-gear"></i>Settings</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="d-flex align-items-center gap-2">
+        <div class="avatar" id="staffAvatar">CR</div>
+        <div><div class="fw-semibold small" id="staffName">Counselor</div><div class="small" style="color:rgba(255,255,255,.62)" id="staffRole">Counseling Staff</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light mobile-menu" id="menuButton"><i class="bi bi-list fs-5"></i></button>
+        <strong>Counseling Office Portal</strong>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-light" id="refreshButton" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+        <button class="btn btn-outline-secondary btn-sm" id="logoutButton">Sign Out</button>
+      </div>
+    </header>
+
+    <div class="page">
+      <section id="dashboardView">
+        <div class="welcome mb-4">
+          <h1>Welcome, <span id="welcomeName">Counselor</span></h1>
+          <p>Review student intake requests, manage schedules, and maintain counseling records.</p>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4"><div class="metric-card"><div class="metric-icon pending"><i class="bi bi-inbox"></i></div><div class="metric-label">New Intake Forms Pending</div><div class="metric-number" id="pendingMetric">0</div></div></div>
+          <div class="col-md-4"><div class="metric-card"><div class="metric-icon today"><i class="bi bi-calendar-check"></i></div><div class="metric-label">Appointments Today</div><div class="metric-number" id="todayMetric">0</div></div></div>
+          <div class="col-md-4"><div class="metric-card"><div class="metric-icon clients"><i class="bi bi-people"></i></div><div class="metric-label">Total Active Clients</div><div class="metric-number" id="activeMetric">0</div></div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div><div class="panel-title">Intake Submissions Queue</div><div class="panel-sub">These records are loaded from the backend database.</div></div>
+            <div class="input-group" style="max-width:290px"><span class="input-group-text bg-white"><i class="bi bi-search"></i></span><input id="searchInput" type="search" class="form-control" placeholder="Search student..."></div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Date Submitted</th><th>Student Name</th><th>Course & Year</th><th>Visit Type</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+              <tbody id="intakeBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="placeholderView" class="d-none">
+        <div class="panel p-5 text-center">
+          <i class="bi bi-cone-striped fs-1" style="color:#174a5b"></i>
+          <h2 class="h5 mt-3" id="placeholderTitle">Section</h2>
+          <p class="text-muted mb-0" id="placeholderText"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- Client modal -->
+<div class="modal fade" id="clientModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><h2 class="modal-title fs-5 mb-1">Student Intake Details</h2><div class="small text-muted">Confidential Counseling Record</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="client-summary d-flex align-items-center gap-3">
+          <div class="avatar" style="background:#174a5b" id="clientAvatar">--</div>
+          <div><div class="fw-bold" id="modalStudentName">—</div><div class="text-muted small" id="modalStudentMeta">—</div><div class="small mt-1">Reference: <strong id="modalReference">—</strong></div></div>
+        </div>
+
+        <div class="detail-title">Personal Information</div>
+        <div class="row">
+          <div class="col-md-4"><div class="detail-label">Full Name</div><div class="detail-value" id="detailName">—</div></div>
+          <div class="col-md-4"><div class="detail-label">Age</div><div class="detail-value" id="detailAge">—</div></div>
+          <div class="col-md-4"><div class="detail-label">Course & Year</div><div class="detail-value" id="detailCourse">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Email</div><div class="detail-value" id="detailEmail">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Cell Phone</div><div class="detail-value" id="detailPhone">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Address</div><div class="detail-value" id="detailAddress">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Marital Status</div><div class="detail-value" id="detailMarital">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Emergency Contact</div><div class="detail-value" id="detailEmergency">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Emergency Number</div><div class="detail-value" id="detailEmergencyPhone">—</div></div>
+        </div>
+
+        <div class="detail-title">Medical & Lifestyle History</div>
+        <div class="mb-3"><div class="detail-label mb-2">Checked Medical Conditions</div><div id="medicalConditions"></div></div>
+        <div class="row">
+          <div class="col-md-6"><div class="detail-label">Prescription Medication</div><div class="detail-value" id="detailMedication">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Family Medical History</div><div class="detail-value" id="detailFamily">—</div></div>
+        </div>
+        <div class="mt-2">
+          <div class="detail-label mb-2">Substance Use</div>
+          <div class="substance"><span>Tobacco / cigarettes / vape</span><span id="subTobacco">—</span></div>
+          <div class="substance"><span>Alcohol</span><span id="subAlcohol">—</span></div>
+          <div class="substance"><span>Caffeine</span><span id="subCaffeine">—</span></div>
+          <div class="substance"><span>Drug Use</span><span id="subDrug">—</span></div>
+        </div>
+
+        <div class="detail-title">Mental Health Intake</div>
+        <div class="highlight"><div class="highlight-title">Reason for Initial Visit</div><div class="highlight-text" id="detailReason">—</div></div>
+        <div class="highlight"><div class="highlight-title">Expectations from Session</div><div class="highlight-text" id="detailExpectations">—</div></div>
+        <div class="row">
+          <div class="col-md-6"><div class="detail-label">Average Hours of Sleep</div><div class="detail-value" id="detailSleep">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Previously Seen Mental Health Professional</div><div class="detail-value" id="detailPrevious">—</div></div>
+        </div>
+
+        <div class="detail-title">Scheduling Request</div>
+        <div class="row">
+          <div class="col-md-6"><div class="detail-label">Student Preference</div><div class="detail-value" id="detailSchedulePreference">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Preferred Time</div><div class="detail-value" id="detailScheduleTime">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Requested Date</div><div class="detail-value" id="detailRequestedDate">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Current Appointment</div><div class="detail-value" id="detailAppointment">Not scheduled</div></div>
+        </div>
+
+        <div class="detail-title">Additional Intake Information</div>
+        <div class="row">
+          <div class="col-md-6"><div class="detail-label">Visit Type</div><div class="detail-value" id="detailVisitType">—</div></div>
+          <div class="col-md-6"><div class="detail-label">Previous Counseling Details</div><div class="detail-value" id="detailCounselingReason">—</div></div>
+          <div class="col-12"><div class="detail-label">Additional Comments</div><div class="detail-value" id="detailAdditional">—</div></div>
+        </div>
+
+        <div id="noteDisplaySection" class="d-none">
+          <div class="detail-title">Confidential Staff Note</div>
+          <div class="alert alert-warning mb-0" id="noteDisplay"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="action-row">
+          <button class="btn btn-primary-custom" id="scheduleButton"><i class="bi bi-calendar-check me-1"></i>Mark as Reviewed & Schedule</button>
+          <button class="btn btn-secondary-custom" id="noteButton"><i class="bi bi-lock me-1"></i>Add Confidential Note</button>
+          <button class="btn btn-outline-secondary" id="notifyButton"><i class="bi bi-send me-1"></i>Record Notification Sent</button>
+        </div>
+        <button class="btn btn-outline-secondary" id="printButton"><i class="bi bi-printer me-1"></i>Print / Export to PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title fs-5">Assign Appointment</h2><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="scheduleForm">
+        <div class="modal-body">
+          <div class="alert alert-light border small">The student's requested schedule is a preference. The counselor now assigns the actual date and time based on office availability.</div>
+          <div class="mb-3"><label class="form-label">Assigned Counselor</label><input class="form-control" id="assignedCounselor" required></div>
+          <div class="row g-3"><div class="col-md-6"><label class="form-label">Appointment Date</label><input type="date" class="form-control" id="appointmentDate" required></div><div class="col-md-6"><label class="form-label">Appointment Time</label><input type="time" class="form-control" id="appointmentTime" required></div></div>
+          <div class="small text-muted mt-3">This prototype records the schedule in SQLite. Actual email/SMS delivery is not connected yet.</div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary-custom" type="submit" id="saveScheduleButton">Save Schedule</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Note modal -->
+<div class="modal fade" id="noteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title fs-5">Add Confidential Note</h2><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form id="noteForm">
+        <div class="modal-body"><label for="noteText" class="form-label">Staff note</label><textarea id="noteText" class="form-control" rows="5" placeholder="Enter a confidential staff note..." required></textarea></div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary-custom" type="submit">Save Note</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let intakes = [];
+  let currentClient = null;
+
+  const clientModal = new bootstrap.Modal('#clientModal');
+  const scheduleModal = new bootstrap.Modal('#scheduleModal');
+  const noteModal = new bootstrap.Modal('#noteModal');
+
+  const $ = (id) => document.getElementById(id);
+
+  async function api(url, options = {}) {
+    const response = await fetch(url, options);
+    if (response.status === 401) {
+      window.location.href = '/staff-login';
+      throw new Error('Staff login required.');
+    }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Request failed.');
+    return data;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '—';
+    const d = new Date(dateString);
+    if (Number.isNaN(d.getTime())) return dateString;
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  function formatDateTime(date, time) {
+    if (!date) return 'Not scheduled';
+    return `${formatDate(date)}${time ? ' • ' + time : ''}`;
+  }
+
+  function statusClass(status) {
+    if (status === 'Scheduled') return 'scheduled';
+    if (status === 'Reviewed') return 'reviewed';
+    return 'pending';
+  }
+
+  function calculateAge(dob) {
+    if (!dob) return '—';
+    const birth = new Date(dob + 'T00:00:00');
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const monthDiff = now.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age--;
+    return age >= 0 ? age : '—';
+  }
+
+  function addressString(client) {
+    return [client.address?.street, client.address?.city, client.address?.province, client.address?.postalCode].filter(Boolean).join(', ') || '—';
+  }
+
+  function preferredScheduleText(client) {
+    if (client.schedulePreference === 'Today / As soon as possible') return client.todayTime || 'Today';
+    if (client.schedulePreference === 'Request a specific date') return client.preferredTime || 'Any available time';
+    return client.preferredTime || 'Within the next few days';
+  }
+
+  function renderTable() {
+    const body = $('intakeBody');
+    const term = $('searchInput').value.trim().toLowerCase();
+    body.innerHTML = '';
+
+    const filtered = intakes.filter(c => [c.name, c.course, c.yearLevel, c.visitType, c.status, c.referenceNumber].join(' ').toLowerCase().includes(term));
+
+    if (!filtered.length) {
+      body.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-5">No matching intake forms.</td></tr>';
+      return;
+    }
+
+    filtered.forEach(client => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${formatDate(client.submittedAt)}</td>
+        <td><div class="student-name">${escapeHtml(client.name)}</div><div class="student-email">${escapeHtml(client.email)}</div></td>
+        <td>${escapeHtml(client.course)}<br><span class="text-muted small">${escapeHtml(client.yearLevel)}</span></td>
+        <td>${escapeHtml(client.visitType)}</td>
+        <td><span class="status ${statusClass(client.status)}"><span class="dot"></span>${escapeHtml(client.status)}</span></td>
+        <td class="text-end"><button class="review-btn" data-id="${client.id}"><i class="bi bi-eye me-1"></i>Review Form</button></td>
+      `;
+      tr.querySelector('button').addEventListener('click', () => openClient(client.id));
+      body.appendChild(tr);
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+  }
+
+  function renderMetrics() {
+    const pending = intakes.filter(c => c.status === 'Pending Review').length;
+    const active = intakes.filter(c => c.status === 'Scheduled' || c.status === 'Reviewed').length;
+    const todayKey = new Date().toISOString().slice(0,10);
+    const today = intakes.filter(c => c.status === 'Scheduled' && c.appointmentDate === todayKey).length;
+    $('pendingMetric').textContent = pending;
+    $('todayMetric').textContent = today;
+    $('activeMetric').textContent = active;
+  }
+
+  function renderClient(client) {
+    currentClient = client;
+    const initials = ((client.firstName?.[0] || '') + (client.lastName?.[0] || '')).toUpperCase();
+    $('clientAvatar').textContent = initials || '--';
+    $('modalStudentName').textContent = client.name;
+    $('modalStudentMeta').textContent = `${client.course} • ${client.yearLevel}`;
+    $('modalReference').textContent = client.referenceNumber;
+
+    $('detailName').textContent = client.name;
+    $('detailAge').textContent = calculateAge(client.dob);
+    $('detailCourse').textContent = `${client.course} • ${client.yearLevel}`;
+    $('detailEmail').textContent = client.email || '—';
+    $('detailPhone').textContent = client.phone || '—';
+    $('detailAddress').textContent = addressString(client);
+    $('detailMarital').textContent = client.maritalStatus || '—';
+    $('detailEmergency').textContent = [client.emergency?.name, client.emergency?.relationship].filter(Boolean).join(' • ') || '—';
+    $('detailEmergencyPhone').textContent = client.emergency?.phone || '—';
+
+    const medical = $('medicalConditions');
+    medical.innerHTML = '';
+    const conditions = client.medicalHistory?.length ? client.medicalHistory : ['None reported'];
+    conditions.forEach(condition => {
+      const span = document.createElement('span');
+      span.className = 'condition';
+      span.textContent = condition;
+      medical.appendChild(span);
+    });
+
+    $('detailMedication').textContent = client.medicationDetails || client.prescriptionMedication || '—';
+    $('detailFamily').textContent = client.familyHistory || '—';
+    $('subTobacco').textContent = client.substanceUse?.tobacco || '—';
+    $('subAlcohol').textContent = client.substanceUse?.alcohol || '—';
+    $('subCaffeine').textContent = client.substanceUse?.caffeine || '—';
+    $('subDrug').textContent = client.substanceUse?.drugUse || '—';
+
+    $('detailReason').textContent = client.visitReason || '—';
+    $('detailExpectations').textContent = client.expectations || '—';
+    $('detailSleep').textContent = client.sleepHours !== null && client.sleepHours !== '' && client.sleepHours !== undefined ? `${client.sleepHours} hours per night` : '—';
+    $('detailPrevious').textContent = client.previousCounseling || '—';
+    $('detailSchedulePreference').textContent = client.schedulePreference || '—';
+    $('detailScheduleTime').textContent = preferredScheduleText(client);
+    $('detailRequestedDate').textContent = client.preferredDate ? formatDate(client.preferredDate) : '—';
+    $('detailAppointment').textContent = client.appointmentDate ? `${formatDate(client.appointmentDate)} • ${client.appointmentTime || ''} • ${client.assignedCounselor || 'Counselor not specified'}` : 'Not scheduled';
+    $('detailVisitType').textContent = client.visitType + (client.referredBy ? ` • Referred by ${client.referredBy}` : '');
+    $('detailCounselingReason').textContent = client.counselingReason || client.previousCounseling || '—';
+    $('detailAdditional').textContent = client.additionalComments || '—';
+
+    if (client.confidentialNote) {
+      $('noteDisplaySection').classList.remove('d-none');
+      $('noteDisplay').textContent = client.confidentialNote;
+    } else {
+      $('noteDisplaySection').classList.add('d-none');
+      $('noteDisplay').textContent = '';
+    }
+  }
+
+  async function openClient(id) {
+    const result = await api(`/api/intakes/${id}`);
+    renderClient(result.intake);
+    clientModal.show();
+  }
+
+  async function loadData() {
+    const me = await api('/api/auth/me');
+    $('staffName').textContent = me.user.name;
+    $('staffRole').textContent = me.user.role;
+    $('welcomeName').textContent = me.user.name;
+    $('staffAvatar').textContent = me.user.name.split(' ').map(x => x[0]).slice(0,2).join('').toUpperCase();
+
+    const result = await api('/api/intakes');
+    intakes = result.intakes;
+    renderTable();
+    renderMetrics();
+  }
+
+  $('searchInput').addEventListener('input', renderTable);
+  $('refreshButton').addEventListener('click', loadData);
+
+  $('scheduleButton').addEventListener('click', () => {
+    if (!currentClient) return;
+    $('assignedCounselor').value = $('staffName').textContent;
+    $('appointmentDate').value = currentClient.appointmentDate || new Date().toISOString().slice(0,10);
+    $('appointmentTime').value = currentClient.appointmentTime || '';
+    scheduleModal.show();
+  });
+
+  $('scheduleForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const button = $('saveScheduleButton');
+    button.disabled = true;
+    button.textContent = 'Saving...';
+    try {
+      const result = await api(`/api/intakes/${currentClient.id}/schedule`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          assignedCounselor: $('assignedCounselor').value.trim(),
+          appointmentDate: $('appointmentDate').value,
+          appointmentTime: $('appointmentTime').value
+        })
+      });
+      const index = intakes.findIndex(c => c.id === currentClient.id);
+      if (index >= 0) intakes[index] = result.intake;
+      renderClient(result.intake);
+      renderTable();
+      renderMetrics();
+      scheduleModal.hide();
+      alert('Appointment schedule saved.');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Save Schedule';
+    }
+  });
+
+  $('noteButton').addEventListener('click', () => {
+    if (!currentClient) return;
+    $('noteText').value = currentClient.confidentialNote || '';
+    noteModal.show();
+  });
+
+  $('noteForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      const result = await api(`/api/intakes/${currentClient.id}/notes`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({note: $('noteText').value.trim()})
+      });
+      const index = intakes.findIndex(c => c.id === currentClient.id);
+      if (index >= 0) intakes[index] = result.intake;
+      renderClient(result.intake);
+      noteModal.hide();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  $('notifyButton').addEventListener('click', async () => {
+    if (!currentClient) return;
+    try {
+      const result = await api(`/api/intakes/${currentClient.id}/notification`, {method:'POST'});
+      const index = intakes.findIndex(c => c.id === currentClient.id);
+      if (index >= 0) intakes[index] = result.intake;
+      renderClient(result.intake);
+      alert(result.message);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+
+  $('printButton').addEventListener('click', () => window.print());
+
+  $('logoutButton').addEventListener('click', async () => {
+    await api('/api/auth/logout', {method:'POST'}).catch(() => {});
+    window.location.href = '/staff-login';
+  });
+
+  const sidebar = $('sidebar');
+  const overlay = $('sidebarOverlay');
+  $('menuButton').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
+  overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
+
+  document.querySelectorAll('.nav-link-staff').forEach(link => {
+    link.addEventListener('click', () => {
+      document.querySelectorAll('.nav-link-staff').forEach(x => x.classList.remove('active'));
+      link.classList.add('active');
+      const view = link.dataset.view;
+      if (view === 'dashboard' || view === 'intakes') {
+        $('dashboardView').classList.remove('d-none');
+        $('placeholderView').classList.add('d-none');
+        if (view === 'intakes') document.querySelector('.panel').scrollIntoView({behavior:'smooth'});
+      } else {
+        $('dashboardView').classList.add('d-none');
+        $('placeholderView').classList.remove('d-none');
+        const titles = {appointments:'Appointments',clients:'Active Clients',reports:'Reports',settings:'Settings'};
+        const texts = {appointments:'Use this section later for counselor availability, assigned appointments, rescheduling, and cancellations.',clients:'Use this section for the active-client view and counseling status records.',reports:'Use this section for administrative reports and non-identifying office statistics.',settings:'Use this section for office settings and staff configuration.'};
+        $('placeholderTitle').textContent = titles[view] || 'Section';
+        $('placeholderText').textContent = texts[view] || '';
+      }
+      sidebar.classList.remove('open'); overlay.classList.remove('show');
+    });
+  });
+
+  loadData().catch(err => {
+    console.error(err);
+    if (err.message !== 'Staff login required.') alert(err.message);
+  });
+</script>
+</body>
+</html>

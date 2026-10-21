@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@source "../js";
+@source "../views";
+@theme {
+    --font-sans: "Segoe UI", system-ui, sans-serif;
+    --font-serif: Georgia, "Times New Roman", serif;
+    --color-powder-50: #f0f9ff;
+    --color-powder-100: #e0f2fe;
+    --color-powder-200: #b0e0e6;
+    --color-powder-500: #0284c7;
+    --color-powder-600: #0369a1;
+}
+.font-sans {
+    font-family: var(--font-sans);
+}
+@layer base {
+    body {
+        margin: 0;
+        font-family: var(--font-sans);
+        background-color: #f0f9ff;
+        color: #1e293b;
+    }
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+    button:not(:disabled) {
+        cursor: pointer;
+    }
+    :focus-visible {
+        outline: 2px solid #0284c7;
+        outline-offset: 3px;
+    }
+}
+@layer components {
+    .control {
+        @apply block w-full rounded-lg border border-sky-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-400 focus:outline-none;
+    }
+}
+@layer utilities {
+    .scrollbar-none {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+}
