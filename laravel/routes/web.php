@@ -46,13 +46,15 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::get('/appointments/request', [AppointmentController::class, 'wizard'])->middleware('permission:appointments.book')->name('appointments.request');
         Route::post('/appointments', [AppointmentController::class, 'store'])->middleware(['permission:appointments.book', 'throttle:10,1'])->name('appointments.store');
         Route::post('/walk-in', [AppointmentController::class, 'walkIn'])->middleware(['permission:appointments.book', 'throttle:2,1'])->name('walkin.join');
-        Route::post('/testing', [TestingRequestController::class, 'store'])->middleware(['permission:testing.request', 'throttle:5,1'])->name('testing.store');
+    });
+    Route::middleware('role:student|faculty|staff')->group(function () {
+        Route::post('/testing', [TestingRequestController::class, 'store'])->middleware(['permission:testing.request|testing.manage', 'throttle:10,1'])->name('testing.store');
     });
     Route::middleware('role:student|faculty')->group(function () {
         Route::post('/referrals', [ReferralController::class, 'store'])->middleware(['permission:referrals.submit', 'throttle:5,1'])->name('referrals.store');
     });
     Route::get('/referrals', [ReferralController::class, 'index'])->middleware(['role:student|faculty|staff', 'permission:referrals.submit|referrals.manage'])->name('referrals.index');
-    Route::get('/testing', [TestingRequestController::class, 'index'])->middleware(['role:student|staff', 'permission:testing.request|testing.manage'])->name('testing.index');
+    Route::get('/testing', [TestingRequestController::class, 'index'])->middleware(['role:student|faculty|staff', 'permission:testing.request|testing.manage'])->name('testing.index');
     Route::get('/appointments/{appointment}/pdf', [AppointmentController::class, 'exportPdf'])->name('appointments.pdf');
     Route::middleware('role:staff')->group(function () {
         Route::get('/queue', [WalkInQueueController::class, 'index'])->middleware('permission:queue.manage')->name('queue.index');

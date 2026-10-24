@@ -4,7 +4,9 @@ namespace Tests\Guidance;
 
 use App\Models\Appointment;
 use App\Models\CounselingCase;
+use App\Models\CounselorSchedule;
 use App\Models\Student;
+use App\Models\TestingRequest;
 use App\Support\Ids;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -309,5 +311,101 @@ class StudentAppointmentTest extends GuidanceTestCase
 
         $this->assertSame('assigned_pending_counselor', $appointment->fresh()->status);
         $this->assertNull($appointment->fresh()->student_accepted_at);
+    }
+
+    public function test_staff_assignment_checks_counselor_leave_and_class_conflict(): void
+    {
+        $staff = $this->user('staff');
+        $studentUser = $this->user();
+        $student = $this->student($studentUser);
+        $counselor = $this->user('counselor');
+        CounselorSchedule::create([
+            'counselor_id' => Ids::object($counselor->id),
+            'availability' => [['dayOfWeek' => 1, 'startTime' => '08:00', 'endTime' => '17:00']],
+            'classSchedule' => [['dayOfWeek' => 1, 'startTime' => '09:00', 'endTime' => '11:00']],
+            'leaves' => [[
+                'startDateTime' => '2026-10-06T09:00',
+                'endDateTime' => '2026-10-06T17:00',
+                'reason' => 'Private leave reason',
+                'type' => 'official',
+            ]],
+        ]);
+
+        $onLeave = $this->appointment($counselor, $student, 'pending_assignment');
+        $onLeave->update([
+            'counselor_id' => null,
+            'scheduled_date' => '2026-10-06',
+            'scheduled_time' => '10:00',
+        ]);
+
+        $this->actingAs($staff)->patch('/appointments/'.$onLeave->id, [
+            'action' => 'assign',
+            'version' => $onLeave->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertSessionHasErrors('counselor_id');
+
+        $duringClass = $this->appointment($counselor, $student, 'pending_assignment');
+        $duringClass->update([
+            'counselor_id' => null,
+            'scheduled_date' => '2026-10-19',
+            'scheduled_time' => '10:00',
+        ]);
+
+        $this->actingAs($staff)->patch('/appointments/'.$duringClass->id, [
+            'action' => 'assign',
+            'version' => $duringClass->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertSessionHasErrors('counselor_id');
+
+        $available = $this->appointment($counselor, $student, 'pending_assignment');
+        $available->update([
+            'counselor_id' => null,
+            'scheduled_date' => '2026-10-19',
+            'scheduled_time' => '14:00',
+        ]);
+
+        $this->actingAs($staff)->patch('/appointments/'.$available->id, [
+            'action' => 'assign',
+            'version' => $available->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $available->refresh();
+        $this->assertSame('assigned_pending_counselor', $available->status);
+        $this->assertTrue(Ids::same($counselor->id, $available->counselor_id));
+    }
+
+    public function test_internship_coordinator_can_submit_cohort_testing_request(): void
+    {
+        $faculty = $this->user('faculty');
+        $staff = $this->user('staff');
+
+        $this->actingAs($faculty)->post('/testing', [
+            'requester_name' => 'Prof. Juan Dela Cruz',
+            'requester_position' => 'Department Internship Coordinator',
+            'college' => 'COT',
+            'program' => 'Bachelor of Science in Information Technology (BSIT)',
+            'year_level' => '4th Year',
+            'student_count' => 45,
+            'purpose' => 'Pre-Internship Psychological Evaluation',
+            'preferred_date' => '2026-11-20',
+            'preferred_session' => 'AM',
+            'test_type' => 'GAMA',
+            'details' => 'BSIT 4A & 4B Internship candidates',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $request = TestingRequest::where('requester_name', 'Prof. Juan Dela Cruz')->firstOrFail();
+        $this->assertSame('pending', $request->status);
+        $this->assertSame(45, $request->student_count);
+        $this->assertSame('COT', $request->college);
+
+        // Staff / Psychometrician approves the batch request
+        $this->actingAs($staff)->patch('/testing/'.$request->id, [
+            'previous_status' => 'pending',
+            'status' => 'approved',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $request->refresh();
+        $this->assertSame('approved', $request->status);
     }
 }

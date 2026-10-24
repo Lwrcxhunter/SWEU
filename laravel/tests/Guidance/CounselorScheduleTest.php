@@ -4,6 +4,7 @@ namespace Tests\Guidance;
 
 use App\Models\CounselorSchedule;
 use App\Services\Appointments;
+use App\Services\CounselorAvailability;
 use App\Support\Ids;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -94,5 +95,26 @@ class CounselorScheduleTest extends GuidanceTestCase
         ])->assertSessionHasErrors('counselor_id');
 
         $this->assertNull($appointment->fresh()->counselor_id);
+    }
+
+    public function test_saved_schedule_replaces_legacy_default_hours_and_checks_partial_leave(): void
+    {
+        $counselor = $this->user('counselor');
+        CounselorSchedule::create([
+            'counselor_id' => Ids::object($counselor->id),
+            'availability' => [['dayOfWeek' => 6, 'startTime' => '09:00', 'endTime' => '12:00']],
+            'classSchedule' => [],
+            'leaves' => [[
+                'startDateTime' => '2026-10-10T10:00',
+                'endDateTime' => '2026-10-10T11:00',
+                'reason' => 'Private leave reason',
+                'type' => 'planned',
+            ]],
+        ]);
+        $availability = app(CounselorAvailability::class);
+
+        $this->assertTrue($availability->check($counselor, '2026-10-10', '09:00')['available']);
+        $this->assertSame('on_leave', $availability->check($counselor, '2026-10-10', '10:00')['status']);
+        $this->assertTrue($availability->check($counselor, '2026-10-10', '11:00')['available']);
     }
 }

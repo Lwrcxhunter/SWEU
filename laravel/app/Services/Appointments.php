@@ -17,6 +17,7 @@ class Appointments
     public function __construct(
         private readonly CounselingCases $cases,
         private readonly CounselorSchedules $schedules,
+        private readonly CounselorAvailability $availability,
     ) {}
 
     public function book(Student $student, array $data): Appointment
@@ -42,7 +43,8 @@ class Appointments
                 'type' => 'online_booking',
                 'urgency_level' => 'normal',
                 'scheduled_date' => $data['scheduled_date'],
-                'scheduled_time' => $data['scheduled_time'],
+                'scheduled_time' => $data['scheduled_time'] ?? null,
+                'preferred_period' => $data['preferred_period'] ?? null,
                 'status' => 'pending_assignment',
                 'version' => 1,
                 'slot_key' => null,
@@ -114,20 +116,45 @@ class Appointments
                 }
                 $counselor = User::findOrFail(Ids::object($data['counselor_id']));
                 $urgent = $appointment->urgency_level === 'urgent';
-                $scheduleRequest = $appointment->toArray();
-                if ($urgent) {
-                    $scheduleRequest['scheduled_date'] = today()->toDateString();
-                    $scheduleRequest['scheduled_time'] = now()->format('H:i');
-                }
                 if ($counselor->role !== 'counselor' || ! $counselor->active || ! $counselor->available
                     || ($urgent && ! $counselor->on_duty)) {
                     throw ValidationException::withMessages(['counselor_id' => 'Choose an available counselor (must be on-duty for urgent cases).']);
                 }
+                $scheduledDate = $urgent ? today()->toDateString() : $appointment->scheduled_date;
+                $scheduledTime = $urgent
+                    ? now()->format('H:i')
+                    : ($appointment->scheduled_time ?? ($data['scheduled_time'] ?? null));
+                if (! $scheduledTime) {
+                    throw ValidationException::withMessages(['scheduled_time' => 'Choose an available time before assigning this counselor.']);
+                }
+                $bookings = Appointment::where('counselor_id', Ids::object($counselor->id))
+                    ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
+                    ->where('scheduled_date', $scheduledDate)
+                    ->get(['_id', 'counselor_id', 'scheduled_date', 'scheduled_time', 'status']);
+                $availability = $this->availability->check(
+                    $counselor,
+                    $scheduledDate,
+                    $scheduledTime,
+                    $urgent ? null : ($appointment->preferred_period ?? null),
+                    $bookings,
+                    (string) $appointment->id,
+                    $urgent,
+                );
+                if (! $availability['available']) {
+                    throw ValidationException::withMessages([
+                        'counselor_id' => 'That counselor is not available at the selected time: '.$availability['reason'],
+                    ]);
+                }
+                $scheduleRequest = [
+                    'scheduled_date' => $scheduledDate,
+                    'scheduled_time' => $scheduledTime,
+                ];
                 if (! $this->schedules->allowsAppointment((string) $counselor->id, $scheduleRequest, $urgent)) {
                     throw ValidationException::withMessages(['counselor_id' => 'That counselor is unavailable during the selected schedule or leave period.']);
                 }
                 if (! $urgent) {
-                    $targetSlot = $this->slot($counselor->id, $appointment->toArray());
+                    $scheduleRequest['scheduled_date'] = $scheduledDate;
+                    $targetSlot = $this->slot($counselor->id, $scheduleRequest);
                     if (Appointment::where('slot_key', $targetSlot)->where('_id', '!=', $appointment->_id)->exists()) {
                         throw ValidationException::withMessages(['counselor_id' => 'That counselor already has an appointment scheduled at that time.']);
                     }
@@ -145,7 +172,9 @@ class Appointments
                     $appointment->scheduled_time = now()->format('H:i');
                     $appointment->slot_key = null;
                 } else {
-                    $appointment->slot_key = $this->slot($counselor->id, $appointment->toArray());
+                    $appointment->scheduled_date = $scheduledDate;
+                    $appointment->scheduled_time = $scheduledTime;
+                    $appointment->slot_key = $this->slot($counselor->id, $scheduleRequest);
                 }
                 $this->alert($counselor, $appointment, 'appointment', 'An appointment has been assigned to you. Review and accept schedule.');
             } elseif ($action === 'counselor_accept') {

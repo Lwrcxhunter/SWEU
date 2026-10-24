@@ -17,7 +17,8 @@ class AppointmentRequest extends FormRequest
         return [
             'channel' => ['nullable', Rule::in(['face_to_face', 'online', 'telecounseling'])],
             'scheduled_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'scheduled_time' => ['required', 'date_format:H:i', 'regex:/^\d{2}:(00|30)$/'],
+            'scheduled_time' => ['required_without:preferred_period', 'nullable', 'date_format:H:i', 'regex:/^\d{2}:(00|30)$/'],
+            'preferred_period' => ['required_without:scheduled_time', 'nullable', Rule::in(['AM', 'PM'])],
             'reason' => ['nullable', 'string', 'max:2000'],
             'expectations' => ['nullable', 'string', 'max:2000'],
             'average_sleep' => ['nullable', 'string', 'max:50'],
@@ -35,7 +36,7 @@ class AppointmentRequest extends FormRequest
     public function after(): array
     {
         return [function ($validator) {
-            if (! $validator->errors()->any() && $this->scheduled_date.' '.$this->scheduled_time <= now()->format('Y-m-d H:i')) {
+            if (! $validator->errors()->any() && $this->scheduled_time && $this->scheduled_date.' '.$this->scheduled_time <= now()->format('Y-m-d H:i')) {
                 $validator->errors()->add('scheduled_time', 'Choose a future appointment time (Philippine time).');
             }
         }];

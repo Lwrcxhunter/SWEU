@@ -75,6 +75,7 @@ class Views
             'urgency_level' => $appointment->urgency_level,
             'scheduled_date' => $appointment->scheduled_date,
             'scheduled_time' => $appointment->scheduled_time,
+            'preferred_period' => $appointment->preferred_period ?? ($appointment->scheduled_time ? ((int) $appointment->scheduled_time < 12 ? 'AM' : 'PM') : null),
             'status' => $appointment->status,
             'student_accepted_at' => $appointment->student_accepted_at ?? null,
             'counselor_accepted_at' => $appointment->counselor_accepted_at ?? null,
