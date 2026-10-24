@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Ids;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use MongoDB\BSON\UTCDateTime;
 
 class Appointments
 {
@@ -36,7 +37,8 @@ class Appointments
                 'type' => 'online_booking',
                 'urgency_level' => 'normal',
                 'scheduled_date' => $data['scheduled_date'],
-                'scheduled_time' => $data['scheduled_time'],
+                'scheduled_time' => $data['scheduled_time'] ?? null,
+                'preferred_period' => $data['preferred_period'] ?? null,
                 'status' => 'pending_assignment',
                 'version' => 1,
                 'slot_key' => null,
@@ -49,7 +51,7 @@ class Appointments
                     'additional_comments' => $data['additional_comments'] ?? null,
                 ],
                 'signature' => $signature,
-                'signed_at' => ! empty($signature) ? new \MongoDB\BSON\UTCDateTime(now()) : null,
+                'signed_at' => ! empty($signature) ? new UTCDateTime(now()) : null,
             ]);
 
             foreach (User::where('role', 'staff')->where('active', true)->get() as $staffUser) {
@@ -110,6 +112,19 @@ class Appointments
                     || ($urgent && ! $counselor->on_duty)) {
                     throw ValidationException::withMessages(['counselor_id' => 'Choose an available counselor (must be on-duty for urgent cases).']);
                 }
+                $date = $urgent ? today()->toDateString() : $appointment->scheduled_date;
+                $time = $urgent ? now()->format('H:i') : ($appointment->scheduled_time ?: ($data['scheduled_time'] ?? null));
+                if (! $time) {
+                    throw ValidationException::withMessages(['scheduled_time' => 'Choose an available time within the requested AM/PM period.']);
+                }
+                $bookings = Appointment::where('counselor_id', Ids::object($counselor->id))
+                    ->where('scheduled_date', $date)->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)->get();
+                $check = app(CounselorAvailability::class)->check($counselor, $date, $time,
+                    $urgent ? null : $appointment->preferred_period, $bookings, (string) $appointment->id, $urgent);
+                if (! $check['available']) {
+                    throw ValidationException::withMessages(['counselor_id' => $check['reason']]);
+                }
+                $appointment->scheduled_time = $time;
                 if (! $urgent) {
                     $targetSlot = $this->slot($counselor->id, $appointment->toArray());
                     if (Appointment::where('slot_key', $targetSlot)->where('_id', '!=', $appointment->_id)->exists()) {
@@ -118,6 +133,8 @@ class Appointments
                 }
                 $appointment->counselor_id = Ids::object($counselor->id);
                 $appointment->status = 'assigned_pending_accept';
+                $appointment->counselor_accepted_at = null;
+                $appointment->student_accepted_at = null;
                 if (! empty($data['onboarding_note'])) {
                     $appointment->onboarding_note = $data['onboarding_note'];
                 }

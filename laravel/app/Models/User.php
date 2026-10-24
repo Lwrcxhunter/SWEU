@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\CounselorAvailability;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,5 +65,48 @@ class User extends Document implements AuthenticatableContract, AuthorizableCont
         }
 
         return false;
+    }
+
+    public function getCounselorSchedule(): array
+    {
+        if (is_array($this->counseling_schedule)) {
+            return $this->counseling_schedule;
+        }
+
+        return [
+            ['day' => 'Monday', 'period' => 'AM', 'start' => '08:00', 'end' => '12:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Monday', 'period' => 'PM', 'start' => '13:00', 'end' => '17:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Tuesday', 'period' => 'AM', 'start' => '08:00', 'end' => '12:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Tuesday', 'period' => 'PM', 'start' => '13:00', 'end' => '17:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Wednesday', 'period' => 'AM', 'start' => '08:00', 'end' => '12:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Wednesday', 'period' => 'PM', 'start' => '13:00', 'end' => '17:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Thursday', 'period' => 'AM', 'start' => '08:00', 'end' => '12:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Thursday', 'period' => 'PM', 'start' => '13:00', 'end' => '17:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Friday', 'period' => 'AM', 'start' => '08:00', 'end' => '12:00', 'label' => 'Counseling Hours'],
+            ['day' => 'Friday', 'period' => 'PM', 'start' => '13:00', 'end' => '17:00', 'label' => 'Counseling Hours'],
+        ];
+    }
+
+    public function getClassSchedule(): array
+    {
+        if (! empty($this->class_schedule) && is_array($this->class_schedule)) {
+            return $this->class_schedule;
+        }
+
+        return [];
+    }
+
+    public function getLeaves(): array
+    {
+        if (! empty($this->leaves) && is_array($this->leaves)) {
+            return $this->leaves;
+        }
+
+        return [];
+    }
+
+    public function checkAvailability(string $date, ?string $time = null, ?string $preferredPeriod = null): array
+    {
+        return app(CounselorAvailability::class)->check($this, $date, $time, $preferredPeriod);
     }
 }

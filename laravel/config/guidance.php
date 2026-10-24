@@ -7,8 +7,8 @@ return [
     // Permission grants can narrow a role's functions, never expand its clinical scope.
     'permissions' => [
         'student' => ['intake.manage', 'appointments.book', 'referrals.submit', 'testing.request'],
-        'faculty' => ['referrals.submit'],
-        'staff' => ['queue.manage', 'referrals.manage', 'testing.manage', 'reports.view'],
+        'faculty' => ['referrals.submit', 'testing.request'],
+        'staff' => ['queue.manage', 'referrals.manage', 'testing.manage', 'testing.request', 'reports.view'],
         'counselor' => ['appointments.manage', 'notes.manage'],
         'admin' => ['users.manage', 'roles.manage'],
     ],

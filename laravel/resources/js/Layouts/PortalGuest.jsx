@@ -3,7 +3,13 @@ import { Brand } from "@/Components/Office";
 export default function PortalGuest({ children }) {
     return (
         <main className="grid min-h-screen lg:grid-cols-2 bg-sky-50/60">
-            <section className="relative overflow-hidden bg-gradient-to-br from-sky-700 via-sky-800 to-sky-950 text-white px-8 py-9 lg:p-16 flex flex-col justify-between shadow-xl">
+            <section
+                className="relative flex flex-col justify-between overflow-hidden bg-cover bg-center px-8 py-9 text-white shadow-xl lg:p-16"
+                style={{
+                    backgroundImage:
+                        "linear-gradient(135deg, rgba(3, 105, 161, 0.88), rgba(7, 89, 133, 0.84), rgba(8, 47, 73, 0.92)), url('/images/20261020_153539.jpg')",
+                }}
+            >
                 <Brand light />
                 <div className="relative py-12 lg:py-20">
                     <div className="mb-6 h-1 w-12 rounded-full bg-sky-400" />

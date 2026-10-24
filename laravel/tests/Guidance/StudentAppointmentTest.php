@@ -226,4 +226,97 @@ class StudentAppointmentTest extends GuidanceTestCase
         $this->assertSame('accepted', $followup->status);
         $this->assertNotNull($followup->student_accepted_at);
     }
+
+    public function test_staff_assignment_checks_counselor_leave_and_class_conflict(): void
+    {
+        $staff = $this->user('staff');
+        $studentUser = $this->user();
+        $student = $this->student($studentUser);
+
+        // Counselor with leaves and classes
+        $counselor = $this->user('counselor', [
+            'available' => true,
+            'on_duty' => true,
+            'leaves' => [
+                ['start_date' => '2026-10-25', 'end_date' => '2026-10-27', 'type' => 'Medical Leave'],
+            ],
+            'class_schedule' => [
+                ['day' => 'Monday', 'period' => 'AM', 'start' => '09:00', 'end' => '11:00', 'subject' => 'PSYC 101', 'room' => 'CAS 301'],
+            ],
+        ]);
+
+        // 1. Appointment on leave date (Oct 26, 2026)
+        $aLeave = app(\App\Services\Appointments::class)->walkIn($student);
+        $aLeave->scheduled_date = '2026-10-26';
+        $aLeave->scheduled_time = '10:00';
+        $aLeave->save();
+
+        $this->actingAs($staff)->patch('/appointments/'.$aLeave->id, [
+            'action' => 'assign',
+            'version' => $aLeave->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertSessionHasErrors('counselor_id');
+
+        // 2. Appointment during teaching class (Monday 09:30 AM)
+        $aClass = app(\App\Services\Appointments::class)->walkIn($student);
+        $aClass->scheduled_date = '2026-10-19'; // Monday
+        $aClass->scheduled_time = '09:30';
+        $aClass->save();
+
+        $this->actingAs($staff)->patch('/appointments/'.$aClass->id, [
+            'action' => 'assign',
+            'version' => $aClass->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertSessionHasErrors('counselor_id');
+
+        // 3. Appointment at available slot (Monday 14:00 PM)
+        $aValid = app(\App\Services\Appointments::class)->walkIn($student);
+        $aValid->scheduled_date = '2026-10-19'; // Monday PM
+        $aValid->scheduled_time = '14:00';
+        $aValid->save();
+
+        $this->actingAs($staff)->patch('/appointments/'.$aValid->id, [
+            'action' => 'assign',
+            'version' => $aValid->version,
+            'counselor_id' => (string) $counselor->id,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $aValid->refresh();
+        $this->assertSame('assigned_pending_accept', $aValid->status);
+        $this->assertTrue(Ids::same($counselor->id, $aValid->counselor_id));
+    }
+
+    public function test_internship_coordinator_can_submit_cohort_testing_request(): void
+    {
+        $faculty = $this->user('faculty');
+        $staff = $this->user('staff');
+
+        $this->actingAs($faculty)->post('/testing', [
+            'requester_name' => 'Prof. Juan Dela Cruz',
+            'requester_position' => 'Department Internship Coordinator',
+            'college' => 'COT',
+            'program' => 'Bachelor of Science in Information Technology (BSIT)',
+            'year_level' => '4th Year',
+            'student_count' => 45,
+            'purpose' => 'Pre-Internship Psychological Evaluation',
+            'preferred_date' => '2026-11-20',
+            'preferred_session' => 'AM',
+            'test_type' => 'GAMA',
+            'details' => 'BSIT 4A & 4B Internship candidates',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $request = \App\Models\TestingRequest::where('requester_name', 'Prof. Juan Dela Cruz')->firstOrFail();
+        $this->assertSame('pending', $request->status);
+        $this->assertSame(45, $request->student_count);
+        $this->assertSame('COT', $request->college);
+
+        // Staff / Psychometrician approves the batch request
+        $this->actingAs($staff)->patch('/testing/'.$request->id, [
+            'previous_status' => 'pending',
+            'status' => 'approved',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $request->refresh();
+        $this->assertSame('approved', $request->status);
+    }
 }

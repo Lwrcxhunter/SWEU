@@ -1,239 +1,284 @@
+﻿import { useState } from "react";
 import { useForm } from "@inertiajs/react";
 import { Button, Errors, Field, StatusBadge } from "@/Components/Office";
 import { parseDateBadge, formatSessionTime } from "@/Support/guidanceConstants";
-import {
-    Calendar,
-    Clock,
-    Phone,
-    Download,
-    CalendarClock,
-    Users,
-    AlertCircle,
-    UserCheck,
-    MapPin,
-} from "lucide-react";
+import { Clock, Phone, Download, Users, UserCheck, MapPin } from "lucide-react";
 
 export default function StaffQueueCard({ item, counselors = [] }) {
+    const [assigning, setAssigning] = useState(false);
     const form = useForm({
         counselor_id: "",
         onboarding_note: "",
-        scheduled_date: "",
         scheduled_time: "",
     });
-
     const perform = (action) => {
         form.transform((data) => ({ ...data, action, version: item.version }));
         form.patch(route("appointments.update", item.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                setAssigning(false);
+                form.reset();
+            },
         });
     };
-
     const closed = ["completed", "cancelled"].includes(item.status);
     const isWalkIn = item.type === "walk_in";
     const dateInfo = parseDateBadge(item.scheduled_date);
     const formattedTime = formatSessionTime(item.scheduled_time);
-
-    const collegeCode = item.student?.college
-        ? typeof item.student.college === "string"
+    const collegeCode =
+        typeof item.student?.college === "string"
             ? item.student.college
-            : item.student.college.code
-        : null;
+            : item.student?.college?.code;
+    const options = counselors
+        .map((counselor) => ({
+            ...counselor,
+            availability: item.assignment_options?.find(
+                (option) => option.id === counselor.id,
+            ),
+            designated: counselor.college_codes?.includes(collegeCode),
+        }))
+        .sort(
+            (a, b) =>
+                Number(!!b.availability?.available) -
+                    Number(!!a.availability?.available) ||
+                Number(!!b.designated) - Number(!!a.designated) ||
+                a.full_name.localeCompare(b.full_name),
+        );
+    const selected = options.find(
+        (option) => option.id === form.data.counselor_id,
+    );
+    const needsTime = !item.scheduled_time && item.urgency_level !== "urgent";
+    const canAssign =
+        selected?.availability?.available &&
+        (!needsTime ||
+            selected.availability.times.includes(form.data.scheduled_time));
+    const awaiting =
+        item.status === "accepted"
+            ? "Accepted appointment"
+            : item.counselor_accepted_at
+              ? "Awaiting student confirmation"
+              : "Awaiting counselor acceptance";
 
     return (
-        <div className="rounded-2xl border border-sky-100 bg-white p-5 shadow-xs transition-all hover:border-sky-200 hover:shadow-md">
+        <article className="rounded-2xl border border-sky-100 bg-white p-5">
             <Errors errors={form.errors} />
-
-            {/* Top Bar: Queue/Date Badge + Student Triage Info + Status */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-sky-100/70">
+            <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    {/* Left Badge: Walk-in Queue badge OR Calendar Badge */}
-                    {isWalkIn ? (
-                        <div className="w-14 rounded-xl border border-amber-200/80 bg-amber-50/60 shadow-xs text-center overflow-hidden shrink-0">
-                            <div className="bg-amber-600 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
-                                Walk-In
-                            </div>
-                            <div className="py-1 flex flex-col items-center justify-center">
-                                <Users className="w-5 h-5 text-amber-700" />
-                                <span className="block text-[8px] font-bold text-amber-800 tracking-wider uppercase mt-0.5">
-                                    Queue
-                                </span>
-                            </div>
+                    <div className="w-14 shrink-0 overflow-hidden rounded-lg border border-sky-200 text-center">
+                        <div className="bg-sky-700 px-1 py-1 text-xs font-semibold text-white">
+                            {isWalkIn
+                                ? "Walk-in"
+                                : dateInfo?.month || "Request"}
                         </div>
-                    ) : dateInfo ? (
-                        <div className="w-14 rounded-xl border border-sky-200/80 bg-white shadow-xs text-center overflow-hidden shrink-0">
-                            <div className="bg-sky-600 px-1 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
-                                {dateInfo.month}
-                            </div>
-                            <div className="py-0.5">
-                                <span className="block text-xl font-black text-slate-900 leading-tight">
-                                    {dateInfo.day}
-                                </span>
-                                <span className="block text-[9px] font-bold text-sky-700 tracking-wider">
-                                    {dateInfo.weekday}
-                                </span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="w-14 h-14 rounded-xl border border-dashed border-sky-200 bg-sky-50/60 flex flex-col items-center justify-center text-center shrink-0">
-                            <CalendarClock className="w-5 h-5 text-sky-500 mb-0.5" />
-                            <span className="text-[9px] font-bold text-sky-700 uppercase tracking-tight">
-                                Pending
-                            </span>
-                        </div>
-                    )}
-
-                    <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-                                <span>
-                                    {item.student?.full_name ||
-                                        "Unknown Student"}
-                                </span>
-                                {item.student?.school_id_number && (
-                                    <span className="text-xs font-normal text-slate-400">
-                                        ({item.student.school_id_number})
-                                    </span>
-                                )}
-                            </h3>
-                            {item.urgency_level === "urgent" && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase tracking-wide">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-                                    Urgent Case
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1 text-xs text-slate-600">
-                            <span className="inline-flex items-center gap-1 text-slate-700 font-medium">
-                                <Phone className="w-3.5 h-3.5 text-sky-600" />
-                                <span>
-                                    Contact:{" "}
-                                    {item.student?.phone_number ||
-                                        "None listed"}
-                                </span>
-                            </span>
-                            <span className="text-slate-300">•</span>
-                            <span className="inline-flex items-center gap-1 font-semibold text-slate-800">
-                                <Clock className="w-3.5 h-3.5 text-sky-600" />
-                                <span>
-                                    {formattedTime
-                                        ? `${formattedTime} PST`
-                                        : isWalkIn
-                                          ? "Walk-in Queue"
-                                          : "Date to be scheduled"}
-                                </span>
-                            </span>
-                            {collegeCode && (
+                        <div className="flex min-h-12 flex-col items-center justify-center py-1">
+                            {isWalkIn ? (
+                                <Users size={20} className="text-sky-800" />
+                            ) : (
                                 <>
-                                    <span className="text-slate-300">•</span>
-                                    <span className="font-medium text-slate-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-md text-[11px]">
-                                        College: {collegeCode}
+                                    <span className="text-xl font-semibold text-slate-900">
+                                        {dateInfo?.day || "—"}
+                                    </span>
+                                    <span className="text-xs text-slate-500">
+                                        {dateInfo?.weekday}
                                     </span>
                                 </>
                             )}
-                            <span className="text-slate-300">•</span>
-                            <span className="inline-flex items-center gap-1 text-slate-500">
-                                <MapPin className="w-3.5 h-3.5 text-sky-600" />
-                                <span>Face-to-Face</span>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-base font-semibold text-slate-900">
+                            {item.student?.full_name ||
+                                "Unavailable student account"}
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-500">
+                            {item.student?.school_id_number}
+                            {collegeCode ? ` / ${collegeCode}` : ""}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-600">
+                            <span className="inline-flex items-center gap-1">
+                                <Clock size={14} />
+                                {formattedTime
+                                    ? `${formattedTime} PHT`
+                                    : `${item.preferred_period || "Time not set"} requested`}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <MapPin size={14} />
+                                {item.channel === "face_to_face"
+                                    ? "Face-to-face"
+                                    : "Virtual"}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <Phone size={14} />
+                                {item.student?.phone_number ||
+                                    "No contact number"}
                             </span>
                         </div>
                     </div>
                 </div>
-
-                <div className="self-start sm:self-center">
+                <div className="flex flex-wrap gap-2">
+                    {item.urgency_level === "urgent" && (
+                        <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-800">
+                            Urgent
+                        </span>
+                    )}
                     <StatusBadge status={item.status} />
                 </div>
             </div>
-
-            {/* Middle Section: Assigned Counselor Status OR Dispatch Notice */}
-            <div className="py-3">
+            <div className="my-4 border-t border-slate-100 pt-3 text-sm">
                 {item.counselor_name ? (
-                    <div className="flex items-center gap-2 rounded-xl bg-sky-50/60 border border-sky-100 px-3.5 py-2 text-xs text-sky-900">
-                        <UserCheck className="w-4 h-4 text-sky-600 shrink-0" />
-                        <span>
-                            <strong>Assigned Counselor:</strong>{" "}
-                            {item.counselor_name}
-                        </span>
-                        {item.onboarding_note && (
-                            <span className="text-slate-500 ml-2 italic">
-                                ({item.onboarding_note})
-                            </span>
-                        )}
+                    <div className="flex items-start gap-2 text-slate-700">
+                        <UserCheck
+                            size={18}
+                            className="mt-0.5 shrink-0 text-sky-700"
+                        />
+                        <div>
+                            <p>
+                                <strong>{item.counselor_name}</strong> —{" "}
+                                {awaiting}
+                            </p>
+                            {item.onboarding_note && (
+                                <p className="mt-1 text-xs text-slate-500">
+                                    {item.onboarding_note}
+                                </p>
+                            )}
+                        </div>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2 rounded-xl bg-amber-50/60 border border-amber-200/70 px-3.5 py-2 text-xs text-amber-900">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>
-                            <strong>Pending Assignment:</strong> Select an
-                            available counselor below to dispatch.
-                        </span>
-                    </div>
+                    <p className="text-amber-800">
+                        Needs assignment. Check availability and send this
+                        request to a counselor.
+                    </p>
                 )}
             </div>
-
-            {/* Embedded Counselor Assignment Form */}
             {!closed && item.status !== "accepted" && (
-                <form
-                    className="my-2 p-3.5 bg-sky-50/40 rounded-xl border border-sky-100 flex flex-wrap items-end gap-3 text-xs"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        perform("assign");
-                    }}
-                >
-                    <Field
-                        label="Assign counselor"
-                        type="select"
-                        form={form}
-                        name="counselor_id"
-                        required
+                <div className="mb-4">
+                    <Button
+                        secondary
+                        onClick={() => setAssigning(!assigning)}
+                        aria-expanded={assigning}
                     >
-                        <option value="">Choose an available counselor</option>
-                        {counselors
-                            .filter(
-                                (c) =>
-                                    c.available &&
-                                    (item.urgency_level === "urgent"
-                                        ? c.on_duty
-                                        : true),
-                            )
-                            .map((c) => {
-                                const isCollegeDesignate =
-                                    item.student?.college?.code &&
-                                    c.college_codes?.includes(
-                                        item.student.college.code,
-                                    );
-                                const designationLabel =
-                                    c.designation ||
-                                    (c.college_codes?.length
-                                        ? `${c.college_codes.join(", ")} Designate`
-                                        : "Counselor");
-                                return (
-                                    <option key={c.id} value={c.id}>
-                                        {c.full_name} — {designationLabel}
-                                        {isCollegeDesignate
-                                            ? " [Student's College Designate]"
-                                            : ""}
-                                        {c.on_duty ? " · On duty" : ""}
-                                    </option>
-                                );
-                            })}
-                    </Field>
-                    <Field
-                        label="Onboarding note (optional)"
-                        form={form}
-                        name="onboarding_note"
-                        placeholder="e.g. Room 202, arrive 5 mins early"
-                    />
-                    <Button secondary disabled={form.processing}>
-                        Assign
+                        {assigning
+                            ? "Hide assignment"
+                            : item.counselor_id
+                              ? "Reassign counselor"
+                              : "Assign counselor"}
                     </Button>
-                </form>
+                    {assigning && (
+                        <form
+                            className="mt-3 space-y-4 rounded-xl border border-sky-200 bg-sky-50/40 p-4"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                if (canAssign) perform("assign");
+                            }}
+                        >
+                            <p className="text-sm text-slate-700">
+                                {item.urgency_level === "urgent"
+                                    ? "Immediate walk-in: on-duty counselors only."
+                                    : `${item.scheduled_date} / ${item.preferred_period || "Requested time"}${formattedTime ? ` / ${formattedTime}` : ""}`}
+                                <span className="mt-1 block text-xs text-slate-500">
+                                    Availability is checked again when you
+                                    assign. The counselor reviews the assignment
+                                    next.
+                                </span>
+                            </p>
+                            <Field
+                                label="Counselor"
+                                type="select"
+                                form={form}
+                                name="counselor_id"
+                                required
+                                onChange={(event) =>
+                                    form.setData({
+                                        ...form.data,
+                                        counselor_id: event.target.value,
+                                        scheduled_time: "",
+                                    })
+                                }
+                            >
+                                <option value="">
+                                    Choose an available counselor
+                                </option>
+                                {options.map((counselor) => (
+                                    <option
+                                        key={counselor.id}
+                                        value={counselor.id}
+                                        disabled={
+                                            !counselor.availability?.available
+                                        }
+                                    >
+                                        {counselor.full_name} —{" "}
+                                        {counselor.availability?.badge ||
+                                            "Availability unknown"}
+                                        {counselor.availability?.available
+                                            ? counselor.designated
+                                                ? " (College designate, recommended)"
+                                                : " (Recommended)"
+                                            : ""}
+                                    </option>
+                                ))}
+                            </Field>
+                            {selected && (
+                                <p
+                                    role="status"
+                                    className={`text-sm ${selected.availability?.available ? "text-emerald-800" : "text-rose-700"}`}
+                                >
+                                    {selected.availability?.reason}
+                                </p>
+                            )}
+                            {!options.some(
+                                (option) => option.availability?.available,
+                            ) && (
+                                <p
+                                    role="status"
+                                    className="text-sm text-amber-800"
+                                >
+                                    No counselors are available for this
+                                    request. Review the availability calendar
+                                    and coordinate another schedule with the
+                                    student.
+                                </p>
+                            )}
+                            {needsTime && (
+                                <Field
+                                    label="Available time (PHT)"
+                                    type="select"
+                                    form={form}
+                                    name="scheduled_time"
+                                    required
+                                >
+                                    <option value="">
+                                        Choose a time in the requested period
+                                    </option>
+                                    {(selected?.availability?.times || []).map(
+                                        (time) => (
+                                            <option key={time} value={time}>
+                                                {formatSessionTime(time)}
+                                            </option>
+                                        ),
+                                    )}
+                                </Field>
+                            )}
+                            <Field
+                                label="Arrival instructions (optional)"
+                                form={form}
+                                name="onboarding_note"
+                                maxLength={500}
+                                hint="Use this for the meeting location or arrival time. Avoid confidential counseling details."
+                            />
+                            <Button
+                                type="submit"
+                                disabled={form.processing || !canAssign}
+                            >
+                                {form.processing
+                                    ? "Assigning…"
+                                    : "Send assignment to counselor"}
+                            </Button>
+                        </form>
+                    )}
+                </div>
             )}
-
-            {/* Bottom Action Bar */}
-            <div className="border-t border-sky-100/80 pt-3 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* Urgent Flag Action for Walk-ins */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                <div className="flex flex-wrap items-center gap-3">
                     {!closed && isWalkIn && item.urgency_level !== "urgent" && (
                         <Button
                             disabled={form.processing}
@@ -242,20 +287,16 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                             Flag urgent & alert counselors
                         </Button>
                     )}
-
-                    {/* PDF Export for Front Desk */}
                     <a
-                        className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 inline-flex items-center gap-1.5 transition shadow-xs"
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50"
                         href={route("appointments.pdf", item.id)}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        <Download className="w-4 h-4 text-sky-600" />
-                        <span>Intake PDF</span>
+                        <Download size={16} />
+                        Intake PDF
                     </a>
                 </div>
-
-                {/* Cancel Action */}
                 {!closed && (
                     <Button
                         secondary
@@ -265,10 +306,10 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                 perform("cancel");
                         }}
                     >
-                        Cancel
+                        Cancel appointment
                     </Button>
                 )}
             </div>
-        </div>
+        </article>
     );
 }

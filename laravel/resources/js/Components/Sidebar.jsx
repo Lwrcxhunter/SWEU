@@ -100,20 +100,6 @@ export default function Sidebar({ auth, menu, setMenu }) {
                 icon: IdCard,
             });
         }
-        if (can("referrals.submit")) {
-            navItems.push({
-                name: "referrals.index",
-                label: "Referrals",
-                icon: Share2,
-            });
-        }
-        if (can("testing.request")) {
-            navItems.push({
-                name: "testing.index",
-                label: "Testing Requests",
-                icon: ClipboardList,
-            });
-        }
     }
 
     // Faculty specific
@@ -131,13 +117,6 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
     // Staff additional queues
     if (role === "staff") {
-        if (can("referrals.manage")) {
-            navItems.push({
-                name: "referrals.index",
-                label: "Referral Queue",
-                icon: Share2,
-            });
-        }
         if (can("testing.manage")) {
             navItems.push({
                 name: "testing.index",
