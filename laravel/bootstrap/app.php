@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ActiveAccount;
+use App\Http\Middleware\CanReadSessionNotes;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,7 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->alias(['role' => RoleMiddleware::class, 'permission' => PermissionMiddleware::class]);
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'can.read.session.notes' => CanReadSessionNotes::class,
+        ]);
         $middleware->web(append: [ActiveAccount::class]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

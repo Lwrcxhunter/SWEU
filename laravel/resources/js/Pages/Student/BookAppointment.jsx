@@ -47,15 +47,15 @@ export default function BookAppointment({ appointments, hasIntake }) {
     const walkForm = useForm({});
 
     const handleAccept = (appointment) => {
-        if (!confirm("Confirm and accept this counseling schedule?")) return;
+        if (!confirm("Confirm this counselor-approved schedule?")) return;
         actionForm.setData({
-            action: "accept",
+            action: "student_confirm",
             version: appointment.version,
         });
         router.patch(
             route("appointments.update", appointment.id),
             {
-                action: "accept",
+                action: "student_confirm",
                 version: appointment.version,
             },
             {
@@ -196,10 +196,24 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                     item.status === "pending_assignment" ||
                                     item.status === "pending";
                                 const isAssignedPending =
+                                    item.status ===
+                                        "assigned_pending_counselor" ||
+                                    item.status ===
+                                        "counselor_accepted_pending_student" ||
+                                    item.status === "reassignment_requested" ||
                                     item.status === "assigned_pending_accept" ||
                                     item.status === "assigned" ||
                                     item.status === "rescheduled";
-                                const isAccepted = item.status === "accepted";
+                                const isAwaitingCounselor =
+                                    item.status ===
+                                    "assigned_pending_counselor";
+                                const isAwaitingStudentConfirmation =
+                                    item.status ===
+                                    "counselor_accepted_pending_student";
+                                const isAccepted = [
+                                    "accepted",
+                                    "confirmed",
+                                ].includes(item.status);
                                 const isRescheduled =
                                     item.status === "rescheduled";
                                 const isCancelled = item.status === "cancelled";
@@ -467,8 +481,18 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                         {/* Action Buttons Row */}
                                         <div className="border-t border-sky-100/80 pt-3 flex flex-wrap items-center justify-between gap-3">
                                             <div className="flex flex-wrap items-center gap-2">
-                                                {/* Dual Acceptance Action */}
-                                                {isAssignedPending && (
+                                                {isAwaitingCounselor && (
+                                                    <p className="rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs font-medium text-sky-900">
+                                                        Your appointment is
+                                                        awaiting counselor
+                                                        acceptance. You can
+                                                        confirm it after the
+                                                        counselor approves the
+                                                        schedule.
+                                                    </p>
+                                                )}
+
+                                                {isAwaitingStudentConfirmation && (
                                                     <button
                                                         onClick={() =>
                                                             handleAccept(item)
@@ -477,12 +501,10 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                                     >
                                                         <CheckCircle2 className="w-3.5 h-3.5" />
                                                         <span>
-                                                            {isRescheduled
-                                                                ? "Confirm New Schedule"
-                                                                : item.type ===
-                                                                    "follow_up"
-                                                                  ? "Confirm Follow-up Schedule"
-                                                                  : "Accept Session Schedule"}
+                                                            {item.type ===
+                                                            "follow_up"
+                                                                ? "Confirm Follow-up Schedule"
+                                                                : "Confirm Schedule"}
                                                         </span>
                                                     </button>
                                                 )}

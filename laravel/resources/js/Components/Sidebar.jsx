@@ -70,6 +70,17 @@ export default function Sidebar({ auth, menu, setMenu }) {
             label: "My Caseload",
             icon: UserCheck,
         });
+        navItems.push({
+            name: "counselor.schedule",
+            label: "My Schedule",
+            icon: Calendar,
+        });
+    } else if (role === "head_counselor" && can("notes.audit.read")) {
+        navItems.push({
+            name: "head.audit.index",
+            label: "Clinical Audit",
+            icon: ShieldCheck,
+        });
     } else if (role === "staff" && can("queue.manage")) {
         navItems.push({
             name: "queue.index",

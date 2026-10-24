@@ -3,13 +3,14 @@
 return [
     'student_id_pattern' => env('STUDENT_ID_PATTERN', '/^[A-Za-z0-9][A-Za-z0-9-]{3,19}$/'),
     'agreement_version' => '2026-01',
-    'roles' => ['student', 'faculty', 'staff', 'counselor', 'admin'],
+    'roles' => ['student', 'faculty', 'staff', 'counselor', 'head_counselor', 'admin'],
     // Permission grants can narrow a role's functions, never expand its clinical scope.
     'permissions' => [
         'student' => ['intake.manage', 'appointments.book', 'referrals.submit', 'testing.request'],
         'faculty' => ['referrals.submit'],
         'staff' => ['queue.manage', 'referrals.manage', 'testing.manage', 'reports.view'],
         'counselor' => ['appointments.manage', 'notes.manage'],
+        'head_counselor' => ['notes.audit.read'],
         'admin' => ['users.manage', 'roles.manage'],
     ],
     'colleges' => [

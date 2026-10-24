@@ -1,4 +1,6 @@
-import { useForm } from "@inertiajs/react";
+import axios from "axios";
+import { Link, router, useForm } from "@inertiajs/react";
+import { useState } from "react";
 import Office, {
     Card,
     Field,
@@ -9,7 +11,20 @@ import Office, {
 } from "@/Components/Office";
 import { TIME_SLOTS } from "@/Support/guidanceConstants";
 
-export default function SessionNotes({ appointment, intake, session }) {
+export default function SessionNotes({
+    appointment,
+    intake,
+    session,
+    caseRecord,
+}) {
+    const [showFollowUp, setShowFollowUp] = useState(false);
+    const [caseProcessing, setCaseProcessing] = useState(false);
+    const [caseError, setCaseError] = useState("");
+    const followUp = useForm({
+        targetDate: "",
+        timeSlot: "AM",
+        mode: appointment.channel === "online" ? "Virtual" : "F2F",
+    });
     const form = useForm({
         notes: session?.notes || "",
         is_flagged_for_followup: session?.is_flagged_for_followup || false,
@@ -23,6 +38,25 @@ export default function SessionNotes({ appointment, intake, session }) {
     const editable =
         Boolean(session) ||
         ["accepted", "completed"].includes(appointment.status);
+    const changeCase = async (action, payload = {}) => {
+        setCaseProcessing(true);
+        setCaseError("");
+        followUp.clearErrors();
+        try {
+            await axios.post(route(`cases.${action}`, caseRecord.id), payload);
+            setShowFollowUp(false);
+            router.reload({ preserveScroll: true });
+        } catch (error) {
+            const response = error.response?.data;
+            if (response?.errors) followUp.setError(response.errors);
+            setCaseError(
+                response?.message ||
+                    "The case could not be updated. Please try again.",
+            );
+        } finally {
+            setCaseProcessing(false);
+        }
+    };
     return (
         <Office
             title="A private space for care."
@@ -162,7 +196,162 @@ export default function SessionNotes({ appointment, intake, session }) {
                         </Button>
                     </form>
                 </Card>
+                {caseRecord && (
+                    <Card
+                        title={`Case ${caseRecord.case_number}`}
+                        description={`Status: ${caseRecord.status.replaceAll("_", " ")} · ${caseRecord.category.replaceAll("_", " ")}`}
+                    >
+                        {caseError && (
+                            <p
+                                role="alert"
+                                className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800"
+                            >
+                                {caseError}
+                            </p>
+                        )}
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-semibold text-slate-800">
+                                Session history
+                            </h3>
+                            <ol className="space-y-3 border-l-2 border-sky-100 pl-4">
+                                {caseRecord.sessions.map((item) => (
+                                    <li
+                                        key={item.id}
+                                        className="relative rounded-lg border border-slate-100 bg-slate-50 p-3"
+                                    >
+                                        <span className="absolute -left-[22px] top-4 h-2 w-2 rounded-full bg-sky-500" />
+                                        <Link
+                                            href={route(
+                                                "notes.show",
+                                                item.appointment_id,
+                                            )}
+                                            className="text-sm font-semibold text-sky-800 hover:text-sky-950"
+                                        >
+                                            Session {item.session_number}
+                                        </Link>
+                                        <p className="mt-1 text-xs text-slate-600">
+                                            {item.session_date} ·{" "}
+                                            {item.time_slot} · {item.mode} ·{" "}
+                                            {item.status.replaceAll("_", " ")}
+                                            {item.is_follow_up
+                                                ? " · Follow-up"
+                                                : ""}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                        {caseRecord.status !== "closed" && (
+                            <div className="mt-5 flex flex-wrap gap-3 border-t border-slate-100 pt-5">
+                                <Button
+                                    disabled={caseProcessing}
+                                    onClick={() => {
+                                        if (
+                                            window.confirm(
+                                                "Close this case and mark the current session completed?",
+                                            )
+                                        ) {
+                                            changeCase("close");
+                                        }
+                                    }}
+                                >
+                                    Close Case
+                                </Button>
+                                <Button
+                                    secondary
+                                    disabled={caseProcessing}
+                                    onClick={() => {
+                                        setCaseError("");
+                                        followUp.clearErrors();
+                                        setShowFollowUp(true);
+                                    }}
+                                >
+                                    Schedule Follow-Up
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
+                )}
             </div>
+            {showFollowUp && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+                    role="presentation"
+                    onMouseDown={(event) => {
+                        if (event.target === event.currentTarget)
+                            setShowFollowUp(false);
+                    }}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="follow-up-title"
+                        className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl"
+                    >
+                        <h2
+                            id="follow-up-title"
+                            className="text-lg font-semibold text-slate-900"
+                        >
+                            Schedule a follow-up
+                        </h2>
+                        <p className="mt-1 text-sm text-slate-600">
+                            The new session will remain in case{" "}
+                            {caseRecord.case_number}.
+                        </p>
+                        <form
+                            className="mt-5 space-y-4"
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                changeCase("follow-up", followUp.data);
+                            }}
+                        >
+                            <Field
+                                form={followUp}
+                                name="targetDate"
+                                label="Date"
+                                type="date"
+                                required
+                            />
+                            <Field
+                                form={followUp}
+                                name="timeSlot"
+                                label="Time slot"
+                                type="select"
+                                required
+                            >
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                            </Field>
+                            <Field
+                                form={followUp}
+                                name="mode"
+                                label="Session mode"
+                                type="select"
+                                required
+                            >
+                                <option value="F2F">Face-to-face</option>
+                                <option value="Virtual">Virtual</option>
+                            </Field>
+                            <Errors errors={followUp.errors} />
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button
+                                    secondary
+                                    type="button"
+                                    disabled={caseProcessing}
+                                    onClick={() => setShowFollowUp(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button disabled={caseProcessing}>
+                                    {caseProcessing
+                                        ? "Scheduling..."
+                                        : "Schedule Follow-Up"}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </Office>
     );
 }

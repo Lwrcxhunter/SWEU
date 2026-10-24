@@ -1,10 +1,12 @@
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
-$localConfig = Join-Path $projectRoot '.runtime/php.ini'
+$runtimeDirectory = Join-Path $projectRoot '.runtime'
+$phpBinary = Join-Path $runtimeDirectory 'php/php.exe'
+$localConfig = Join-Path $runtimeDirectory 'php/php.ini'
 $mongoDirectory = Join-Path $projectRoot '.runtime/mongodb-server'
 $mongoBinary = Get-ChildItem -LiteralPath $mongoDirectory -Filter mongod.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $mongoBinary -or -not (Test-Path -LiteralPath $localConfig)) {
-    throw 'Local runtime is missing. Follow laravel/README.md to configure PHP and a MongoDB replica set.'
+if (-not $mongoBinary -or -not (Test-Path -LiteralPath $phpBinary) -or -not (Test-Path -LiteralPath $localConfig)) {
+    throw 'Local runtime is incomplete. Follow laravel/README.md to configure PHP and a MongoDB replica set.'
 }
 $listener = Get-NetTCPConnection -LocalPort 27028 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($listener) {
@@ -19,13 +21,13 @@ if ($listener) {
 $previousConfig = $env:PHPRC
 try {
     $env:PHPRC = $localConfig
-    & php (Join-Path $PSScriptRoot 'init-local-mongo.php')
+    & $phpBinary (Join-Path $PSScriptRoot 'init-local-mongo.php')
     if ($LASTEXITCODE -ne 0) { throw 'Local MongoDB initialization failed.' }
     Push-Location (Join-Path $projectRoot 'laravel')
-    & php artisan guidance:setup
+    & $phpBinary artisan guidance:setup
     if ($LASTEXITCODE -ne 0) { throw 'Database setup failed.' }
     Write-Host 'Open http://127.0.0.1:8000. Use another terminal to create an administrator with scripts/php.ps1 artisan guidance:admin.'
-    & php artisan serve --host=127.0.0.1 --port=8000 --no-reload
+    & $phpBinary artisan serve --host=127.0.0.1 --port=8000 --no-reload
 } finally {
     if ((Get-Location).Path -eq (Join-Path $projectRoot 'laravel')) { Pop-Location }
     $env:PHPRC = $previousConfig

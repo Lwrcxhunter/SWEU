@@ -44,7 +44,8 @@ class Views
         Appointment $appointment,
         ?Student $student = null,
         ?User $studentUser = null,
-        ?User $counselor = null
+        ?User $counselor = null,
+        bool $includeReassignmentNote = false,
     ): array {
         $student = $student ?? ($appointment->student_id ? Student::find($appointment->student_id) : null);
         $studentUser = $studentUser ?? ($student && $student->user_id ? User::find($student->user_id) : null);
@@ -65,6 +66,7 @@ class Views
                 'available' => (bool) $counselor->available,
             ] : null,
             'onboarding_note' => $appointment->onboarding_note ?? null,
+            'reassignment_note' => $includeReassignmentNote ? ($appointment->reassignment_note ?? null) : null,
             'initial_visit_questionnaire' => $appointment->initial_visit_questionnaire ?? null,
             'signature' => $appointment->signature ?? null,
             'signed_at' => $appointment->signed_at ? ($appointment->signed_at instanceof \DateTimeInterface ? $appointment->signed_at->format('Y-m-d H:i:s') : (string) $appointment->signed_at) : null,
@@ -83,7 +85,7 @@ class Views
     /**
      * Batch-hydrate appointments to eliminate N+1 database queries.
      */
-    public static function appointments(mixed $appointments): mixed
+    public static function appointments(mixed $appointments, bool $includeReassignmentNote = false): mixed
     {
         if ($appointments === null) {
             return null;
@@ -120,12 +122,12 @@ class Views
             $users = User::whereIn('_id', $userObjectIds)->get()->keyBy(fn ($u) => (string) $u->id);
         }
 
-        $transformer = function (Appointment $appointment) use ($students, $users) {
+        $transformer = function (Appointment $appointment) use ($students, $users, $includeReassignmentNote) {
             $student = $appointment->student_id ? $students->get((string) $appointment->student_id) : null;
             $studentUser = $student && $student->user_id ? $users->get((string) $student->user_id) : null;
             $counselor = $appointment->counselor_id ? $users->get((string) $appointment->counselor_id) : null;
 
-            return self::appointment($appointment, $student, $studentUser, $counselor);
+            return self::appointment($appointment, $student, $studentUser, $counselor, $includeReassignmentNote);
         };
 
         if ($isPaginator) {

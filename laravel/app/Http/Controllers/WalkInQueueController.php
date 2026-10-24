@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
+use App\Models\CounselorSchedule;
+use App\Models\Referral;
 use App\Models\Student;
+use App\Models\TestingRequest;
 use App\Models\User;
 use App\Services\Appointments;
+use App\Support\Ids;
 use App\Support\Views;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +24,11 @@ class WalkInQueueController extends Controller
             'pending_assignment',
             'assigned',
             'assigned_pending_accept',
+            'assigned_pending_counselor',
+            'counselor_accepted_pending_student',
+            'reassignment_requested',
             'accepted',
+            'confirmed',
             'rescheduled',
         ];
 
@@ -29,17 +37,35 @@ class WalkInQueueController extends Controller
             ->oldest()
             ->paginate(20);
 
-        $counselors = User::where('role', 'counselor')
+        $counselorRecords = User::where('role', 'counselor')
             ->where('active', true)
-            ->get()
-            ->map(function ($u) {
-                $userView = Views::user($u);
-                $userView['active_sessions_count'] = Appointment::where('counselor_id', $u->id)
-                    ->whereIn('status', ['assigned', 'assigned_pending_accept', 'accepted'])
-                    ->count();
+            ->get();
+        $schedules = CounselorSchedule::whereIn(
+            'counselor_id',
+            $counselorRecords->map(fn ($user) => Ids::object($user->id))->all(),
+        )->get()->keyBy(fn ($schedule) => (string) $schedule->counselor_id);
+        $counselors = $counselorRecords->map(function ($u) use ($schedules) {
+            $userView = Views::user($u);
+            $schedule = $schedules->get((string) $u->id);
+            $userView['schedule'] = $schedule ? [
+                'availability' => $schedule->availability ?? [],
+                'classSchedule' => $schedule->classSchedule ?? [],
+                'leaves' => collect($schedule->leaves ?? [])->map(fn ($leave) => [
+                    'startDateTime' => $leave['startDateTime'],
+                    'endDateTime' => $leave['endDateTime'],
+                    'type' => $leave['type'],
+                ])->all(),
+            ] : null;
+            $userView['active_sessions_count'] = Appointment::where('counselor_id', $u->id)
+                ->whereIn('status', [
+                    'assigned', 'assigned_pending_accept', 'assigned_pending_counselor',
+                    'counselor_accepted_pending_student', 'reassignment_requested',
+                    'accepted', 'confirmed',
+                ])
+                ->count();
 
-                return $userView;
-            });
+            return $userView;
+        });
 
         $onDutyCounselors = User::where('role', 'counselor')->where('active', true)->where('on_duty', true)->count();
         $availableCounselors = User::where('role', 'counselor')->where('active', true)->where('available', true)->count();
@@ -48,15 +74,15 @@ class WalkInQueueController extends Controller
         $metrics = [
             'queue_total' => Appointment::whereIn('status', $activeStatuses)->count(),
             'urgent_count' => Appointment::whereIn('status', $activeStatuses)->where('urgency_level', 'urgent')->count(),
-            'pending_referrals_count' => \App\Models\Referral::where('status', 'submitted')->count(),
-            'open_testing_count' => \App\Models\TestingRequest::where('status', 'pending')->count(),
+            'pending_referrals_count' => Referral::where('status', 'submitted')->count(),
+            'open_testing_count' => TestingRequest::where('status', 'pending')->count(),
             'counselors_on_duty' => $onDutyCounselors,
             'counselors_available' => $availableCounselors,
             'counselors_total' => $totalCounselors,
         ];
 
         return Inertia::render('Staff/WalkInQueue', [
-            'appointments' => Views::appointments($appointments),
+            'appointments' => Views::appointments($appointments, true),
             'counselors' => $counselors,
             'metrics' => $metrics,
         ]);

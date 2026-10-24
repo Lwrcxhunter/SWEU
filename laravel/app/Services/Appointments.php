@@ -10,9 +10,15 @@ use App\Models\User;
 use App\Support\Ids;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use MongoDB\BSON\UTCDateTime;
 
 class Appointments
 {
+    public function __construct(
+        private readonly CounselingCases $cases,
+        private readonly CounselorSchedules $schedules,
+    ) {}
+
     public function book(Student $student, array $data): Appointment
     {
         return DB::transaction(function () use ($student, $data) {
@@ -49,7 +55,7 @@ class Appointments
                     'additional_comments' => $data['additional_comments'] ?? null,
                 ],
                 'signature' => $signature,
-                'signed_at' => ! empty($signature) ? new \MongoDB\BSON\UTCDateTime(now()) : null,
+                'signed_at' => ! empty($signature) ? new UTCDateTime(now()) : null,
             ]);
 
             foreach (User::where('role', 'staff')->where('active', true)->get() as $staffUser) {
@@ -101,14 +107,24 @@ class Appointments
                 }
             } elseif ($action === 'assign') {
                 abort_unless($isStaff, 403);
-                if (in_array($appointment->status, ['accepted', 'completed']) || CounselingSession::where('appointment_id', Ids::object($appointment->id))->exists()) {
+                if (in_array($appointment->status, ['accepted', 'confirmed', 'completed', 'cancelled', 'counselor_accepted_pending_student'])
+                    || (CounselingSession::where('appointment_id', Ids::object($appointment->id))->exists()
+                        && $appointment->status !== 'reassignment_requested')) {
                     throw ValidationException::withMessages(['action' => 'An accepted appointment or a session with clinical notes cannot be reassigned.']);
                 }
                 $counselor = User::findOrFail(Ids::object($data['counselor_id']));
                 $urgent = $appointment->urgency_level === 'urgent';
+                $scheduleRequest = $appointment->toArray();
+                if ($urgent) {
+                    $scheduleRequest['scheduled_date'] = today()->toDateString();
+                    $scheduleRequest['scheduled_time'] = now()->format('H:i');
+                }
                 if ($counselor->role !== 'counselor' || ! $counselor->active || ! $counselor->available
                     || ($urgent && ! $counselor->on_duty)) {
                     throw ValidationException::withMessages(['counselor_id' => 'Choose an available counselor (must be on-duty for urgent cases).']);
+                }
+                if (! $this->schedules->allowsAppointment((string) $counselor->id, $scheduleRequest, $urgent)) {
+                    throw ValidationException::withMessages(['counselor_id' => 'That counselor is unavailable during the selected schedule or leave period.']);
                 }
                 if (! $urgent) {
                     $targetSlot = $this->slot($counselor->id, $appointment->toArray());
@@ -117,7 +133,10 @@ class Appointments
                     }
                 }
                 $appointment->counselor_id = Ids::object($counselor->id);
-                $appointment->status = 'assigned_pending_accept';
+                $appointment->status = 'assigned_pending_counselor';
+                $appointment->reassignment_note = null;
+                $appointment->student_accepted_at = null;
+                $appointment->counselor_accepted_at = null;
                 if (! empty($data['onboarding_note'])) {
                     $appointment->onboarding_note = $data['onboarding_note'];
                 }
@@ -129,17 +148,33 @@ class Appointments
                     $appointment->slot_key = $this->slot($counselor->id, $appointment->toArray());
                 }
                 $this->alert($counselor, $appointment, 'appointment', 'An appointment has been assigned to you. Review and accept schedule.');
+            } elseif ($action === 'counselor_accept') {
+                abort_unless($isCounselor, 403);
+                if ($appointment->status !== 'assigned_pending_counselor') {
+                    throw ValidationException::withMessages(['action' => 'Only a newly assigned appointment can be accepted.']);
+                }
+                $appointment->counselor_accepted_at = now()->toDateTimeString();
+                $appointment->status = 'counselor_accepted_pending_student';
+            } elseif ($action === 'student_confirm') {
+                abort_unless($isStudent, 403);
+                if ($appointment->status !== 'counselor_accepted_pending_student') {
+                    throw ValidationException::withMessages(['action' => 'Confirmations are available only after the counselor accepts the appointment.']);
+                }
+                $appointment->student_accepted_at = now()->toDateTimeString();
+                $appointment->status = 'confirmed';
+            } elseif ($action === 'request_reassignment') {
+                abort_unless($isCounselor, 403);
+                if ($appointment->status !== 'assigned_pending_counselor') {
+                    throw ValidationException::withMessages(['action' => 'Reassignment can only be requested for a newly assigned appointment.']);
+                }
+                $appointment->status = 'reassignment_requested';
+                $appointment->reassignment_note = trim($data['note']);
             } elseif ($action === 'accept') {
-                abort_unless($isCounselor || $isStudent, 403);
-                if (! in_array($appointment->status, ['assigned', 'assigned_pending_accept', 'rescheduled'])) {
+                abort_unless($isCounselor, 403);
+                if (! in_array($appointment->status, ['assigned', 'assigned_pending_accept', 'rescheduled'], true)) {
                     throw ValidationException::withMessages(['action' => 'Only assigned requests can be accepted.']);
                 }
-                if ($isStudent) {
-                    $appointment->student_accepted_at = now()->toDateTimeString();
-                }
-                if ($isCounselor) {
-                    $appointment->counselor_accepted_at = now()->toDateTimeString();
-                }
+                $appointment->counselor_accepted_at = now()->toDateTimeString();
                 $appointment->status = 'accepted';
             } elseif ($action === 'reschedule') {
                 abort_unless($isCounselor || $isStudent, 403);
@@ -148,6 +183,10 @@ class Appointments
                 }
                 $targetSlot = null;
                 if ($appointment->counselor_id) {
+                    $targetTime = [...$appointment->toArray(), ...$data];
+                    if (! $this->schedules->allowsAppointment((string) $appointment->counselor_id, $targetTime)) {
+                        throw ValidationException::withMessages(['scheduled_time' => 'The selected time conflicts with the counselor schedule or leave.']);
+                    }
                     $targetSlot = $this->slot($appointment->counselor_id, $data);
                     if (Appointment::where('slot_key', $targetSlot)->where('_id', '!=', $appointment->_id)->exists()) {
                         throw ValidationException::withMessages(['conflict' => 'That time is already reserved. Please choose another slot.']);
@@ -156,13 +195,13 @@ class Appointments
                 $appointment->scheduled_date = $data['scheduled_date'];
                 $appointment->scheduled_time = $data['scheduled_time'];
                 $appointment->slot_key = $targetSlot;
-                $appointment->status = 'rescheduled';
+                $appointment->status = $isCounselor ? 'counselor_accepted_pending_student' : 'rescheduled';
                 $appointment->student_accepted_at = null;
-                $appointment->counselor_accepted_at = null;
+                $appointment->counselor_accepted_at = $isCounselor ? now()->toDateTimeString() : null;
             } elseif ($action === 'complete') {
                 abort_unless($isCounselor, 403);
-                if ($appointment->status !== 'accepted') {
-                    throw ValidationException::withMessages(['action' => 'Accept the appointment before completing it.']);
+                if (! in_array($appointment->status, ['accepted', 'confirmed'], true)) {
+                    throw ValidationException::withMessages(['action' => 'Wait for the student to confirm the appointment before completing it.']);
                 }
                 $appointment->status = 'completed';
                 $appointment->slot_key = null;
@@ -175,9 +214,33 @@ class Appointments
             }
             $appointment->version++;
             $appointment->save();
-            if (in_array($action, ['assign', 'accept', 'reschedule', 'complete', 'cancel'])) {
-                $this->alert(User::findOrFail($student->user_id), $appointment, 'status', 'Your appointment status or schedule has changed. Open appointments for details.');
-                if ($action !== 'assign' && $appointment->counselor_id && ($isStaff || $isStudent)) {
+            if ($action === 'counselor_accept' || ($action === 'accept' && $isCounselor)) {
+                $this->cases->createCaseFromAppointment($appointment);
+            }
+            $session = CounselingSession::where('appointment_id', Ids::object($appointment->id))->first();
+            if ($session && in_array($action, ['cancel', 'complete', 'reschedule'], true)) {
+                $sessionUpdate = match ($action) {
+                    'cancel' => ['status' => 'cancelled', 'cancelled_at' => now()->toDateTimeString()],
+                    'complete' => ['status' => 'completed', 'completed_at' => now()->toDateTimeString()],
+                    'reschedule' => [
+                        'session_date' => $appointment->scheduled_date,
+                        'time_slot' => $this->cases->timeSlot($appointment->scheduled_time),
+                        'mode' => $this->cases->mode($appointment->channel),
+                        'status' => 'scheduled',
+                    ],
+                };
+                $session->update($sessionUpdate);
+            }
+            if (in_array($action, ['counselor_accept', 'student_confirm', 'accept', 'reschedule', 'complete', 'cancel', 'request_reassignment'])) {
+                if ($action === 'request_reassignment') {
+                    foreach (User::where('role', 'staff')->where('active', true)->get() as $staffUser) {
+                        $this->alert($staffUser, $appointment, 'appointment', 'A counselor requested reassignment. Review the request note in the front-desk queue.');
+                    }
+                }
+                if (in_array($action, ['counselor_accept', 'student_confirm', 'reschedule', 'complete', 'cancel'])) {
+                    $this->alert(User::findOrFail($student->user_id), $appointment, 'status', 'Your appointment status or schedule has changed. Open appointments for details.');
+                }
+                if (in_array($action, ['student_confirm', 'reschedule', 'complete', 'cancel']) && $appointment->counselor_id && ($isStaff || $isStudent)) {
                     $assignedCounselor = User::find($appointment->counselor_id);
                     if ($assignedCounselor) {
                         $this->alert($assignedCounselor, $appointment, 'appointment', "Appointment status changed to {$appointment->status}.");

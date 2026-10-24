@@ -52,7 +52,8 @@ Official runtime documentation: [MongoDB PHP installation](https://www.mongodb.c
 | Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; submit self/peer referrals; request GAMA or other testing; view own status and notifications. |
 | Faculty | Submit referrals by student ID and track only their own referral statuses. No intake narratives or counseling notes are returned. |
 | Staff / psychometrician | Check in students with completed intake; view the active queue; assess urgency; alert and assign counselors; process referral and testing queues; export aggregate CSV reports. |
-| Counselor | View assigned appointments and intake; accept/reschedule/complete sessions; record encrypted notes; flag and resolve follow-ups; set duty/availability; receive in-app alerts. |
+| Counselor | View assigned appointments and intake; accept/reschedule/complete sessions; record encrypted notes; manage case closure and follow-up sessions; flag and resolve follow-ups; plan weekly availability, class blocks, and leave; export their own case/session summaries; receive in-app alerts. |
+| Head counselor | Read case notes in the audit workspace after each access is recorded; cannot edit notes or view intake narratives. |
 | Administrator | Create/disable accounts, change roles, map multiple colleges per counselor, and restrict role permissions. Administrators have no clinical note access. |
 
 Online appointments use 30-minute start times and Philippine calendar dates. Mapped available counselors are selected deterministically. If mapped counselors are all booked for that slot, the request is rejected; if no mapped available counselor exists, it remains pending for front-desk coordination. MongoDB's unique partial slot index resolves races at the database level.
@@ -61,17 +62,25 @@ Urgent walk-ins bypass ordinary slot reservation and alert all active, on-duty, 
 
 Referrals progress through `submitted → under_review → action_taken → closed`. Testing progresses through `pending → approved → completed`. Appointment updates enforce valid state transitions and an optimistic version to reject stale actions.
 
+Appointment confirmation is a two-step process: staff assignment moves a request to `assigned_pending_counselor`; counselor acceptance moves it to `counselor_accepted_pending_student`; and only the owning student can confirm it as `confirmed`. Counselors can request reassignment with a required note while an assignment is awaiting their response. The note is shown to staff in the front-desk queue and is not included in the student's appointment view.
+
+Accepting an assigned appointment opens a counselor-owned case with an atomic `CASE-YYYY-NNNN` number and its first scheduled session. The counselor can review the case session history, close the active session with a `completed/stable` outcome, or schedule an AM/PM face-to-face or virtual follow-up under the same case. Follow-up appointments reserve the counselor's slot and remain pending student confirmation. Case numbering and per-case session numbers have database uniqueness constraints.
+
+Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. Schedule overlaps and conflicts are rejected; regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Urgent assignments can occur outside regular availability but cannot overlap leave. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
+
+The `head_counselor` role is read-only for clinical notes. Each note/case-history read writes an `audit_logs` record with the actor, case/session IDs, action, IP, and timestamp before returning content; the audit record never contains note text. Operational staff session lists exclude notes. Counselors can export only their own case/session summaries as JSON or UTF-8 CSV, or open a print-friendly HTML report and use the browser's print-to-PDF option. Exports contain case number, session date/time, mode, status, and category, never intake narratives or clinical notes.
+
 ## Data and authorization design
 
 - Every application model inherits `MongoDB\Laravel\Eloquent\Model` through `App\Models\Document`. `User` adds Laravel's authentication and authorization contracts/traits to that MongoDB model.
-- Required domain collections: `users`, `students`, `appointments`, `counseling_sessions`, `referrals`, `testing_requests`. Supporting collections: `role_grants`, `office_alerts`.
+- Required domain collections: `users`, `students`, `appointments`, `counseling_cases`, `counseling_case_sequences`, `counseling_sessions`, `referrals`, `testing_requests`. Supporting collections: `role_grants`, `office_alerts`, `audit_logs`, `counselor_schedules`.
 - ObjectId references are stored as BSON ObjectIds. Page projections deliberately serialize IDs to strings and omit clinical content from operational lists.
 - Spatie's real `RoleMiddleware`, `PermissionMiddleware`, and Gate registration are used with a small Mongo-native adapter on `User` (`hasAnyRole`, `hasAnyPermission`, `checkPermissionTo`). `role_grants` stores permission arrays, avoiding Spatie's SQL pivot schema. Use the application's administrator screen for permission changes; stock Spatie role/pivot mutation commands are not part of this adapter.
 - The single `users.role` value is authoritative. Role permissions may narrow its configured capabilities, but cannot grant access outside the fixed role/policy boundaries. There is no administrator superuser bypass.
-- Clinical notes use Laravel's encrypted cast and are hidden from ordinary model serialization. Only the assigned session counselor is authorized to explicitly decrypt them. Notes are versioned to reject stale saves. Administrators, faculty, students, staff, and other counselors are denied even with a known record ID.
+- Clinical notes use Laravel's encrypted cast and are hidden from ordinary model serialization. Only the assigned session counselor can edit them; the head counselor can read them only after an audit record is written. Notes are versioned to reject stale saves. Administrators, faculty, students, staff, and other counselors are denied even with a known record ID.
 - Session cookies are HttpOnly; requests use CSRF protection, login throttling, session regeneration, encrypted file sessions, password-hash session checks, and no-store responses. Inertia history encryption is enabled and logout clears its history key.
 - Sworn truthfulness, agreement acknowledgment, timestamp, and agreement version are persisted. Phone validation accepts `09xxxxxxxxx` or `+639xxxxxxxxx`.
-- `guidance:setup` creates uniqueness constraints for email, student ID, user/student linkage, active appointment slots, and appointment/session linkage. Application updates never rewrite an entire dataset.
+- `guidance:setup` creates uniqueness constraints for email, student ID, user/student linkage, active appointment slots, appointment/session linkage, case numbers, and per-case session numbers. Application updates never rewrite an entire dataset.
 
 ## Institution-specific decisions still needed
 

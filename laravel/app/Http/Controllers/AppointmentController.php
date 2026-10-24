@@ -56,10 +56,11 @@ class AppointmentController extends Controller
     public function update(Request $request, string $appointment, Appointments $service)
     {
         $data = $request->validate([
-            'action' => 'required|in:assign,urgent,accept,reschedule,complete,cancel',
+            'action' => 'required|in:assign,urgent,accept,counselor_accept,student_confirm,request_reassignment,reschedule,complete,cancel',
             'version' => 'required|integer|min:1',
             'counselor_id' => 'required_if:action,assign|nullable|string|regex:/^[a-f0-9]{24}$/i',
             'onboarding_note' => 'nullable|string|max:500',
+            'note' => 'required_if:action,request_reassignment|nullable|string|max:1000',
             'scheduled_date' => 'required_if:action,reschedule|nullable|date_format:Y-m-d|after_or_equal:today',
             'scheduled_time' => ['required_if:action,reschedule', 'nullable', 'date_format:H:i', 'regex:/^\d{2}:(00|30)$/'],
         ]);

@@ -105,7 +105,7 @@ class GuidanceTest extends GuidanceTestCase
 
         $a1->refresh();
         $this->assertTrue(Ids::same($counselor1->id, $a1->counselor_id));
-        $this->assertContains($a1->status, ['assigned', 'assigned_pending_accept']);
+        $this->assertSame('assigned_pending_counselor', $a1->status);
         $this->assertSame(1, OfficeAlert::where('user_id', Ids::object($counselor1->id))->count());
 
         // Second booking at the same time
@@ -130,7 +130,7 @@ class GuidanceTest extends GuidanceTestCase
 
         $a2->refresh();
         $this->assertTrue(Ids::same($counselor2->id, $a2->counselor_id));
-        $this->assertContains($a2->status, ['assigned', 'assigned_pending_accept']);
+        $this->assertSame('assigned_pending_counselor', $a2->status);
     }
 
     public function test_unmapped_booking_stays_pending_and_invalid_dates_are_rejected(): void
@@ -156,7 +156,7 @@ class GuidanceTest extends GuidanceTestCase
         $this->assertCount(1, $alerts);
         $this->assertTrue(Ids::same($ready->id, $alerts->first()->user_id));
         $this->patch('/appointments/'.$a->id, ['action' => 'assign', 'version' => 2, 'counselor_id' => (string) $ready->id])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertContains($a->fresh()->status, ['assigned', 'assigned_pending_accept']);
+        $this->assertSame('assigned_pending_counselor', $a->fresh()->status);
     }
 
     public function test_stale_updates_and_illegal_transitions_do_not_overwrite(): void

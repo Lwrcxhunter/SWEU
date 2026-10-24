@@ -6,7 +6,7 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Api\AcademicProgramController;
 use App\Http\Controllers\Api\PsgcController;
 use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\IntakeFormController;
+use App\Http\Controllers\CounselorScheduleController;
 use App\Http\Controllers\PersonalInformationController;
 use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReportController;
@@ -21,7 +21,8 @@ Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'logi
 Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/dashboard', fn () => redirect()->route(match (auth()->user()->role) {
         'student' => 'student.dashboard', 'faculty' => 'referrals.index', 'staff' => 'queue.index',
-        'counselor' => 'counselor.dashboard', 'admin' => 'admin.index', default => abort(403),
+        'counselor' => 'counselor.dashboard', 'head_counselor' => 'head.audit.index',
+        'admin' => 'admin.index', default => abort(403),
     }))->name('dashboard');
     Route::get('/account', fn () => Inertia::render('Account'))->name('account');
     Route::patch('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
@@ -59,14 +60,33 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         Route::patch('/referrals/{referral}', [ReferralController::class, 'update'])->middleware('permission:referrals.manage')->name('referrals.update');
         Route::patch('/testing/{testing}', [TestingRequestController::class, 'update'])->middleware('permission:testing.manage')->name('testing.update');
         Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
+        Route::get('/api/counselors/{counselor}/schedule', [CounselorScheduleController::class, 'showForStaff'])->middleware('permission:queue.manage')->name('counselor.schedule.staff');
+        Route::get('/api/counseling-sessions', [SessionNoteController::class, 'operationalSessions'])->middleware('permission:queue.manage')->name('sessions.operational');
     });
     Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->middleware(['role:student|staff|counselor'])->name('appointments.update');
+    Route::middleware('role:counselor|head_counselor')->group(function () {
+        Route::get('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'show'])
+            ->middleware(['permission:notes.manage|notes.audit.read', 'can.read.session.notes:appointment,read'])
+            ->name('notes.show');
+        Route::get('/api/cases/{case}', [SessionNoteController::class, 'caseDetails'])
+            ->middleware(['permission:notes.manage|notes.audit.read', 'can.read.session.notes:case,read'])
+            ->name('cases.show');
+    });
     Route::middleware('role:counselor')->group(function () {
         Route::get('/counselor', [SessionNoteController::class, 'dashboard'])->middleware('permission:appointments.manage')->name('counselor.dashboard');
-        Route::get('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'show'])->middleware('permission:notes.manage')->name('notes.show');
-        Route::put('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'store'])->middleware('permission:notes.manage')->name('notes.store');
+        Route::get('/counselor/reports/sessions', [ReportController::class, 'counselorSessions'])->middleware('permission:notes.manage')->name('counselor.reports.sessions');
+        Route::get('/counselor/schedule', [CounselorScheduleController::class, 'index'])->middleware('permission:appointments.manage')->name('counselor.schedule');
+        Route::get('/api/counselor/schedule', [CounselorScheduleController::class, 'showMine'])->middleware('permission:appointments.manage')->name('counselor.schedule.show');
+        Route::put('/api/counselor/schedule', [CounselorScheduleController::class, 'update'])->middleware('permission:appointments.manage')->name('counselor.schedule.update');
+        Route::put('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'store'])
+            ->middleware(['permission:notes.manage', 'can.read.session.notes:appointment,write'])->name('notes.store');
+        Route::post('/api/cases/{case}/close', [SessionNoteController::class, 'closeCase'])->middleware('permission:notes.manage')->name('cases.close');
+        Route::post('/api/cases/{case}/follow-up', [SessionNoteController::class, 'scheduleFollowUp'])->middleware('permission:notes.manage')->name('cases.follow-up');
         Route::patch('/availability', [AdminController::class, 'availability'])->name('availability.update');
     });
+    Route::get('/head-counselor/audit', [SessionNoteController::class, 'auditDashboard'])
+        ->middleware(['role:head_counselor', 'permission:notes.audit.read'])
+        ->name('head.audit.index');
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->middleware('permission:users.manage')->name('admin.index');
         Route::post('/admin/users', [AdminController::class, 'store'])->middleware('permission:users.manage')->name('admin.store');

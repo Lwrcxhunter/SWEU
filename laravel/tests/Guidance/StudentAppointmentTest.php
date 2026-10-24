@@ -3,8 +3,8 @@
 namespace Tests\Guidance;
 
 use App\Models\Appointment;
+use App\Models\CounselingCase;
 use App\Models\Student;
-use App\Models\User;
 use App\Support\Ids;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -87,7 +87,7 @@ class StudentAppointmentTest extends GuidanceTestCase
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $appointment->refresh();
-        $this->assertSame('assigned_pending_accept', $appointment->status);
+        $this->assertSame('assigned_pending_counselor', $appointment->status);
         $this->assertSame('Please arrive 5 minutes early at Room 202, SWEU Building.', $appointment->onboarding_note);
 
         // 2b. Student cannot reschedule once counselor has been assigned
@@ -98,14 +98,28 @@ class StudentAppointmentTest extends GuidanceTestCase
             'scheduled_time' => '11:00',
         ])->assertSessionHasErrors('action');
 
-        // 3. Student views appointment and accepts
+        // A student cannot confirm before the assigned counselor accepts.
         $this->actingAs($studentUser)->patch('/appointments/'.$appointment->id, [
-            'action' => 'accept',
+            'action' => 'student_confirm',
+            'version' => $appointment->version,
+        ])->assertSessionHasErrors('action');
+
+        // Counselor approval makes the appointment available for student confirmation.
+        $this->actingAs($counselor)->patch('/appointments/'.$appointment->id, [
+            'action' => 'counselor_accept',
             'version' => $appointment->version,
         ])->assertRedirect()->assertSessionHasNoErrors();
-
         $appointment->refresh();
-        $this->assertSame('accepted', $appointment->status);
+        $this->assertSame('counselor_accepted_pending_student', $appointment->status);
+        $this->assertNotNull($appointment->counselor_accepted_at);
+        $this->assertSame(1, CounselingCase::where('appointment_id', Ids::object($appointment->id))->count());
+
+        $this->actingAs($studentUser)->patch('/appointments/'.$appointment->id, [
+            'action' => 'student_confirm',
+            'version' => $appointment->version,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $appointment->refresh();
+        $this->assertSame('confirmed', $appointment->status);
         $this->assertNotNull($appointment->student_accepted_at);
     }
 
@@ -209,7 +223,7 @@ class StudentAppointmentTest extends GuidanceTestCase
             ->where('type', 'follow_up')
             ->firstOrFail();
 
-        $this->assertSame('assigned_pending_accept', $followup->status);
+        $this->assertSame('counselor_accepted_pending_student', $followup->status);
         $this->assertSame('2026-10-15', $followup->scheduled_date);
         $this->assertSame('14:00', $followup->scheduled_time);
         $this->assertTrue(Ids::same($counselor->id, $followup->counselor_id));
@@ -218,12 +232,82 @@ class StudentAppointmentTest extends GuidanceTestCase
 
         // Student accepts the follow-up appointment
         $this->actingAs($studentUser)->patch('/appointments/'.$followup->id, [
-            'action' => 'accept',
+            'action' => 'student_confirm',
             'version' => $followup->version,
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $followup->refresh();
-        $this->assertSame('accepted', $followup->status);
+        $this->assertSame('confirmed', $followup->status);
         $this->assertNotNull($followup->student_accepted_at);
+    }
+
+    public function test_counselor_can_request_reassignment_and_staff_can_read_and_reassign(): void
+    {
+        $studentUser = $this->user();
+        $student = $this->student($studentUser);
+        $staff = $this->user('staff');
+        $counselor = $this->user('counselor');
+        $replacement = $this->user('counselor');
+        $appointment = $this->appointment($counselor, $student, 'assigned_pending_counselor');
+
+        $this->actingAs($replacement)->patch('/appointments/'.$appointment->id, [
+            'action' => 'request_reassignment',
+            'version' => $appointment->version,
+            'note' => 'This appointment conflicts with my approved leave.',
+        ])->assertForbidden();
+
+        $this->actingAs($counselor)->patch('/appointments/'.$appointment->id, [
+            'action' => 'request_reassignment',
+            'version' => $appointment->version,
+        ])->assertSessionHasErrors('note');
+
+        $this->actingAs($counselor)->patch('/appointments/'.$appointment->id, [
+            'action' => 'request_reassignment',
+            'version' => $appointment->version,
+            'note' => 'This appointment conflicts with my approved leave.',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $appointment->refresh();
+        $this->assertSame('reassignment_requested', $appointment->status);
+        $this->assertSame('This appointment conflicts with my approved leave.', $appointment->reassignment_note);
+
+        $this->actingAs($studentUser)->get('/appointments')->assertInertia(
+            fn (Assert $page) => $page
+                ->where('appointments.data.0.status', 'reassignment_requested')
+                ->where('appointments.data.0.reassignment_note', null),
+        );
+
+        $this->actingAs($staff)->get('/queue')->assertInertia(
+            fn (Assert $page) => $page
+                ->where('appointments.data.0.status', 'reassignment_requested')
+                ->where('appointments.data.0.reassignment_note', 'This appointment conflicts with my approved leave.'),
+        );
+
+        $this->patch('/appointments/'.$appointment->id, [
+            'action' => 'assign',
+            'version' => $appointment->version,
+            'counselor_id' => (string) $replacement->id,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $appointment->refresh();
+        $this->assertSame('assigned_pending_counselor', $appointment->status);
+        $this->assertTrue(Ids::same($replacement->id, $appointment->counselor_id));
+        $this->assertNull($appointment->reassignment_note);
+    }
+
+    public function test_student_cannot_confirm_an_assignment_until_the_counselor_accepts(): void
+    {
+        $studentUser = $this->user();
+        $student = $this->student($studentUser);
+        $counselor = $this->user('counselor');
+        $appointment = $this->appointment($counselor, $student, 'assigned_pending_counselor');
+
+        $this->actingAs($studentUser)->patch('/appointments/'.$appointment->id, [
+            'action' => 'student_confirm',
+            'version' => $appointment->version,
+        ])->assertSessionHasErrors('action');
+
+        $this->assertSame('assigned_pending_counselor', $appointment->fresh()->status);
+        $this->assertNull($appointment->fresh()->student_accepted_at);
     }
 }

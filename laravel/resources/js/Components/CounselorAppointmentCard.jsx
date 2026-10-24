@@ -17,10 +17,13 @@ import {
 
 export default function CounselorAppointmentCard({ item }) {
     const [isRescheduling, setIsRescheduling] = useState(false);
+    const [isRequestingReassignment, setIsRequestingReassignment] =
+        useState(false);
     const form = useForm({
         counselor_id: "",
         scheduled_date: item.scheduled_date || "",
         scheduled_time: item.scheduled_time || "",
+        note: "",
     });
 
     const perform = (action) => {
@@ -32,10 +35,11 @@ export default function CounselorAppointmentCard({ item }) {
 
     const closed = ["completed", "cancelled"].includes(item.status);
     const isAssignedPending =
+        item.status === "assigned_pending_counselor" ||
         item.status === "assigned" ||
         item.status === "assigned_pending_accept" ||
         item.status === "rescheduled";
-    const isAccepted = item.status === "accepted";
+    const isAccepted = ["accepted", "confirmed"].includes(item.status);
     const dateInfo = parseDateBadge(item.scheduled_date);
     const formattedTime = formatSessionTime(item.scheduled_time);
 
@@ -147,10 +151,15 @@ export default function CounselorAppointmentCard({ item }) {
                                 Student Accepted: {item.student_accepted_at}
                             </span>
                         </span>
-                    ) : isAssignedPending ? (
+                    ) : item.status === "counselor_accepted_pending_student" ? (
                         <span className="inline-flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg">
                             <CalendarClock className="w-3.5 h-3.5 text-amber-600" />
                             <span>Awaiting student confirmation</span>
+                        </span>
+                    ) : isAssignedPending ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-sky-800 bg-sky-50 border border-sky-200/80 px-2.5 py-1 rounded-lg">
+                            <CalendarClock className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Awaiting counselor acceptance</span>
                         </span>
                     ) : null}
 
@@ -184,9 +193,31 @@ export default function CounselorAppointmentCard({ item }) {
                     {isAssignedPending && (
                         <Button
                             disabled={form.processing}
-                            onClick={() => perform("accept")}
+                            onClick={() =>
+                                perform(
+                                    item.status === "assigned_pending_counselor"
+                                        ? "counselor_accept"
+                                        : "accept",
+                                )
+                            }
                         >
-                            Accept request
+                            {item.status === "assigned_pending_counselor"
+                                ? "Accept Assignment"
+                                : "Accept request"}
+                        </Button>
+                    )}
+                    {item.status === "assigned_pending_counselor" && (
+                        <Button
+                            secondary
+                            disabled={form.processing}
+                            onClick={() => {
+                                form.setData("note", "");
+                                setIsRequestingReassignment(
+                                    !isRequestingReassignment,
+                                );
+                            }}
+                        >
+                            Request Reassignment
                         </Button>
                     )}
 
@@ -277,6 +308,42 @@ export default function CounselorAppointmentCard({ item }) {
                     </Button>
                 </form>
             )}
+            {isRequestingReassignment &&
+                item.status === "assigned_pending_counselor" && (
+                    <form
+                        className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50/70 p-4"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            perform("request_reassignment");
+                        }}
+                    >
+                        <Field
+                            label="Reason for reassignment"
+                            type="textarea"
+                            rows="3"
+                            form={form}
+                            name="note"
+                            required
+                            maxLength={1000}
+                        />
+                        <Errors errors={form.errors} />
+                        <div className="flex gap-2">
+                            <Button
+                                secondary
+                                type="button"
+                                disabled={form.processing}
+                                onClick={() =>
+                                    setIsRequestingReassignment(false)
+                                }
+                            >
+                                Cancel
+                            </Button>
+                            <Button disabled={form.processing}>
+                                Submit Request
+                            </Button>
+                        </div>
+                    </form>
+                )}
         </div>
     );
 }

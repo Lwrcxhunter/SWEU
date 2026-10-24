@@ -227,6 +227,7 @@ export function StatusBadge({ status, className = "" }) {
             );
         case "assigned_pending_accept":
         case "assigned":
+        case "assigned_pending_counselor":
             return (
                 <span
                     className={`inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800 border border-sky-200 ${className}`}
@@ -235,10 +236,35 @@ export function StatusBadge({ status, className = "" }) {
                         className="h-1.5 w-1.5 rounded-full bg-sky-600"
                         aria-hidden="true"
                     />
-                    Counselor Assigned – Action Required
+                    Counselor Review Required
+                </span>
+            );
+        case "counselor_accepted_pending_student":
+            return (
+                <span
+                    className={`inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200 ${className}`}
+                >
+                    <span
+                        className="h-1.5 w-1.5 rounded-full bg-indigo-600"
+                        aria-hidden="true"
+                    />
+                    Awaiting Student Confirmation
+                </span>
+            );
+        case "reassignment_requested":
+            return (
+                <span
+                    className={`inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 border border-amber-200 ${className}`}
+                >
+                    <span
+                        className="h-1.5 w-1.5 rounded-full bg-amber-600"
+                        aria-hidden="true"
+                    />
+                    Reassignment Requested
                 </span>
             );
         case "accepted":
+        case "confirmed":
             return (
                 <span
                     className={`inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200 ${className}`}

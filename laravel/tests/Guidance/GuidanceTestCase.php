@@ -32,7 +32,7 @@ abstract class GuidanceTestCase extends TestCase
         $this->assertSame('buksu_guidance_test', config('database.connections.mongodb.database'), 'Refusing to clear a non-test database');
         $this->assertStringStartsWith('mongodb://127.0.0.1:27028/', config('database.connections.mongodb.dsn'));
         $db = DB::connection()->getDatabase();
-        foreach (['users', 'students', 'appointments', 'counseling_sessions', 'referrals', 'testing_requests', 'office_alerts', 'role_grants'] as $collection) {
+        foreach (['users', 'students', 'appointments', 'counseling_cases', 'counseling_case_sequences', 'counseling_sessions', 'counselor_schedules', 'audit_logs', 'referrals', 'testing_requests', 'office_alerts', 'role_grants'] as $collection) {
             $db->selectCollection($collection)->deleteMany([]);
         }
         app(DatabaseSetup::class)->run();

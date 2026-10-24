@@ -32,6 +32,9 @@ export default function StaffQueueCard({ item, counselors = [] }) {
     const isWalkIn = item.type === "walk_in";
     const dateInfo = parseDateBadge(item.scheduled_date);
     const formattedTime = formatSessionTime(item.scheduled_time);
+    const selectedCounselor = counselors.find(
+        (counselor) => counselor.id === form.data.counselor_id,
+    );
 
     const collegeCode = item.student?.college
         ? typeof item.student.college === "string"
@@ -147,6 +150,17 @@ export default function StaffQueueCard({ item, counselors = [] }) {
 
             {/* Middle Section: Assigned Counselor Status OR Dispatch Notice */}
             <div className="py-3">
+                {item.status === "reassignment_requested" &&
+                    item.reassignment_note && (
+                        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-950">
+                            <strong className="block text-[10px] uppercase tracking-wider text-amber-800">
+                                Counselor reassignment note
+                            </strong>
+                            <p className="mt-1 leading-relaxed">
+                                {item.reassignment_note}
+                            </p>
+                        </div>
+                    )}
                 {item.counselor_name ? (
                     <div className="flex items-center gap-2 rounded-xl bg-sky-50/60 border border-sky-100 px-3.5 py-2 text-xs text-sky-900">
                         <UserCheck className="w-4 h-4 text-sky-600 shrink-0" />
@@ -172,63 +186,98 @@ export default function StaffQueueCard({ item, counselors = [] }) {
             </div>
 
             {/* Embedded Counselor Assignment Form */}
-            {!closed && item.status !== "accepted" && (
-                <form
-                    className="my-2 p-3.5 bg-sky-50/40 rounded-xl border border-sky-100 flex flex-wrap items-end gap-3 text-xs"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        perform("assign");
-                    }}
-                >
-                    <Field
-                        label="Assign counselor"
-                        type="select"
-                        form={form}
-                        name="counselor_id"
-                        required
+            {!closed &&
+                ![
+                    "accepted",
+                    "confirmed",
+                    "completed",
+                    "cancelled",
+                    "counselor_accepted_pending_student",
+                ].includes(item.status) && (
+                    <form
+                        className="my-2 p-3.5 bg-sky-50/40 rounded-xl border border-sky-100 flex flex-wrap items-end gap-3 text-xs"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            perform("assign");
+                        }}
                     >
-                        <option value="">Choose an available counselor</option>
-                        {counselors
-                            .filter(
-                                (c) =>
-                                    c.available &&
-                                    (item.urgency_level === "urgent"
-                                        ? c.on_duty
-                                        : true),
-                            )
-                            .map((c) => {
-                                const isCollegeDesignate =
-                                    item.student?.college?.code &&
-                                    c.college_codes?.includes(
-                                        item.student.college.code,
+                        <Field
+                            label="Assign counselor"
+                            type="select"
+                            form={form}
+                            name="counselor_id"
+                            required
+                        >
+                            <option value="">
+                                Choose an available counselor
+                            </option>
+                            {counselors
+                                .filter(
+                                    (c) =>
+                                        c.available &&
+                                        (item.urgency_level === "urgent"
+                                            ? c.on_duty
+                                            : true),
+                                )
+                                .map((c) => {
+                                    const isCollegeDesignate =
+                                        item.student?.college?.code &&
+                                        c.college_codes?.includes(
+                                            item.student.college.code,
+                                        );
+                                    const designationLabel =
+                                        c.designation ||
+                                        (c.college_codes?.length
+                                            ? `${c.college_codes.join(", ")} Designate`
+                                            : "Counselor");
+                                    return (
+                                        <option key={c.id} value={c.id}>
+                                            {c.full_name} — {designationLabel}
+                                            {isCollegeDesignate
+                                                ? " [Student's College Designate]"
+                                                : ""}
+                                            {c.on_duty ? " · On duty" : ""}
+                                        </option>
                                     );
-                                const designationLabel =
-                                    c.designation ||
-                                    (c.college_codes?.length
-                                        ? `${c.college_codes.join(", ")} Designate`
-                                        : "Counselor");
-                                return (
-                                    <option key={c.id} value={c.id}>
-                                        {c.full_name} — {designationLabel}
-                                        {isCollegeDesignate
-                                            ? " [Student's College Designate]"
-                                            : ""}
-                                        {c.on_duty ? " · On duty" : ""}
-                                    </option>
-                                );
-                            })}
-                    </Field>
-                    <Field
-                        label="Onboarding note (optional)"
-                        form={form}
-                        name="onboarding_note"
-                        placeholder="e.g. Room 202, arrive 5 mins early"
-                    />
-                    <Button secondary disabled={form.processing}>
-                        Assign
-                    </Button>
-                </form>
-            )}
+                                })}
+                        </Field>
+                        {selectedCounselor?.schedule && (
+                            <div className="w-full rounded-lg border border-sky-100 bg-white p-3 text-[11px] text-slate-600">
+                                <strong className="mb-1 block text-slate-800">
+                                    Counselor schedule (read-only)
+                                </strong>
+                                {selectedCounselor.schedule.availability.length
+                                    ? selectedCounselor.schedule.availability
+                                          .map(
+                                              (entry) =>
+                                                  `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][entry.dayOfWeek]} ${entry.startTime}–${entry.endTime}`,
+                                          )
+                                          .join(" · ")
+                                    : "No recurring counseling hours configured"}
+                                {selectedCounselor.schedule.leaves.length >
+                                    0 && (
+                                    <span className="mt-1 block text-amber-800">
+                                        {selectedCounselor.schedule.leaves
+                                            .map(
+                                                (leave) =>
+                                                    `${leave.type} leave ${leave.startDateTime}–${leave.endDateTime}`,
+                                            )
+                                            .join(" · ")}
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        <Field
+                            label="Onboarding note (optional)"
+                            form={form}
+                            name="onboarding_note"
+                            placeholder="e.g. Room 202, arrive 5 mins early"
+                        />
+                        <Button secondary disabled={form.processing}>
+                            Assign
+                        </Button>
+                    </form>
+                )}
 
             {/* Bottom Action Bar */}
             <div className="border-t border-sky-100/80 pt-3 flex flex-wrap items-center justify-between gap-3">
