@@ -10,6 +10,55 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 class StaffAvailabilityTest extends GuidanceTestCase
 {
+    public function test_staff_can_distinguish_confirmation_stages_and_browse_history(): void
+    {
+        $staff = $this->user('staff');
+        $counselor = $this->user('counselor');
+        foreach (['assigned_pending_counselor', 'counselor_accepted_pending_student', 'confirmed', 'completed', 'cancelled', 'reassignment_requested'] as $status) {
+            $this->appointment($counselor, status: $status);
+        }
+        $this->actingAs($staff)->get('/queue')->assertInertia(fn (Assert $page) => $page
+            ->where('appointments.total', 6)
+            ->where('metrics.unassigned_count', 1)->where('metrics.waiting_count', 1)
+            ->where('metrics.student_count', 1)->where('metrics.confirmed_count', 1)
+            ->where('metrics.completed_count', 1)->where('metrics.cancelled_count', 1));
+        foreach (['waiting' => 'assigned_pending_counselor', 'student' => 'counselor_accepted_pending_student', 'confirmed' => 'confirmed', 'completed' => 'completed', 'cancelled' => 'cancelled', 'unassigned' => 'reassignment_requested'] as $stage => $status) {
+            $this->get('/queue?stage='.$stage)->assertInertia(fn (Assert $page) => $page
+                ->where('appointments.total', 1)->where('appointments.data.0.status', $status));
+        }
+    }
+
+    public function test_staff_searches_all_records_by_student_name_id_and_date_without_clinical_answers(): void
+    {
+        $staff = $this->user('staff');
+        $counselor = $this->user('counselor');
+        $student = $this->student($this->user('student', ['full_name' => 'Mira Santos']));
+        $student->update(['school_id_number' => '2026-FIND']);
+        $record = $this->appointment($counselor, $student, 'completed');
+        $record->update(['initial_visit_questionnaire' => ['reason' => 'Private narrative'], 'signature' => 'Private signature']);
+        $this->appointment($counselor);
+        foreach (['mira', '2026-FIND'] as $search) {
+            $this->actingAs($staff)->get('/queue?search='.$search.'&appointment_date=2026-10-05')->assertInertia(fn (Assert $page) => $page
+                ->where('appointments.total', 1)->where('appointments.data.0.id', (string) $record->id)
+                ->missing('appointments.data.0.initial_visit_questionnaire')->missing('appointments.data.0.signature'));
+        }
+        $this->get('/queue?search=mira&appointment_date=2026-10-06')->assertInertia(fn (Assert $page) => $page->where('appointments.total', 0));
+        $this->get('/queue?search=%2E%2A')->assertInertia(fn (Assert $page) => $page->where('appointments.total', 0));
+    }
+
+    public function test_staff_request_inboxes_filter_before_pagination_and_show_requester(): void
+    {
+        $staff = $this->user('staff');
+        for ($index = 0; $index < 16; $index++) {
+            TestingRequest::create(['requester_name' => 'Coordinator '.$index, 'status' => 'completed']);
+        }
+        TestingRequest::create(['requester_name' => 'Faculty Coordinator', 'college' => 'CAS', 'status' => 'pending']);
+        $this->actingAs($staff)->get('/testing?status=pending&search=Faculty')->assertInertia(fn (Assert $page) => $page
+            ->where('requests.total', 1)->where('requests.data.0.requester_name', 'Faculty Coordinator')->where('counts.completed', 16));
+        $this->get('/testing?status=pending&search=missing')->assertInertia(fn (Assert $page) => $page->where('requests.total', 0));
+        $this->actingAs($this->user())->get('/queue')->assertForbidden();
+    }
+
     public function test_class_overlap_and_counseling_hours_are_enforced(): void
     {
         $counselor = $this->user('counselor', [
@@ -77,8 +126,7 @@ class StaffAvailabilityTest extends GuidanceTestCase
             ->where('counselors.0.calendar.2026-10-05.AM.0.status', 'in_class')
             ->where('counselors.0.calendar.2026-10-05.AM.1.status', 'available')
             ->where('counselors.0.calendar.2026-10-05.AM.2.status', 'booked')
-            ->missing('counselors.0.leaves')
-            ->where('metrics.pending_referrals_count', 0));
+            ->missing('counselors.0.leaves'));
         $response->assertDontSee('Private medical details');
         $this->get('/queue?calendar_date=2026-10-11&calendar_view=week')->assertInertia(fn (Assert $page) => $page
             ->where('calendar.dates.0', '2026-10-05')->where('calendar.dates.6', '2026-10-11')
@@ -125,7 +173,7 @@ class StaffAvailabilityTest extends GuidanceTestCase
         $this->actingAs($staff)->get('/queue?stage=unassigned')->assertInertia(fn (Assert $page) => $page
             ->where('appointments.total', 1)->where('metrics.queue_total', 22)
             ->where('metrics.waiting_count', 21)->where('metrics.open_testing_count', 1));
-        $this->get('/queue?stage=waiting&page=2')->assertInertia(fn (Assert $page) => $page
+        $this->get('/queue?stage=waiting&page=3')->assertInertia(fn (Assert $page) => $page
             ->where('appointments.total', 21)->has('appointments.data', 1));
     }
 }

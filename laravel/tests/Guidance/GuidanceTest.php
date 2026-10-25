@@ -5,7 +5,6 @@ namespace Tests\Guidance;
 use App\Models\Appointment;
 use App\Models\CounselingSession;
 use App\Models\OfficeAlert;
-use App\Models\Referral;
 use App\Models\RoleGrant;
 use App\Models\Student;
 use App\Models\TestingRequest;
@@ -211,29 +210,20 @@ class GuidanceTest extends GuidanceTestCase
         $this->actingAs($studentUser)->get('/appointments')->assertInertia(fn (Assert $page) => $page->has('appointments.data', 1));
         $staff = $this->user('staff');
         $this->actingAs($staff)->get('/queue')->assertInertia(fn (Assert $page) => $page->has('appointments.data', 2)->missing('appointments.data.0.student.intake_record'));
-        $faculty = $this->user('faculty');
-        $other = $this->user('faculty');
-        Referral::create(['referrer_id' => Ids::object($faculty->id), 'student_id' => Ids::object($s->id), 'reason' => 'Private referral', 'status' => 'submitted']);
-        Referral::create(['referrer_id' => Ids::object($other->id), 'student_id' => Ids::object($s->id), 'reason' => 'Other referral', 'status' => 'submitted']);
-        $this->actingAs($faculty)->get('/referrals')->assertInertia(fn (Assert $page) => $page->has('referrals.data', 1)->missing('referrals.data.0.reason')->missing('referrals.data.0.student'));
     }
 
-    public function test_referral_testing_and_aggregate_reports_work_without_clinical_data(): void
+    public function test_testing_and_aggregate_reports_work_without_clinical_data(): void
     {
         $u = $this->user();
         $s = $this->student($u);
-        $this->actingAs($u)->post('/referrals', ['school_id_number' => $s->school_id_number, 'reason' => 'Private referral'])->assertRedirect()->assertSessionHasNoErrors();
-        $this->post('/testing', ['test_type' => 'Other'])->assertSessionHasErrors('details');
+        $this->actingAs($u)->post('/testing', ['test_type' => 'Other'])->assertSessionHasErrors('details');
         $this->post('/testing', ['test_type' => 'GAMA', 'details' => ''])->assertRedirect()->assertSessionHasNoErrors();
         $staff = $this->user('staff');
-        $r = Referral::firstOrFail();
         $t = TestingRequest::firstOrFail();
-        $this->actingAs($staff)->patch('/referrals/'.$r->id, ['previous_status' => 'submitted', 'status' => 'under_review'])->assertRedirect()->assertSessionHasNoErrors();
-        $this->patch('/testing/'.$t->id, ['previous_status' => 'pending', 'status' => 'approved'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->actingAs($staff)->patch('/testing/'.$t->id, ['previous_status' => 'pending', 'status' => 'approved'])->assertRedirect()->assertSessionHasNoErrors();
         $this->get('/reports')->assertOk();
         $csv = $this->get('/reports?download=1')->assertOk()->streamedContent();
         $this->assertStringContainsString('TestingRequest,approved,1', $csv);
-        $this->assertStringNotContainsString('Private referral', $csv);
         $this->assertStringNotContainsString($s->school_id_number, $csv);
     }
 

@@ -3,7 +3,6 @@
 namespace Tests\Guidance;
 
 use App\Models\OfficeAlert;
-use App\Models\Referral;
 use App\Models\RoleGrant;
 use App\Models\Student;
 use App\Models\TestingRequest;
@@ -34,7 +33,7 @@ class StudentDashboardTest extends GuidanceTestCase
         $this->actingAs($this->user())->get('/dashboard')->assertRedirect('/student/dashboard');
         $this->get('/student/dashboard')->assertInertia(fn (Assert $page) => $page->component('Student/Dashboard')
             ->where('student', null)->where('summary.pending_appointments', 0)->where('summary.scheduled_appointments', 0)
-            ->where('summary.active_referrals', 0)->has('summary.testing', 6)->where('unreadAlertCount', 0));
+            ->has('summary.testing', 6)->where('unreadAlertCount', 0));
         foreach (['faculty', 'staff', 'counselor', 'admin'] as $role) {
             $this->actingAs($this->user($role))->get('/student/dashboard')->assertForbidden();
         }
@@ -54,14 +53,6 @@ class StudentDashboardTest extends GuidanceTestCase
         $this->appointment($counselor, $student, 'pending')->update(['scheduled_date' => '2026-10-04', 'scheduled_time' => '09:30']);
         $this->appointment($counselor, $student, 'accepted')->update(['scheduled_date' => '2026-10-04', 'scheduled_time' => '10:30']);
         $this->appointment($counselor, $student, 'assigned')->update(['scheduled_date' => '2026-10-04', 'scheduled_time' => '10:30']);
-        $faculty = $this->user('faculty');
-        foreach (['submitted', 'under_review', 'action_taken', 'closed'] as $status) {
-            Referral::create(['student_id' => Ids::object($student->id), 'referrer_id' => Ids::object($faculty->id), 'status' => $status, 'reason' => 'Private faculty reason']);
-            Referral::create(['student_id' => Ids::object($other->id), 'referrer_id' => Ids::object($faculty->id), 'status' => $status]);
-        }
-        // A self-referral must count once despite matching both branches.
-        Referral::create(['student_id' => Ids::object($student->id), 'referrer_id' => Ids::object($user->id), 'status' => 'submitted']);
-        Referral::create(['student_id' => Ids::object($other->id), 'referrer_id' => Ids::object($user->id), 'status' => 'submitted']);
         foreach (['GAMA', 'Other'] as $type) {
             foreach (['pending', 'approved', 'completed'] as $status) {
                 TestingRequest::create(['student_id' => Ids::object($student->id), 'test_type' => $type, 'status' => $status]);
@@ -70,7 +61,7 @@ class StudentDashboardTest extends GuidanceTestCase
         }
         $this->actingAs($user)->get('/student/dashboard?student_id='.$other->id)->assertInertia(fn (Assert $page) => $page
             ->where('student.school_id_number', $student->school_id_number)->where('summary.pending_appointments', 3)
-            ->where('summary.scheduled_appointments', 2)->where('summary.active_referrals', 5)
+            ->where('summary.scheduled_appointments', 2)
             ->where('summary.testing.0', ['type' => 'GAMA', 'status' => 'pending', 'count' => 1])
             ->where('summary.testing.5', ['type' => 'Other', 'status' => 'completed', 'count' => 1])->missing('referrals'));
     }

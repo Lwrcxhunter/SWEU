@@ -49,9 +49,9 @@ Official runtime documentation: [MongoDB PHP installation](https://www.mongodb.c
 
 | Role | Workspace and actions |
 |---|---|
-| Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; submit self/peer referrals; request GAMA or other testing; view own status and notifications. |
-| Faculty | Submit referrals by student ID and track only their own referral statuses. No intake narratives or counseling notes are returned. |
-| Staff / psychometrician | Check in students with completed intake; view the active queue; assess urgency; alert and assign counselors; process referral and testing queues; export aggregate CSV reports. |
+| Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; request GAMA or other testing; view own status and notifications. |
+| Faculty / Coordinator | Submit standardized testing requests for student batches and monitor testing statuses. No intake narratives or counseling notes are returned. |
+| Staff / psychometrician | View the active queue; assess urgency; alert and assign counselors; manage counselor availability calendar; process testing requests queue; export aggregate CSV reports. |
 | Counselor | View assigned appointments and intake; accept/reschedule/complete sessions; record encrypted notes; manage case closure and follow-up sessions; flag and resolve follow-ups; plan weekly availability, class blocks, and leave; export their own case/session summaries; receive in-app alerts. |
 | Head counselor | Read case notes in the audit workspace after each access is recorded; cannot edit notes or view intake narratives. |
 | Administrator | Create/disable accounts, change roles, map multiple colleges per counselor, and restrict role permissions. Administrators have no clinical note access. |
@@ -60,7 +60,7 @@ Online appointments use 30-minute start times and Philippine calendar dates. Map
 
 Urgent walk-ins bypass ordinary slot reservation and alert all active, on-duty, available counselors. The front desk makes the assignment. In-app notifications refresh every 15 seconds while an authenticated workspace is open. They are not an emergency dispatch service and are not email/SMS delivery.
 
-Referrals progress through `submitted → under_review → action_taken → closed`. Testing progresses through `pending → approved → completed`. Appointment updates enforce valid state transitions and an optimistic version to reject stale actions.
+Testing progresses through `pending → approved → completed`. Appointment updates enforce valid state transitions and an optimistic version to reject stale actions.
 
 Appointment confirmation is a two-step process: staff assignment moves a request to `assigned_pending_counselor`; counselor acceptance moves it to `counselor_accepted_pending_student`; and only the owning student can confirm it as `confirmed`. Counselors can request reassignment with a required note while an assignment is awaiting their response. The note is shown to staff in the front-desk queue and is not included in the student's appointment view.
 
@@ -68,7 +68,7 @@ Accepting an assigned appointment opens a counselor-owned case with an atomic `C
 
 Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. Schedule overlaps and conflicts are rejected; regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Urgent assignments can occur outside regular availability but cannot overlap leave. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
 
-The `head_counselor` role is read-only for clinical notes. Each note/case-history read writes an `audit_logs` record with the actor, case/session IDs, action, IP, and timestamp before returning content; the audit record never contains note text. Operational staff session lists exclude notes. Counselors can export only their own case/session summaries as JSON or UTF-8 CSV, or open a print-friendly HTML report and use the browser's print-to-PDF option. Exports contain case number, session date/time, mode, status, and category, never intake narratives or clinical notes.
+Clinical notes are strictly confidential to the assigned counselor who authored them. Operational staff session lists exclude notes. Counselors can export only their own case/session summaries as JSON or UTF-8 CSV, or open a print-friendly HTML report and use the browser's print-to-PDF option. Exports contain case number, session date/time, mode, status, and category, never intake narratives or clinical notes.
 
 ## Data and authorization design
 

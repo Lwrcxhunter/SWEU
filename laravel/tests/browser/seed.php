@@ -13,7 +13,7 @@ if (config('database.connections.mongodb.database') !== 'buksu_guidance_browser_
     throw new RuntimeException('Browser fixtures require the isolated loopback browser-test database.');
 }
 $db = DB::connection()->getDatabase();
-foreach (['users', 'students', 'appointments', 'counseling_sessions', 'referrals', 'testing_requests', 'office_alerts', 'role_grants'] as $collection) {
+foreach (['users', 'students', 'appointments', 'counseling_sessions', 'testing_requests', 'office_alerts', 'role_grants'] as $collection) {
     $db->selectCollection($collection)->deleteMany([]);
 }
 app(DatabaseSetup::class)->run();

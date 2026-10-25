@@ -27,7 +27,7 @@ export default function Office({
 export function Card({ title, description, children, className = "" }) {
     return (
         <section
-            className={`rounded-2xl border border-sky-100 bg-white p-5 md:p-6 shadow-sm shadow-sky-950/5 ${className}`}
+            className={`office-card rounded-2xl border border-sky-100 bg-white p-5 md:p-6 shadow-sm shadow-sky-950/5 ${className}`}
         >
             {title && (
                 <h2 className="text-base font-semibold text-slate-900">
@@ -137,7 +137,7 @@ export function Button({
         <button
             disabled={disabled || isBusy}
             aria-busy={isBusy}
-            className={`${
+            className={`office-button ${secondary ? "office-button-secondary" : "office-button-primary"} ${
                 secondary
                     ? "border border-sky-200 bg-white text-sky-800 hover:bg-sky-50 focus:ring-sky-300"
                     : "bg-sky-600 hover:bg-sky-700 text-white font-medium focus:ring-sky-400"

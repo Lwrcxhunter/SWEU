@@ -29,31 +29,27 @@ class SessionNoteConfidentialityTest extends GuidanceTestCase
         $this->assertSame(0, AuditLog::count());
     }
 
-    public function test_head_counselor_note_reads_are_audited_before_access_and_are_read_only(): void
+    public function test_non_assigned_counselors_and_other_roles_cannot_read_case_details(): void
     {
         $counselor = $this->user('counselor');
         $appointment = $this->appointment($counselor);
         $case = app(CounselingCases::class)->createCaseFromAppointment($appointment);
         $session = CounselingSession::where('case_id', Ids::object($case->id))->firstOrFail();
         $session->update(['encrypted_session_notes' => 'Private clinical details']);
-        $head = $this->user('head_counselor');
 
-        $this->actingAs($head)->getJson('/api/cases/'.$case->id)
+        // Assigned counselor can view case details
+        $this->actingAs($counselor)->getJson('/api/cases/'.$case->id)
             ->assertOk()
             ->assertJsonPath('sessions.0.notes', 'Private clinical details');
-        $log = AuditLog::firstOrFail();
-        $this->assertTrue(Ids::same($head->id, $log->actor_id));
-        $this->assertTrue(Ids::same($case->id, $log->case_id));
-        $this->assertTrue(Ids::same($session->id, $log->session_id));
-        $this->assertSame('read_session_notes', $log->action);
-        $this->assertNotNull($log->created_at);
 
-        $this->actingAs($head)->put('/counselor/appointments/'.$appointment->id.'/notes', [
-            'notes' => 'Attempted modification',
-            'version' => 1,
-            'is_flagged_for_followup' => false,
-        ])->assertForbidden();
-        $this->assertSame('Private clinical details', $session->fresh()->encrypted_session_notes);
+        // Other counselor is forbidden
+        $otherCounselor = $this->user('counselor');
+        $this->actingAs($otherCounselor)->getJson('/api/cases/'.$case->id)
+            ->assertForbidden();
+
+        // Staff and students are forbidden
+        $this->actingAs($this->user('staff'))->getJson('/api/cases/'.$case->id)->assertForbidden();
+        $this->actingAs($this->user('student'))->getJson('/api/cases/'.$case->id)->assertForbidden();
     }
 
     public function test_operational_session_list_never_contains_notes_and_api_requires_authentication(): void

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use MongoDB\BSON\Regex;
 
 class TestingRequestController extends Controller
 {
@@ -22,6 +23,15 @@ class TestingRequestController extends Controller
         $student = $isStaff ? null : Student::where('user_id', Ids::object($user->id))->first();
 
         $query = TestingRequest::query();
+        $filters = $isStaff ? $request->validate(['status' => 'nullable|in:all,pending,approved,completed', 'search' => 'nullable|string|max:100']) : [];
+        $counts = $isStaff ? collect(['pending', 'approved', 'completed'])->mapWithKeys(fn ($status) => [$status => TestingRequest::where('status', $status)->count()])->all() : [];
+        if ($isStaff && ($filters['status'] ?? 'all') !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+        if ($isStaff && ($search = trim($filters['search'] ?? ''))) {
+            $pattern = new Regex(preg_quote($search), 'i');
+            $query->where(fn ($q) => $q->where('requester_name', 'regex', $pattern)->orWhere('college', 'regex', $pattern)->orWhere('program', 'regex', $pattern));
+        }
         if (! $isStaff) {
             $query->where(function ($q) use ($student, $user) {
                 if ($student) {
@@ -33,9 +43,11 @@ class TestingRequestController extends Controller
 
         return Inertia::render('Student/RequestTesting', [
             'isStaff' => $isStaff,
+            'filters' => ['status' => $filters['status'] ?? 'all', 'search' => $filters['search'] ?? ''],
+            'counts' => $counts,
             'colleges' => config('guidance.colleges', []),
             'programs' => config('guidance.programs', []),
-            'requests' => $query->latest()->paginate(15)->through(function ($t) use ($isStaff) {
+            'requests' => $query->latest()->paginate(15)->withQueryString()->through(function ($t) use ($isStaff) {
                 $st = ($t->student_id) ? Student::find($t->student_id) : null;
                 $reqName = $t->requester_name;
                 if (! $reqName && $st) {

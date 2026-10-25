@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Models\Referral;
 use App\Models\Student;
 use App\Models\TestingRequest;
 use App\Support\Ids;
@@ -30,20 +29,11 @@ class StudentDashboardController extends Controller
                     ? TestingRequest::where('student_id', $studentId)->where('test_type', $type)->where('status', $status)->count() : 0];
             }
         }
-        $referrals = Referral::whereIn('status', ['submitted', 'under_review', 'action_taken'])
-            ->where(function ($query) use ($userId, $studentId) {
-                $query->where('referrer_id', $userId);
-                if ($studentId) {
-                    $query->orWhere('student_id', $studentId);
-                }
-            })->count();
-
         return Inertia::render('Student/Dashboard', [
             'student' => $student ? StudentInformation::forOwner($student) : null,
             'summary' => [
                 'pending_appointments' => $student ? (clone $appointments)->whereIn('status', ['pending', 'assigned'])->count() : 0,
                 'scheduled_appointments' => $student ? (clone $appointments)->where('status', 'accepted')->count() : 0,
-                'active_referrals' => $referrals,
                 'testing' => $testing,
             ],
         ]);

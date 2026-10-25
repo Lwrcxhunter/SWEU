@@ -10,7 +10,7 @@ class DatabaseSetup
     public function run(): void
     {
         $db = DB::connection('mongodb')->getDatabase();
-        foreach (['users', 'students', 'appointments', 'counseling_cases', 'counseling_case_sequences', 'counseling_sessions', 'counselor_schedules', 'audit_logs', 'referrals', 'testing_requests', 'office_alerts', 'role_grants'] as $name) {
+        foreach (['users', 'students', 'appointments', 'counseling_cases', 'counseling_case_sequences', 'counseling_sessions', 'counselor_schedules', 'audit_logs', 'testing_requests', 'office_alerts', 'role_grants'] as $name) {
             if (! in_array($name, iterator_to_array($db->listCollectionNames()))) {
                 $db->createCollection($name);
             }
@@ -40,8 +40,6 @@ class DatabaseSetup
         $db->counselor_schedules->createIndex(['counselor_id' => 1], ['unique' => true]);
         $db->audit_logs->createIndex(['actor_id' => 1, 'created_at' => -1]);
         $db->audit_logs->createIndex(['session_id' => 1, 'created_at' => -1]);
-        $db->referrals->createIndex(['referrer_id' => 1, 'created_at' => -1]);
-        $db->referrals->createIndex(['student_id' => 1, 'status' => 1]);
         $db->testing_requests->createIndex(['student_id' => 1, 'created_at' => -1]);
         $db->office_alerts->createIndex(['user_id' => 1, 'created_at' => -1]);
         $db->role_grants->createIndex(['name' => 1], ['unique' => true]);
