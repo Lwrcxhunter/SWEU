@@ -27,9 +27,23 @@ export default function CounselorAppointmentCard({ item }) {
     });
 
     const perform = (action) => {
-        form.transform((data) => ({ ...data, action, version: item.version }));
+        form.transform((data) => {
+            const payload = { action, version: item.version };
+            if (action === "reschedule") {
+                payload.scheduled_date = data.scheduled_date;
+                payload.scheduled_time = data.scheduled_time;
+            } else if (action === "request_reassignment") {
+                payload.note = data.note;
+            }
+            return payload;
+        });
         form.patch(route("appointments.update", item.id), {
             preserveScroll: true,
+            onSuccess: () => {
+                setIsRequestingReassignment(false);
+                setIsRescheduling(false);
+                form.clearErrors();
+            },
         });
     };
 
@@ -212,6 +226,7 @@ export default function CounselorAppointmentCard({ item }) {
                             disabled={form.processing}
                             onClick={() => {
                                 form.setData("note", "");
+                                form.clearErrors();
                                 setIsRequestingReassignment(
                                     !isRequestingReassignment,
                                 );
@@ -341,9 +356,10 @@ export default function CounselorAppointmentCard({ item }) {
                                 secondary
                                 type="button"
                                 disabled={form.processing}
-                                onClick={() =>
-                                    setIsRequestingReassignment(false)
-                                }
+                                onClick={() => {
+                                    form.clearErrors();
+                                    setIsRequestingReassignment(false);
+                                }}
                             >
                                 Cancel
                             </Button>

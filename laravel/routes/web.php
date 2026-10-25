@@ -10,7 +10,6 @@ use App\Http\Controllers\CounselorAnalyticsController;
 use App\Http\Controllers\CounselorCaseController;
 use App\Http\Controllers\CounselorScheduleController;
 use App\Http\Controllers\PersonalInformationController;
-use App\Http\Controllers\ReferralController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SessionNoteController;
 use App\Http\Controllers\StudentDashboardController;
@@ -22,9 +21,8 @@ use Inertia\Inertia;
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'));
 Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/dashboard', fn () => redirect()->route(match (auth()->user()->role) {
-        'student' => 'student.dashboard', 'faculty' => 'referrals.index', 'staff' => 'queue.index',
-        'counselor' => 'counselor.dashboard', 'head_counselor' => 'head.audit.index',
-        'admin' => 'admin.index', default => abort(403),
+        'student' => 'student.dashboard', 'faculty' => 'testing.index', 'staff' => 'queue.index',
+        'counselor' => 'counselor.dashboard', 'admin' => 'admin.index', default => abort(403),
     }))->name('dashboard');
     Route::get('/account', fn () => Inertia::render('Account'))->name('account');
     Route::patch('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
@@ -52,36 +50,28 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::middleware('role:student|faculty|staff')->group(function () {
         Route::post('/testing', [TestingRequestController::class, 'store'])->middleware(['permission:testing.request|testing.manage', 'throttle:10,1'])->name('testing.store');
     });
-    Route::middleware('role:student|faculty')->group(function () {
-        Route::post('/referrals', [ReferralController::class, 'store'])->middleware(['permission:referrals.submit', 'throttle:5,1'])->name('referrals.store');
-    });
-    Route::get('/referrals', [ReferralController::class, 'index'])->middleware(['role:student|faculty|staff', 'permission:referrals.submit|referrals.manage'])->name('referrals.index');
     Route::get('/testing', [TestingRequestController::class, 'index'])->middleware(['role:student|faculty|staff', 'permission:testing.request|testing.manage'])->name('testing.index');
     Route::get('/appointments/{appointment}/pdf', [AppointmentController::class, 'exportPdf'])->name('appointments.pdf');
     Route::middleware('role:staff')->group(function () {
         Route::get('/queue', [WalkInQueueController::class, 'index'])->middleware('permission:queue.manage')->name('queue.index');
         Route::post('/queue', [WalkInQueueController::class, 'store'])->middleware(['permission:queue.manage', 'throttle:10,1'])->name('queue.store');
-        Route::patch('/referrals/{referral}', [ReferralController::class, 'update'])->middleware('permission:referrals.manage')->name('referrals.update');
         Route::patch('/testing/{testing}', [TestingRequestController::class, 'update'])->middleware('permission:testing.manage')->name('testing.update');
         Route::get('/reports', [ReportController::class, 'index'])->middleware('permission:reports.view')->name('reports.index');
         Route::get('/api/counselors/{counselor}/schedule', [CounselorScheduleController::class, 'showForStaff'])->middleware('permission:queue.manage')->name('counselor.schedule.staff');
         Route::get('/api/counseling-sessions', [SessionNoteController::class, 'operationalSessions'])->middleware('permission:queue.manage')->name('sessions.operational');
     });
     Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->middleware(['role:student|staff|counselor'])->name('appointments.update');
-    Route::middleware('role:counselor|head_counselor')->group(function () {
-        Route::get('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'show'])
-            ->middleware(['permission:notes.manage|notes.audit.read', 'can.read.session.notes:appointment,read'])
-            ->name('notes.show');
-        Route::get('/api/cases/{case}', [SessionNoteController::class, 'caseDetails'])
-            ->middleware(['permission:notes.manage|notes.audit.read', 'can.read.session.notes:case,read'])
-            ->name('cases.show');
-    });
     Route::middleware('role:counselor')->group(function () {
         Route::get('/counselor', [SessionNoteController::class, 'dashboard'])->middleware('permission:appointments.manage')->name('counselor.dashboard');
         Route::get('/counselor/cases', [CounselorCaseController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.cases.index');
         Route::get('/counselor/cases/{case}', [CounselorCaseController::class, 'show'])->middleware('permission:notes.manage')->name('counselor.cases.show');
-        Route::get('/api/cases/{case}/follow-up-slots', [CounselorCaseController::class, 'followUpSlots'])->middleware('permission:notes.manage')->name('cases.follow-up-slots');
         Route::get('/counselor/analytics', [CounselorAnalyticsController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.analytics');
+        Route::get('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'show'])
+            ->middleware(['permission:notes.manage', 'can.read.session.notes:appointment,read'])
+            ->name('notes.show');
+        Route::get('/api/cases/{case}', [SessionNoteController::class, 'caseDetails'])
+            ->middleware(['permission:notes.manage', 'can.read.session.notes:case,read'])
+            ->name('cases.show');
         Route::get('/counselor/reports/sessions', [ReportController::class, 'counselorSessions'])->middleware('permission:notes.manage')->name('counselor.reports.sessions');
         Route::get('/counselor/schedule', [CounselorScheduleController::class, 'index'])->middleware('permission:appointments.manage')->name('counselor.schedule');
         Route::get('/api/counselor/schedule', [CounselorScheduleController::class, 'showMine'])->middleware('permission:appointments.manage')->name('counselor.schedule.show');
@@ -90,11 +80,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
             ->middleware(['permission:notes.manage', 'can.read.session.notes:appointment,write'])->name('notes.store');
         Route::post('/api/cases/{case}/close', [SessionNoteController::class, 'closeCase'])->middleware('permission:notes.manage')->name('cases.close');
         Route::post('/api/cases/{case}/follow-up', [SessionNoteController::class, 'scheduleFollowUp'])->middleware('permission:notes.manage')->name('cases.follow-up');
+        Route::get('/api/cases/{case}/follow-up-slots', [CounselorCaseController::class, 'followUpSlots'])->middleware('permission:notes.manage')->name('cases.follow-up-slots');
         Route::patch('/availability', [AdminController::class, 'availability'])->name('availability.update');
     });
-    Route::get('/head-counselor/audit', [SessionNoteController::class, 'auditDashboard'])
-        ->middleware(['role:head_counselor', 'permission:notes.audit.read'])
-        ->name('head.audit.index');
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin', [AdminController::class, 'index'])->middleware('permission:users.manage')->name('admin.index');
         Route::post('/admin/users', [AdminController::class, 'store'])->middleware('permission:users.manage')->name('admin.store');

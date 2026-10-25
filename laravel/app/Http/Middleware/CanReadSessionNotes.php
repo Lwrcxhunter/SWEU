@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\Appointment;
-use App\Models\AuditLog;
 use App\Models\CounselingCase;
 use App\Models\CounselingSession;
 use App\Support\Ids;
@@ -40,33 +39,7 @@ class CanReadSessionNotes
             abort(404);
         }
 
-        if ($owns) {
-            return $next($request);
-        }
-
-        $isAuditedHead = $user->role === 'head_counselor'
-            && $user->checkPermissionTo('notes.audit.read');
-        abort_unless($isAuditedHead && $intent === 'read', 403);
-
-        if ($sessions->isEmpty()) {
-            AuditLog::create([
-                'actor_id' => Ids::object($user->id),
-                'case_id' => $case ? Ids::object($case->id) : null,
-                'session_id' => null,
-                'action' => 'read_session_notes',
-                'ip_address' => $request->ip(),
-            ]);
-        } else {
-            foreach ($sessions as $session) {
-                AuditLog::create([
-                    'actor_id' => Ids::object($user->id),
-                    'case_id' => $session->case_id ? Ids::object($session->case_id) : ($case ? Ids::object($case->id) : null),
-                    'session_id' => Ids::object($session->id),
-                    'action' => 'read_session_notes',
-                    'ip_address' => $request->ip(),
-                ]);
-            }
-        }
+        abort_unless($owns, 403);
 
         return $next($request);
     }

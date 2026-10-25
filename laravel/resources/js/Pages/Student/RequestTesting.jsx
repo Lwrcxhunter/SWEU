@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useForm, usePage } from "@inertiajs/react";
+import StaffRequestFilters from "@/Components/StaffRequestFilters";
+import StaffTestingRow from "@/Components/StaffTestingRow";
 import Office, {
     Card,
     Field,
@@ -103,6 +105,8 @@ export default function RequestTesting({
     isStaff,
     colleges = [],
     programs = {},
+    filters = {},
+    counts = {},
 }) {
     const { auth } = usePage().props;
     const [showForm, setShowForm] = useState(!isStaff);
@@ -131,11 +135,15 @@ export default function RequestTesting({
 
     return (
         <Office
-            title="Standardized Psychological Testing & Evaluation"
+            title={
+                isStaff
+                    ? "Testing requests"
+                    : "Standardized Psychological Testing & Evaluation"
+            }
             eyebrow="SWEU Psychometrics"
             description={
                 isStaff
-                    ? "Review and process institutional testing requests from Department Internship Coordinators."
+                    ? "Review request forms from faculty, internship coordinators and students. Approve requests, then record testing completion."
                     : "Department Internship Coordinators submit batch psychological testing requests for student cohorts."
             }
             action={
@@ -143,7 +151,7 @@ export default function RequestTesting({
                     <button
                         type="button"
                         onClick={() => setShowForm(!showForm)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-sky-500 transition"
+                        className="office-button office-button-primary inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-sky-500 transition"
                     >
                         <PlusCircle className="w-4 h-4" />
                         <span>
@@ -153,6 +161,19 @@ export default function RequestTesting({
                 )
             }
         >
+            {isStaff && (
+                <StaffRequestFilters
+                    routeName="testing.index"
+                    filters={filters}
+                    counts={counts}
+                    stages={[
+                        ["pending", "Needs review"],
+                        ["approved", "Approved"],
+                        ["completed", "Completed"],
+                    ]}
+                    searchable
+                />
+            )}
             <div
                 className={`grid gap-6 ${showForm ? "xl:grid-cols-[1fr_420px]" : "grid-cols-1"}`}
             >
@@ -160,22 +181,30 @@ export default function RequestTesting({
                 <Card
                     title={
                         isStaff
-                            ? "Psychological Testing Queue"
+                            ? "Submitted testing forms"
                             : "Your Testing Requests"
                     }
                     description={`${requests.total || requests.data?.length || 0} batch testing request(s) on file.`}
                 >
                     {!requests.data?.length ? (
-                        <Empty>No testing requests submitted yet.</Empty>
+                        <Empty>
+                            {isStaff
+                                ? "No testing requests match this view. Try another status or search."
+                                : "No testing requests submitted yet."}
+                        </Empty>
                     ) : (
                         <div className="divide-y divide-sky-100/60">
-                            {requests.data.map((r) => (
-                                <TestingRow
-                                    key={r.id}
-                                    record={r}
-                                    isStaff={isStaff}
-                                />
-                            ))}
+                            {requests.data.map((r) =>
+                                isStaff ? (
+                                    <StaffTestingRow key={r.id} record={r} />
+                                ) : (
+                                    <TestingRow
+                                        key={r.id}
+                                        record={r}
+                                        isStaff={isStaff}
+                                    />
+                                ),
+                            )}
                         </div>
                     )}
                     <Pagination data={requests} />

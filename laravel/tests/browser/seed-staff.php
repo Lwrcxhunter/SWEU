@@ -29,3 +29,8 @@ foreach ([['09:30', null, 'pending_assignment'], ['09:30', $booked->id, 'assigne
         'type' => 'online_booking', 'urgency_level' => 'normal', 'status' => $status, 'version' => 1]);
 }
 TestingRequest::create(['status' => 'pending', 'student_count' => 30, 'requester_name' => 'Synthetic internship coordinator']);
+foreach (['completed', 'cancelled'] as $status) {
+    Appointment::create(['student_id' => Ids::object($student->id), 'counselor_id' => Ids::object($available->id),
+        'scheduled_date' => $date, 'scheduled_time' => '08:00', 'channel' => 'face_to_face',
+        'type' => 'online_booking', 'urgency_level' => 'normal', 'status' => $status, 'version' => 1]);
+}

@@ -1,9 +1,8 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     LayoutDashboard,
     Calendar,
     IdCard,
-    Share2,
     ClipboardList,
     Users,
     UserCheck,
@@ -51,6 +50,9 @@ export function Brand({ light = false }) {
 }
 
 export default function Sidebar({ auth, menu, setMenu }) {
+    const { url } = usePage();
+    const calendarActive =
+        new URLSearchParams(url.split("?")[1] || "").get("tab") === "calendar";
     const role = auth.user.role;
     const permissions = auth.permissions || [];
     const can = (perm) => permissions.includes(perm);
@@ -87,17 +89,19 @@ export default function Sidebar({ auth, menu, setMenu }) {
                 icon: BarChart3,
             });
         }
-    } else if (role === "head_counselor" && can("notes.audit.read")) {
-        navItems.push({
-            name: "head.audit.index",
-            label: "Clinical Audit",
-            icon: ShieldCheck,
-        });
     } else if (role === "staff" && can("queue.manage")) {
         navItems.push({
             name: "queue.index",
-            label: "Front-Desk Dashboard",
+            label: "Appointments",
             icon: LayoutDashboard,
+            active: route().current("queue.index") && !calendarActive,
+        });
+        navItems.push({
+            name: "queue.index",
+            params: { tab: "calendar" },
+            label: "Counselor schedules",
+            icon: Calendar,
+            active: route().current("queue.index") && calendarActive,
         });
     } else if (role === "admin" && can("users.manage")) {
         navItems.push({
@@ -126,15 +130,11 @@ export default function Sidebar({ auth, menu, setMenu }) {
     }
 
     // Faculty specific
-    if (
-        role === "faculty" &&
-        can("referrals.submit") &&
-        !navItems.some((i) => i.name === "referrals.index")
-    ) {
+    if (role === "faculty" && can("testing.request")) {
         navItems.push({
-            name: "referrals.index",
-            label: "Referrals",
-            icon: Share2,
+            name: "testing.index",
+            label: "Testing requests",
+            icon: ClipboardList,
         });
     }
 
@@ -143,14 +143,15 @@ export default function Sidebar({ auth, menu, setMenu }) {
         if (can("testing.manage")) {
             navItems.push({
                 name: "testing.index",
-                label: "Testing Queue",
+                label: "Testing requests",
                 icon: ClipboardList,
             });
         }
         if (can("reports.view")) {
             navItems.push({
                 name: "reports.index",
-                label: "Office Reports",
+                label: "Reports & Analytics",
+                ariaLabel: "Office reports",
                 icon: BarChart3,
             });
         }
@@ -169,7 +170,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
             {/* Sidebar Element */}
             <aside
-                className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-white border-r border-sky-100 text-slate-800 transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 ${
+                className={`workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-white border-r border-sky-100 text-slate-800 transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 ${
                     menu
                         ? "translate-x-0 shadow-2xl"
                         : "-translate-x-full lg:translate-x-0"
@@ -190,19 +191,28 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
                 {/* Scrollable Navigation */}
                 <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none px-4 py-5">
-                    <p className="px-3 pb-3 text-[10px] font-bold tracking-[.2em] uppercase text-sky-800/60">
-                        Workspace
+                    <p
+                        className={
+                            role === "staff"
+                                ? "px-3 pb-3 text-xs font-medium text-slate-500"
+                                : "px-3 pb-3 text-[10px] font-bold tracking-[.2em] uppercase text-sky-800/60"
+                        }
+                    >
+                        {role === "staff" ? "Staff workspace" : "Workspace"}
                     </p>
                     <nav aria-label="Main navigation" className="space-y-1.5">
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            const isActive = route().current(item.name);
+                            const isActive =
+                                item.active ?? route().current(item.name);
                             return (
                                 <Link
-                                    key={item.name}
-                                    href={route(item.name)}
+                                    key={item.label}
+                                    href={route(item.name, item.params)}
+                                    aria-label={item.ariaLabel || item.label}
+                                    aria-current={isActive ? "page" : undefined}
                                     onClick={() => setMenu(false)}
-                                    className={`flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-xs font-medium transition ${
+                                    className={`workspace-nav-link flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-xs font-medium transition ${
                                         isActive
                                             ? "bg-sky-600 text-white font-semibold shadow-sm shadow-sky-600/25"
                                             : "text-slate-600 hover:bg-sky-100/70 hover:text-sky-900"

@@ -35,7 +35,7 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
     ];
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-sky-100 bg-white/85 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+        <header className="workspace-header sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-sky-100 bg-white/85 backdrop-blur-md px-4 sm:px-6 lg:px-8">
             {/* Mobile / Compact Sidebar Toggle */}
             <div className="flex items-center gap-3">
                 <button

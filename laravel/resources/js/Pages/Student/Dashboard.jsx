@@ -1,6 +1,6 @@
 import { Link, usePage } from "@inertiajs/react";
 import Office, { Card } from "@/Components/Office";
-import { CalendarPlus, Share2, ClipboardList, ArrowRight } from "lucide-react";
+import { CalendarPlus, ClipboardList, ArrowRight } from "lucide-react";
 
 function Detail({ label, children }) {
     return (
@@ -57,19 +57,6 @@ export default function Dashboard({ student, summary }) {
                 : null,
         },
         {
-            title: "Refer Someone",
-            tag: "Peer & Self Support",
-            tagStyle: "bg-emerald-50 text-emerald-700 border-emerald-200/70",
-            description:
-                "Help a fellow BukSU student or submit a self-referral to connect with guidance counselors in a private, supportive space.",
-            icon: Share2,
-            iconContainer:
-                "bg-emerald-50 text-emerald-600 border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600",
-            actionLabel: "Submit Referral",
-            actionColor: "text-emerald-600 group-hover:text-emerald-700",
-            link: can("referrals.submit") ? route("referrals.index") : null,
-        },
-        {
             title: "Request for Testing Form",
             tag: "Psychological Testing",
             tagStyle: "bg-indigo-50 text-indigo-700 border-indigo-200/70",
@@ -121,7 +108,7 @@ export default function Dashboard({ student, summary }) {
                     </div>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-3">
+                <div className="grid gap-5 md:grid-cols-2">
                     {quickActions.map((action) => {
                         const Icon = action.icon;
                         return (

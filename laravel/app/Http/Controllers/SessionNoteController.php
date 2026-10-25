@@ -45,20 +45,6 @@ class SessionNoteController extends Controller
         ]);
     }
 
-    public function auditDashboard()
-    {
-        $cases = CounselingCase::orderByDesc('opened_at')->paginate(20)->through(fn (CounselingCase $case) => [
-            'id' => (string) $case->id,
-            'case_number' => $case->case_number,
-            'category' => $case->category,
-            'status' => $case->status,
-            'opened_at' => $case->opened_at,
-            'session_count' => (int) $case->session_count,
-        ]);
-
-        return Inertia::render('Counselor/AuditCases', ['cases' => $cases]);
-    }
-
     public function operationalSessions()
     {
         $sessions = CounselingSession::orderByDesc('session_date')->paginate(30)->through(fn (CounselingSession $session) => [
@@ -75,17 +61,17 @@ class SessionNoteController extends Controller
     public function show(Request $request, string $appointment)
     {
         $record = Appointment::findOrFail(Ids::object($appointment));
-        $isOwner = $request->user()->role === 'counselor'
-            && Ids::same($request->user()->id, $record->counselor_id)
-            && $request->user()->checkPermissionTo('notes.manage');
-        $isHead = $request->user()->role === 'head_counselor'
-            && $request->user()->checkPermissionTo('notes.audit.read');
-        abort_unless($isOwner || $isHead, 403);
+        abort_unless(
+            $request->user()->role === 'counselor'
+                && Ids::same($request->user()->id, $record->counselor_id)
+                && $request->user()->checkPermissionTo('notes.manage'),
+            403
+        );
         $session = CounselingSession::where('appointment_id', Ids::object($appointment))->first();
         $case = ! empty($record->case_id)
             ? CounselingCase::find($record->case_id)
             : CounselingCase::where('appointment_id', Ids::object($appointment))->first();
-        if (! $isHead && ! $case && in_array($record->status, ['accepted', 'completed'], true)) {
+        if (! $case && in_array($record->status, ['accepted', 'completed'], true)) {
             $case = app(CounselingCases::class)->createCaseFromAppointment($record);
         }
         $notes = null;
@@ -101,16 +87,8 @@ class SessionNoteController extends Controller
         }
 
         return Inertia::render('Counselor/SessionNotes', [
-            'appointment' => $isHead ? [
-                'id' => (string) $record->id,
-                'status' => $record->status,
-                'scheduled_date' => $record->scheduled_date,
-                'scheduled_time' => $record->scheduled_time,
-                'type' => $record->type,
-                'channel' => $record->channel,
-                'student' => null,
-            ] : Views::appointment($record),
-            'intake' => $isHead ? null : Student::findOrFail($record->student_id)->intake_record,
+            'appointment' => Views::appointment($record),
+            'intake' => Student::findOrFail($record->student_id)->intake_record,
             'session' => $notes,
             'caseRecord' => $case ? $this->serializeCase($case) : null,
         ]);
@@ -120,12 +98,12 @@ class SessionNoteController extends Controller
     {
         $record = CounselingCase::findOrFail(Ids::object($case));
         $user = $request->user();
-        $isOwner = $user->role === 'counselor'
-            && Ids::same($user->id, $record->counselor_id)
-            && $user->checkPermissionTo('notes.manage');
-        $isHead = $user->role === 'head_counselor'
-            && $user->checkPermissionTo('notes.audit.read');
-        abort_unless($isOwner || $isHead, 403);
+        abort_unless(
+            $user->role === 'counselor'
+                && Ids::same($user->id, $record->counselor_id)
+                && $user->checkPermissionTo('notes.manage'),
+            403
+        );
 
         return response()->json([
             'case' => $this->serializeCase($record, false),

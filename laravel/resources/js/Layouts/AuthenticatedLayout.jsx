@@ -54,7 +54,7 @@ export default function AuthenticatedLayout({
                 />
 
                 {/* Main Content Area */}
-                <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+                <main className="workspace-main flex-1 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
                     {/* Page Hero Header Banner (Powder Blue Gradient) */}
                     {(title || eyebrow || action) && (
                         <div className="mb-8 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 text-white p-6 md:p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -65,12 +65,12 @@ export default function AuthenticatedLayout({
                                     </span>
                                 )}
                                 {title && (
-                                    <h1 className="text-2xl font-bold md:text-3xl text-white tracking-tight">
+                                    <h1 className="text-2xl font-bold md:text-3xl tracking-tight text-white">
                                         {title}
                                     </h1>
                                 )}
                                 {description && (
-                                    <p className="text-xs md:text-sm text-sky-100 leading-relaxed">
+                                    <p className="text-sm leading-relaxed text-sky-100">
                                         {description}
                                     </p>
                                 )}
