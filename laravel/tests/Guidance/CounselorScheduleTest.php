@@ -117,4 +117,28 @@ class CounselorScheduleTest extends GuidanceTestCase
         $this->assertSame('on_leave', $availability->check($counselor, '2026-10-10', '10:00')['status']);
         $this->assertTrue($availability->check($counselor, '2026-10-10', '11:00')['available']);
     }
+
+    public function test_schedule_cannot_be_changed_to_conflict_with_an_existing_appointment(): void
+    {
+        $counselor = $this->user('counselor');
+        $this->appointment($counselor, status: 'confirmed');
+
+        $this->actingAs($counselor)
+            ->get('/counselor/schedule')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Counselor/Schedule')
+                ->has('appointments', 1)
+                ->where('appointments.0.scheduled_time', '10:00'));
+
+        $this->actingAs($counselor)->put('/api/counselor/schedule', [
+            'availability' => [
+                ['dayOfWeek' => 1, 'startTime' => '11:00', 'endTime' => '12:00'],
+            ],
+            'classSchedule' => [],
+            'leaves' => [],
+        ])->assertSessionHasErrors('availability');
+
+        $this->assertSame(0, CounselorSchedule::count());
+    }
 }

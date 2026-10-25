@@ -53,6 +53,7 @@ class Views
 
         return [
             'id' => (string) $appointment->id,
+            'case_id' => $appointment->case_id ? (string) $appointment->case_id : null,
             'student' => $student ? self::student($student, $studentUser) : null,
             'counselor_id' => $appointment->counselor_id ? (string) $appointment->counselor_id : null,
             'counselor_name' => $counselor?->full_name,

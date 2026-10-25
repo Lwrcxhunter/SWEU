@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { useForm, usePage } from "@inertiajs/react";
-import Office, { Button, Card, Check, Errors } from "@/Components/Office";
+import { Link, useForm, usePage } from "@inertiajs/react";
+import Office, {
+    Button,
+    Card,
+    Check,
+    Empty,
+    Errors,
+} from "@/Components/Office";
 
 const dayNames = [
     "Sunday",
@@ -13,6 +19,11 @@ const dayNames = [
 ];
 const orderedDays = [1, 2, 3, 4, 5, 6, 0];
 const blankSchedule = { availability: [], classSchedule: [], leaves: [] };
+
+function localDate() {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 const emptyDraft = (section) =>
     section === "leaves"
@@ -37,7 +48,10 @@ function formatEntry(section, entry) {
     return `${dayNames[entry.dayOfWeek]} · ${entry.startTime}–${entry.endTime}${entry.label ? ` · ${entry.label}` : ""}`;
 }
 
-export default function Schedule({ schedule = blankSchedule }) {
+export default function Schedule({
+    schedule = blankSchedule,
+    appointments = [],
+}) {
     const { auth } = usePage().props;
     const [data, setData] = useState({
         availability: schedule.availability || [],
@@ -45,6 +59,7 @@ export default function Schedule({ schedule = blankSchedule }) {
         leaves: schedule.leaves || [],
     });
     const [section, setSection] = useState("availability");
+    const [weekOffset, setWeekOffset] = useState(0);
     const [draft, setDraft] = useState(emptyDraft("availability"));
     const [editingIndex, setEditingIndex] = useState(null);
     const saveForm = useForm(blankSchedule);
@@ -104,6 +119,7 @@ export default function Schedule({ schedule = blankSchedule }) {
     };
 
     const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() + weekOffset * 7);
     weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
     const previewDays = orderedDays.map((dayOfWeek, index) => {
         const date = new Date(weekStart);
@@ -124,8 +140,18 @@ export default function Schedule({ schedule = blankSchedule }) {
                     entry.startDateTime.slice(0, 10) <= dateKey &&
                     entry.endDateTime.slice(0, 10) >= dateKey,
             ),
+            appointments: appointments.filter(
+                (appointment) => appointment.scheduled_date === dateKey,
+            ),
         };
     });
+    const upcomingAppointments = appointments
+        .filter((appointment) => appointment.scheduled_date >= localDate())
+        .sort((left, right) =>
+            `${left.scheduled_date} ${left.scheduled_time}`.localeCompare(
+                `${right.scheduled_date} ${right.scheduled_time}`,
+            ),
+        );
 
     return (
         <Office
@@ -136,16 +162,48 @@ export default function Schedule({ schedule = blankSchedule }) {
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
                 <div className="space-y-6">
                     <Card title="Visual weekly preview">
-                        <div className="mb-4 flex flex-wrap gap-3 text-xs">
-                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-900">
-                                Available for Counseling
-                            </span>
-                            <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-900">
-                                In Class
-                            </span>
-                            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
-                                On Leave
-                            </span>
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-wrap gap-3 text-xs">
+                                <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-900">
+                                    Available for counseling
+                                </span>
+                                <span className="rounded-full bg-sky-100 px-3 py-1 text-sky-900">
+                                    In class
+                                </span>
+                                <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-900">
+                                    Unavailable
+                                </span>
+                                <span className="rounded-full bg-indigo-100 px-3 py-1 text-indigo-900">
+                                    Appointment
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setWeekOffset((current) => current - 1)
+                                    }
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    Previous week
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setWeekOffset(0)}
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    This week
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setWeekOffset((current) => current + 1)
+                                    }
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                                >
+                                    Next week
+                                </button>
+                            </div>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             {previewDays.map((day) => (
@@ -188,12 +246,48 @@ export default function Schedule({ schedule = blankSchedule }) {
                                                 key={`l-${index}`}
                                                 className="rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-950"
                                             >
-                                                Leave · {entry.type}
+                                                Unavailable{" "}
+                                                {entry.startDateTime.slice(
+                                                    11,
+                                                    16,
+                                                )}
+                                                –
+                                                {entry.endDateTime.slice(
+                                                    11,
+                                                    16,
+                                                )}{" "}
+                                                · {entry.type}
                                             </p>
+                                        ))}
+                                        {day.appointments.map((appointment) => (
+                                            <Link
+                                                key={appointment.id}
+                                                href={
+                                                    appointment.case_id
+                                                        ? route(
+                                                              "counselor.cases.show",
+                                                              appointment.case_id,
+                                                          )
+                                                        : route(
+                                                              "notes.show",
+                                                              appointment.id,
+                                                          )
+                                                }
+                                                className="block rounded-md bg-indigo-100 px-2 py-1 text-xs text-indigo-950 hover:bg-indigo-200"
+                                            >
+                                                Appointment{" "}
+                                                {appointment.scheduled_time} ·{" "}
+                                                {appointment.student_name} ·{" "}
+                                                {appointment.status.replaceAll(
+                                                    "_",
+                                                    " ",
+                                                )}
+                                            </Link>
                                         ))}
                                         {!day.availability.length &&
                                             !day.classes.length &&
-                                            !day.leaves.length && (
+                                            !day.leaves.length &&
+                                            !day.appointments.length && (
                                                 <p className="text-xs text-slate-400">
                                                     No scheduled entries
                                                 </p>
@@ -202,6 +296,63 @@ export default function Schedule({ schedule = blankSchedule }) {
                                 </section>
                             ))}
                         </div>
+                    </Card>
+
+                    <Card
+                        title="Upcoming appointments"
+                        description="Open an appointment or its case folder without leaving the schedule workspace."
+                    >
+                        {upcomingAppointments.length === 0 ? (
+                            <Empty>
+                                No upcoming appointments are scheduled.
+                            </Empty>
+                        ) : (
+                            <ul className="divide-y divide-slate-100">
+                                {upcomingAppointments.map((appointment) => (
+                                    <li
+                                        key={appointment.id}
+                                        className="flex flex-wrap items-center justify-between gap-3 py-3"
+                                    >
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-900">
+                                                {appointment.scheduled_date} ·{" "}
+                                                {appointment.scheduled_time}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-600">
+                                                {appointment.student_name} ·{" "}
+                                                {appointment.type.replaceAll(
+                                                    "_",
+                                                    " ",
+                                                )}{" "}
+                                                ·{" "}
+                                                {appointment.status.replaceAll(
+                                                    "_",
+                                                    " ",
+                                                )}
+                                            </p>
+                                        </div>
+                                        <Link
+                                            href={
+                                                appointment.case_id
+                                                    ? route(
+                                                          "counselor.cases.show",
+                                                          appointment.case_id,
+                                                      )
+                                                    : route(
+                                                          "notes.show",
+                                                          appointment.id,
+                                                      )
+                                            }
+                                            className="text-sm font-semibold text-sky-800 hover:underline"
+                                        >
+                                            {appointment.case_id
+                                                ? "View case"
+                                                : "Open appointment"}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </Card>
 
                     {[

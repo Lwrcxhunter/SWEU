@@ -6,6 +6,8 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Api\AcademicProgramController;
 use App\Http\Controllers\Api\PsgcController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\CounselorAnalyticsController;
+use App\Http\Controllers\CounselorCaseController;
 use App\Http\Controllers\CounselorScheduleController;
 use App\Http\Controllers\PersonalInformationController;
 use App\Http\Controllers\ReferralController;
@@ -76,6 +78,10 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     });
     Route::middleware('role:counselor')->group(function () {
         Route::get('/counselor', [SessionNoteController::class, 'dashboard'])->middleware('permission:appointments.manage')->name('counselor.dashboard');
+        Route::get('/counselor/cases', [CounselorCaseController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.cases.index');
+        Route::get('/counselor/cases/{case}', [CounselorCaseController::class, 'show'])->middleware('permission:notes.manage')->name('counselor.cases.show');
+        Route::get('/api/cases/{case}/follow-up-slots', [CounselorCaseController::class, 'followUpSlots'])->middleware('permission:notes.manage')->name('cases.follow-up-slots');
+        Route::get('/counselor/analytics', [CounselorAnalyticsController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.analytics');
         Route::get('/counselor/reports/sessions', [ReportController::class, 'counselorSessions'])->middleware('permission:notes.manage')->name('counselor.reports.sessions');
         Route::get('/counselor/schedule', [CounselorScheduleController::class, 'index'])->middleware('permission:appointments.manage')->name('counselor.schedule');
         Route::get('/api/counselor/schedule', [CounselorScheduleController::class, 'showMine'])->middleware('permission:appointments.manage')->name('counselor.schedule.show');
