@@ -57,16 +57,28 @@ class CounselorCaseController extends Controller
             ->orderBy('scheduled_time')
             ->get();
 
+        $historyAppointments = Appointment::where('counselor_id', $counselorId)
+            ->whereIn('status', ['completed', 'cancelled', 'declined_by_student'])
+            ->orderByDesc('scheduled_date')
+            ->orderByDesc('scheduled_time')
+            ->get();
+
+        $appointmentView = fn (array $appointment) => [
+            'id' => $appointment['id'],
+            'case_id' => $appointment['case_id'],
+            'student_name' => $appointment['student']['full_name'] ?? 'Unavailable account',
+            'scheduled_date' => $appointment['scheduled_date'],
+            'scheduled_time' => $appointment['scheduled_time'],
+            'type' => $appointment['type'],
+            'status' => $appointment['status'],
+        ];
+
         $appointmentViews = collect(Views::appointments($appointments->all()))
-            ->map(fn (array $appointment) => [
-                'id' => $appointment['id'],
-                'case_id' => $appointment['case_id'],
-                'student_name' => $appointment['student']['full_name'] ?? 'Unavailable account',
-                'scheduled_date' => $appointment['scheduled_date'],
-                'scheduled_time' => $appointment['scheduled_time'],
-                'type' => $appointment['type'],
-                'status' => $appointment['status'],
-            ])
+            ->map($appointmentView)
+            ->values()
+            ->all();
+        $historyAppointmentViews = collect(Views::appointments($historyAppointments->all()))
+            ->map($appointmentView)
             ->values()
             ->all();
 
@@ -78,8 +90,9 @@ class CounselorCaseController extends Controller
         return Inertia::render('Counselor/Cases', [
             'cases' => $cases,
             'appointments' => $appointmentViews,
+            'historyAppointments' => $historyAppointmentViews,
             'caseStatusCounts' => $caseStatusCounts,
-            'tab' => in_array($request->string('tab')->toString(), ['schedule', 'ongoing', 'hold', 'closed'], true)
+            'tab' => in_array($request->string('tab')->toString(), ['schedule', 'history', 'ongoing', 'hold', 'closed'], true)
                 ? $request->string('tab')->toString()
                 : 'schedule',
         ]);

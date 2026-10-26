@@ -75,16 +75,16 @@ export default function Sidebar({ auth, menu, setMenu }) {
         if (can("notes.manage")) {
             navItems.push({
                 name: "counselor.cases.index",
-                label: "Appointments",
+                label: "Appointment",
                 icon: ClipboardList,
                 active:
                     route().current("counselor.cases.index") &&
-                    ["", "schedule"].includes(
+                    ["", "schedule", "history"].includes(
                         new URLSearchParams(url.split("?")[1] || "").get("tab") || "",
                     ),
             });
             navItems.push({
-                name: "counselor.schedule",
+                name: "schedule",
                 label: "My Schedule",
                 icon: Calendar,
             });
@@ -99,7 +99,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
                         "ongoing",
             });
             navItems.push({
-                name: "counselor.analytics",
+                name: "analytics",
                 label: "Analytics",
                 icon: BarChart3,
             });

@@ -116,3 +116,8 @@ Artisan::command('guidance:demo-data', function () {
     app(DemoDataSeeder::class)->run(fn (string $msg) => $this->line(" - {$msg}"));
     $this->info('Realistic demo data seeded successfully.');
 })->purpose('Seed realistic appointments, cases, testing requests, and alerts for demo');
+
+Artisan::command('schedule:clear-sample', function () {
+    $deleted = \App\Models\ScheduleEvent::where('is_sample', true)->delete();
+    $this->info("Deleted {$deleted} sample schedule event(s).");
+})->purpose('Delete only sample counselor schedule events');

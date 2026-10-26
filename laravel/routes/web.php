@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Api\AcademicProgramController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\CounselorCaseController;
 use App\Http\Controllers\CounselorScheduleController;
 use App\Http\Controllers\PersonalInformationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SessionNoteController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TestingRequestController;
@@ -28,6 +30,12 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::patch('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::patch('/account/preferences', [AccountController::class, 'preferences'])->name('account.preferences');
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])
+        ->middleware(['role:counselor', 'permission:notes.manage'])
+        ->name('analytics');
+    Route::get('/schedule', [ScheduleController::class, 'index'])
+        ->middleware(['role:counselor', 'permission:appointments.manage'])
+        ->name('schedule');
     Route::patch('/alerts/{alert}', [AlertController::class, 'update'])->name('alerts.update');
     Route::get('/notifications', fn () => redirect()->route('alerts.index'))->name('notifications.index');
 
@@ -73,7 +81,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
             ->middleware(['permission:notes.manage', 'can.read.session.notes:case,read'])
             ->name('cases.show');
         Route::get('/counselor/reports/sessions', [ReportController::class, 'counselorSessions'])->middleware('permission:notes.manage')->name('counselor.reports.sessions');
-        Route::get('/counselor/schedule', [CounselorScheduleController::class, 'index'])->middleware('permission:appointments.manage')->name('counselor.schedule');
+        Route::get('/counselor/schedule', fn () => redirect()->route('schedule'))->middleware('permission:appointments.manage')->name('counselor.schedule');
         Route::get('/api/counselor/schedule', [CounselorScheduleController::class, 'showMine'])->middleware('permission:appointments.manage')->name('counselor.schedule.show');
         Route::put('/api/counselor/schedule', [CounselorScheduleController::class, 'update'])->middleware('permission:appointments.manage')->name('counselor.schedule.update');
         Route::put('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'store'])

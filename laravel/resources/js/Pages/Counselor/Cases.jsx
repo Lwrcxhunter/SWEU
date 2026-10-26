@@ -51,7 +51,37 @@ function AppointmentStatus({ status }) {
     return <span className={`rounded-full px-3 py-1 text-[11px] font-semibold capitalize ${status === "pending" ? "bg-[#F9E8C7] text-[#9A6A20]" : "bg-[#DDEBE5] text-[#315C52]"}`}>{status?.replaceAll("_", " ") || "Pending"}</span>;
 }
 
-function Caseload({ appointments = [] }) {
+function AppointmentTable({ appointments, emptyMessage }) {
+    return appointments.length === 0 ? (
+        <Empty>{emptyMessage}</Empty>
+    ) : (
+        <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-left text-xs">
+                <thead className="border-y border-[#E3E5DF] bg-[#F7F5EF] text-[#6D7974]">
+                    <tr>
+                        {["Date", "Time", "Student", "Service Type", "Status", "Actions"].map((heading) => (
+                            <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E3E5DF]">
+                    {appointments.map((appointment) => (
+                        <tr key={appointment.id}>
+                            <td className="px-3 py-4 text-[#6D7974]">{formatDate(appointment.scheduled_date)}</td>
+                            <td className="px-3 py-4 text-[#6D7974]">{appointment.scheduled_time || "TBD"}</td>
+                            <td className="px-3 py-4 font-medium text-[#263B36]">{appointment.student_name}</td>
+                            <td className="px-3 py-4 capitalize text-[#6D7974]">{formatType(appointment.type)}</td>
+                            <td className="px-3 py-4"><AppointmentStatus status={appointment.status} /></td>
+                            <td className="px-3 py-4"><Link href={appointment.case_id ? route("counselor.cases.show", appointment.case_id) : route("notes.show", appointment.id)} className="rounded-lg border border-[#DCE5DF] px-3 py-2 font-semibold text-[#315C52]">View</Link></td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function AppointmentSchedule({ appointments = [], historyAppointments = [], tab = "schedule" }) {
     const today = new Date().toISOString().slice(0, 10);
     const upcoming = appointments
         .filter((appointment) => appointment.scheduled_date >= today)
@@ -64,18 +94,35 @@ function Caseload({ appointments = [] }) {
         <Office
             title="Appointments"
             eyebrow="Counselor workspace"
-            description="View and manage your student appointments and caseload."
+            description="View and manage your student appointments."
         >
             <div>
                 <section className="rounded-xl border border-[#E3E5DF] bg-white p-3 shadow-[0_8px_24px_rgba(49,92,82,0.06)] md:p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E3E5DF] px-2">
-                        <div className="flex items-center gap-2">
-                            <span className="border-b-2 border-[#315C52] px-3 py-3 text-xs font-semibold text-[#263B36]">
+                    <div className="flex items-center justify-start border-b border-[#E3E5DF] px-2">
+                        <div className="flex items-center justify-start gap-12">
+                            <Link href={`${route("counselor.cases.index")}?tab=schedule`} className={`border-b-2 px-3 py-3 text-xs font-semibold ${tab === "schedule" ? "border-[#315C52] text-[#263B36]" : "border-transparent text-[#6D7974]"}`}>
                                 Appointment Schedule
-                            </span>
-                            <span className="px-3 py-3 text-xs text-[#6D7974]">
+                            </Link>
+                            <Link href={`${route("counselor.cases.index")}?tab=history`} className={`border-b-2 px-3 py-3 text-xs font-semibold ${tab === "history" ? "border-[#315C52] text-[#263B36]" : "border-transparent text-[#6D7974]"}`}>
                                 Appointment History
+                            </Link>
+                        </div>
+                    </div>
+                    {tab === "history" ? (
+                        <AppointmentTable appointments={historyAppointments} emptyMessage="No completed or cancelled appointments have been recorded yet." />
+                    ) : (
+                    <>
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button type="button" className="grid h-9 w-9 place-items-center rounded-lg border border-[#E3E5DF] text-[#315C52]">
+                                <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <span className="rounded-lg border border-[#E3E5DF] px-4 py-2 text-xs font-semibold text-[#315C52]">
+                                {formatDate(today)} (Today)
                             </span>
+                            <button type="button" className="grid h-9 w-9 place-items-center rounded-lg border border-[#E3E5DF] text-[#315C52]">
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
                         </div>
                         <Link
                             href={route("appointments.request")}
@@ -85,42 +132,8 @@ function Caseload({ appointments = [] }) {
                             Book Appointment
                         </Link>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 px-2 py-4">
-                        <button type="button" className="grid h-9 w-9 place-items-center rounded-lg border border-[#E3E5DF] text-[#315C52]">
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <span className="rounded-lg border border-[#E3E5DF] px-4 py-2 text-xs font-semibold text-[#315C52]">
-                            {formatDate(today)} (Today)
-                        </span>
-                        <button type="button" className="grid h-9 w-9 place-items-center rounded-lg border border-[#E3E5DF] text-[#315C52]">
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
-                    </div>
-                    {upcoming.length === 0 ? (
-                        <Empty>No upcoming appointments are scheduled.</Empty>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[640px] text-left text-xs">
-                                <thead className="border-y border-[#E3E5DF] bg-[#F7F5EF] text-[#6D7974]">
-                                    <tr>
-                                        {["Time", "Student", "Service Type", "Status", "Actions"].map((heading) => (
-                                            <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[#E3E5DF]">
-                                    {upcoming.slice(0, 6).map((appointment) => (
-                                        <tr key={appointment.id}>
-                                            <td className="px-3 py-4 text-[#6D7974]">{appointment.scheduled_time || "TBD"}</td>
-                                            <td className="px-3 py-4 font-medium text-[#263B36]">{appointment.student_name}</td>
-                                            <td className="px-3 py-4 capitalize text-[#6D7974]">{formatType(appointment.type)}</td>
-                                            <td className="px-3 py-4"><AppointmentStatus status={appointment.status} /></td>
-                                            <td className="px-3 py-4"><Link href={appointment.case_id ? route("counselor.cases.show", appointment.case_id) : route("notes.show", appointment.id)} className="rounded-lg border border-[#DCE5DF] px-3 py-2 font-semibold text-[#315C52]">View</Link></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                    <AppointmentTable appointments={upcoming.slice(0, 6)} emptyMessage="No upcoming appointments are scheduled." />
+                    </>
                     )}
                 </section>
             </div>
@@ -129,5 +142,5 @@ function Caseload({ appointments = [] }) {
 }
 
 export default function Cases(props) {
-    return props.tab === "schedule" ? <Caseload {...props} /> : <CaseList {...props} />;
+    return ["schedule", "history"].includes(props.tab) ? <AppointmentSchedule {...props} /> : <CaseList {...props} />;
 }
