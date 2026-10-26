@@ -75,7 +75,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
         if (can("notes.manage")) {
             navItems.push({
                 name: "counselor.cases.index",
-                label: "Caseload",
+                label: "Appointments",
                 icon: ClipboardList,
                 active:
                     route().current("counselor.cases.index") &&

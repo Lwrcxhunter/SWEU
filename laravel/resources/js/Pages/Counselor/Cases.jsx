@@ -60,17 +60,13 @@ function Caseload({ appointments = [] }) {
                 `${b.scheduled_date} ${b.scheduled_time}`,
             ),
         );
-    const confirmed = appointments.filter((a) => a.status === "confirmed").length;
-    const pending = appointments.filter((a) => a.status === "pending").length;
-    const cancelled = appointments.filter((a) => a.status === "cancelled").length;
-
     return (
         <Office
-            title="Caseload"
+            title="Appointments"
             eyebrow="Counselor workspace"
             description="View and manage your student appointments and caseload."
         >
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+            <div>
                 <section className="rounded-xl border border-[#E3E5DF] bg-white p-3 shadow-[0_8px_24px_rgba(49,92,82,0.06)] md:p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E3E5DF] px-2">
                         <div className="flex items-center gap-2">
@@ -127,31 +123,6 @@ function Caseload({ appointments = [] }) {
                         </div>
                     )}
                 </section>
-                <aside className="space-y-5">
-                    <section className="rounded-xl border border-[#E3E5DF] bg-white p-5 shadow-sm">
-                        <h2 className="text-sm font-semibold text-[#263B36]">Quick Stats</h2>
-                        <div className="mt-4 flex items-center gap-4">
-                            <div className="relative grid h-24 w-24 place-items-center rounded-full" style={{ background: `conic-gradient(#315C52 ${appointments.length ? (confirmed / appointments.length) * 100 : 0}%, #E8C98A 0 100%)` }}>
-                                <div className="grid h-16 w-16 place-items-center rounded-full bg-white text-center">
-                                    <strong className="text-xl text-[#315C52]">{appointments.length}</strong>
-                                    <span className="text-[9px] text-[#6D7974]">Appointments</span>
-                                </div>
-                            </div>
-                            <div className="space-y-2 text-[11px] text-[#6D7974]">
-                                <p>Confirmed {confirmed}</p><p>Pending {pending}</p><p>Cancelled {cancelled}</p>
-                            </div>
-                        </div>
-                    </section>
-                    <section className="rounded-xl border border-[#E3E5DF] bg-white p-5 shadow-sm">
-                        <h2 className="text-sm font-semibold text-[#263B36]">Upcoming Notes</h2>
-                        {upcoming.slice(0, 3).map((appointment) => (
-                            <Link key={appointment.id} href={route("notes.show", appointment.id)} className="flex gap-3 border-b py-3 text-[11px] text-[#6D7974]">
-                                <FileText className="h-4 w-4 text-[#8A6A5B]" />
-                                <span><strong className="block text-[#263B36]">{appointment.student_name}</strong>{formatType(appointment.type)}<br />{formatDate(appointment.scheduled_date)}, {appointment.scheduled_time}</span>
-                            </Link>
-                        ))}
-                    </section>
-                </aside>
             </div>
         </Office>
     );
