@@ -10,7 +10,7 @@ From the project root:
 .\scripts\start-local.ps1
 ```
 
-Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and MongoDB installation in `.runtime/`. It does not install a Windows service or edit machine-wide PHP settings. Keep that terminal open while using the application. MongoDB runs on loopback port 27028; the Laravel development server runs on loopback port 8000.
+Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and the MongoDB Atlas connection configured in `.env`. It does not start a local MongoDB process, install a Windows service, or edit machine-wide PHP settings. Keep that terminal open while using the application. The Laravel development server runs on loopback port 8000.
 
 In another terminal, create the first administrator:
 
@@ -26,7 +26,7 @@ To stop the web server, press Ctrl+C in its terminal. The local MongoDB process 
 
 1. Install PHP 8.2 or newer with MongoDB, OpenSSL, mbstring, fileinfo, XML, DOM, and the standard Laravel extensions. The generated Composer lockfile targets PHP 8.2 compatibility; this build was executed with PHP 8.4.
 2. Install Composer and a current Node.js LTS version.
-3. Provide a MongoDB replica set. Transactions are required for appointment/alert consistency and versioned note changes; a standalone MongoDB server is insufficient. For local development a single-member replica set is enough.
+3. Provide a MongoDB Atlas cluster or another MongoDB replica set. Transactions are required for appointment/alert consistency and versioned note changes; a standalone MongoDB server is insufficient.
 4. In this directory:
 
 ```sh
@@ -37,7 +37,7 @@ npm ci
 npm run build
 ```
 
-5. Set `MONGODB_URI` and `MONGODB_DATABASE` in `.env`. The example points to the local `guidance` replica set at `127.0.0.1:27028`.
+5. Set `MONGODB_URI` and `MONGODB_DATABASE` in `.env`. The deployed configuration uses MongoDB Atlas. Keep the URI out of source control and use a database user with only the permissions required by this application.
 6. Run `php artisan guidance:setup` to create collections, unique indexes, and initial role grants. The command preserves existing grants and records. It does not delete data. There are no SQL migrations to run.
 7. Run `php artisan guidance:admin`, then `php artisan serve` for local development.
 

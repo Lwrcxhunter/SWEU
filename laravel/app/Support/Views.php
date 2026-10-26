@@ -79,6 +79,8 @@ class Views
             'preferred_period' => $appointment->preferred_period ?? ($appointment->scheduled_time ? ((int) $appointment->scheduled_time < 12 ? 'AM' : 'PM') : null),
             'status' => $appointment->status,
             'student_accepted_at' => $appointment->student_accepted_at ?? null,
+            'student_declined_at' => $appointment->student_declined_at ?? null,
+            'student_decline_note' => $appointment->student_decline_note ?? null,
             'counselor_accepted_at' => $appointment->counselor_accepted_at ?? null,
             'version' => (int) $appointment->version,
         ];

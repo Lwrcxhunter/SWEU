@@ -78,7 +78,7 @@ export default function AppointmentWizard({
     const appointmentForm = useForm({
         channel: "face_to_face",
         scheduled_date: "",
-        scheduled_time: "09:00",
+        scheduled_time: "08:00",
         reason: "",
         expectations: "",
         average_sleep: "6 - 7 hours",
@@ -139,12 +139,20 @@ export default function AppointmentWizard({
                 appointmentForm.data.typed_signature,
         };
 
+        appointmentForm.transform(() => payload);
         appointmentForm.post(route("appointments.store"), {
-            data: payload,
-            onSuccess: () => {
-                // Controller will redirect to appointments index with flash message
-            },
-        });
+                onError: (errors) => {
+                    if (
+                        errors.channel ||
+                        errors.scheduled_date ||
+                        errors.scheduled_time
+                    )
+                        setStep(2);
+                },
+                onSuccess: () => {
+                    // Controller will redirect to appointments index with flash message
+                },
+            });
     };
 
     const clientFullName =

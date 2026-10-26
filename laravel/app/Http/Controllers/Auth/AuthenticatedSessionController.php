@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Services\GoogleAuthService;
+use App\Services\RecaptchaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +36,36 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         // A shared terminal may have a previous role's protected URL in history.
         // Always enter the newly authenticated user's own workspace.
+        $request->session()->forget('url.intended');
+
+        return redirect(route('dashboard', absolute: false));
+    }
+
+    /**
+     * Handle an incoming Google authentication request.
+     */
+    public function google(Request $request, GoogleAuthService $googleAuth, RecaptchaService $recaptcha): RedirectResponse
+    {
+        $data = $request->validate([
+            'credential' => 'required|string',
+            'recaptcha_token' => 'nullable|string',
+        ]);
+
+        if (! empty($data['recaptcha_token'])) {
+            $recaptcha->verify($data['recaptcha_token'], $request->ip());
+        }
+
+        try {
+            $user = $googleAuth->authenticate($data['credential']);
+        } catch (\MongoDB\Driver\Exception\ConnectionTimeoutException|\MongoDB\Driver\Exception\ConnectionException $e) {
+            report($e);
+            throw ValidationException::withMessages([
+                'google' => 'Database connection timeout: Unable to connect to MongoDB Atlas. Please verify that your IP address is whitelisted in MongoDB Atlas Network Access.',
+            ]);
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
         $request->session()->forget('url.intended');
 
         return redirect(route('dashboard', absolute: false));

@@ -18,17 +18,26 @@ import {
     ChevronDown,
 } from "lucide-react";
 import { parseDateBadge, formatSessionTime } from "@/Support/guidanceConstants";
+import FollowUpBanner from "./FollowUpBanner";
 
 function ChannelBadge({ channel }) {
     return (
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
             <MapPin className="w-3.5 h-3.5 text-sky-600" />
-            <span>Face-to-Face (Guidance Office)</span>
+            <span>
+                {channel === "face_to_face"
+                    ? "Face-to-Face (Guidance Office)"
+                    : "Virtual (Online)"}
+            </span>
         </span>
     );
 }
 
-export default function BookAppointment({ appointments, hasIntake }) {
+export default function BookAppointment({
+    appointments,
+    hasIntake,
+    followUps = [],
+}) {
     const [reschedulingId, setReschedulingId] = useState(null);
     const [cancellingId, setCancellingId] = useState(null);
 
@@ -122,6 +131,7 @@ export default function BookAppointment({ appointments, hasIntake }) {
                 </div>
             }
         >
+            <FollowUpBanner appointments={followUps} />
             {!hasIntake && (
                 <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -216,7 +226,10 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                 ].includes(item.status);
                                 const isRescheduled =
                                     item.status === "rescheduled";
-                                const isCancelled = item.status === "cancelled";
+                                const isCancelled = [
+                                    "cancelled",
+                                    "declined_by_student",
+                                ].includes(item.status);
                                 const isCompleted = item.status === "completed";
                                 const isAssigned = Boolean(
                                     item.counselor ||
@@ -273,7 +286,9 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                                             <span>
                                                                 {formattedTime
                                                                     ? `${formattedTime} PST`
-                                                                    : "Schedule Pending Assignment"}
+                                                                    : item.preferred_period
+                                                                      ? `${item.preferred_period.toUpperCase()} preferred window; time pending assignment`
+                                                                      : "Schedule Pending Assignment"}
                                                             </span>
                                                         </h3>
                                                         {item.urgency_level ===
@@ -478,6 +493,14 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                             )}
                                         </div>
 
+                                        {item.student_decline_note && (
+                                            <p className="mb-3 text-sm text-slate-700">
+                                                Declined{" "}
+                                                {item.student_declined_at}:{" "}
+                                                {item.student_decline_note}
+                                            </p>
+                                        )}
+
                                         {/* Action Buttons Row */}
                                         <div className="border-t border-sky-100/80 pt-3 flex flex-wrap items-center justify-between gap-3">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -492,22 +515,26 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                                     </p>
                                                 )}
 
-                                                {isAwaitingStudentConfirmation && (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleAccept(item)
-                                                        }
-                                                        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
-                                                    >
-                                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                                        <span>
-                                                            {item.type ===
-                                                            "follow_up"
-                                                                ? "Confirm Follow-up Schedule"
-                                                                : "Confirm Schedule"}
-                                                        </span>
-                                                    </button>
-                                                )}
+                                                {isAwaitingStudentConfirmation &&
+                                                    item.type !==
+                                                        "follow_up" && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleAccept(
+                                                                    item,
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+                                                        >
+                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            <span>
+                                                                {item.type ===
+                                                                "follow_up"
+                                                                    ? "Confirm Follow-up Schedule"
+                                                                    : "Confirm Schedule"}
+                                                            </span>
+                                                        </button>
+                                                    )}
 
                                                 {/* PDF Export for Confirmed, Completed or Assigned */}
                                                 {(isAccepted ||
@@ -587,28 +614,34 @@ export default function BookAppointment({ appointments, hasIntake }) {
                                             </div>
 
                                             {/* Cancel Action */}
-                                            {!isCancelled && !isCompleted && (
-                                                <button
-                                                    type="button"
-                                                    disabled={isAccepted}
-                                                    title={
-                                                        isAccepted
-                                                            ? "Cancellation is not allowed once an assigned schedule has been accepted."
-                                                            : "Cancel Request"
-                                                    }
-                                                    onClick={() => {
-                                                        if (isAccepted) return;
-                                                        handleCancel(item);
-                                                    }}
-                                                    className={
-                                                        isAccepted
-                                                            ? "text-xs font-medium text-slate-400 cursor-not-allowed opacity-60 px-2 py-1"
-                                                            : "text-xs font-semibold text-rose-600 hover:text-rose-800 transition px-2 py-1"
-                                                    }
-                                                >
-                                                    Cancel Request
-                                                </button>
-                                            )}
+                                            {!isCancelled &&
+                                                !isCompleted &&
+                                                !(
+                                                    isAwaitingStudentConfirmation &&
+                                                    item.type === "follow_up"
+                                                ) && (
+                                                    <button
+                                                        type="button"
+                                                        disabled={isAccepted}
+                                                        title={
+                                                            isAccepted
+                                                                ? "Cancellation is not allowed once an assigned schedule has been accepted."
+                                                                : "Cancel Request"
+                                                        }
+                                                        onClick={() => {
+                                                            if (isAccepted)
+                                                                return;
+                                                            handleCancel(item);
+                                                        }}
+                                                        className={
+                                                            isAccepted
+                                                                ? "text-xs font-medium text-slate-400 cursor-not-allowed opacity-60 px-2 py-1"
+                                                                : "text-xs font-semibold text-rose-600 hover:text-rose-800 transition px-2 py-1"
+                                                        }
+                                                    >
+                                                        Cancel Request
+                                                    </button>
+                                                )}
                                         </div>
 
                                         {/* Inline Reschedule Box */}

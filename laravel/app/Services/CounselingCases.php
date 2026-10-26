@@ -106,6 +106,6 @@ class CounselingCases
 
     public function mode(?string $channel): string
     {
-        return in_array($channel, ['online', 'telecounseling'], true) ? 'Virtual' : 'F2F';
+        return in_array($channel, ['virtual', 'online', 'telecounseling'], true) ? 'Virtual' : 'F2F';
     }
 }

@@ -33,7 +33,7 @@ class StudentDashboardTest extends GuidanceTestCase
         $this->actingAs($this->user())->get('/dashboard')->assertRedirect('/student/dashboard');
         $this->get('/student/dashboard')->assertInertia(fn (Assert $page) => $page->component('Student/Dashboard')
             ->where('student', null)->where('summary.pending_appointments', 0)->where('summary.scheduled_appointments', 0)
-            ->has('summary.testing', 6)->where('unreadAlertCount', 0));
+            ->missing('summary.testing')->has('followUps', 0)->where('unreadAlertCount', 0));
         foreach (['faculty', 'staff', 'counselor', 'admin'] as $role) {
             $this->actingAs($this->user($role))->get('/student/dashboard')->assertForbidden();
         }
@@ -62,8 +62,7 @@ class StudentDashboardTest extends GuidanceTestCase
         $this->actingAs($user)->get('/student/dashboard?student_id='.$other->id)->assertInertia(fn (Assert $page) => $page
             ->where('student.school_id_number', $student->school_id_number)->where('summary.pending_appointments', 3)
             ->where('summary.scheduled_appointments', 2)
-            ->where('summary.testing.0', ['type' => 'GAMA', 'status' => 'pending', 'count' => 1])
-            ->where('summary.testing.5', ['type' => 'Other', 'status' => 'completed', 'count' => 1])->missing('referrals'));
+            ->missing('summary.testing')->missing('referrals'));
     }
 
     public function test_full_information_round_trips_with_bson_dates_and_reconfirmation(): void

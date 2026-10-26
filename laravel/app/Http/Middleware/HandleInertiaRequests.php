@@ -32,15 +32,52 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = null;
+        try {
+            $user = $request->user();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return [
             ...parent::share($request),
             'flash' => ['success' => fn () => $request->session()->get('success')],
-            'unreadAlertCount' => fn () => $request->user() ? OfficeAlert::where('user_id', Ids::object($request->user()->id))->whereNull('read_at')->count() : 0,
-            'unreadAlerts' => fn () => $request->user() ? OfficeAlert::where('user_id', Ids::object($request->user()->id))
-                ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => ['id' => (string) $a->id, 'kind' => $a->kind, 'message' => $a->message]) : [],
+            'unreadAlertCount' => function () use ($user) {
+                if (! $user) {
+                    return 0;
+                }
+                try {
+                    return OfficeAlert::where('user_id', Ids::object($user->id))->whereNull('read_at')->count();
+                } catch (\Throwable $e) {
+                    report($e);
+                    return 0;
+                }
+            },
+            'unreadAlerts' => function () use ($user) {
+                if (! $user) {
+                    return [];
+                }
+                try {
+                    return OfficeAlert::where('user_id', Ids::object($user->id))
+                        ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => ['id' => (string) $a->id, 'kind' => $a->kind, 'message' => $a->message]);
+                } catch (\Throwable $e) {
+                    report($e);
+                    return [];
+                }
+            },
             'auth' => [
-                'user' => $request->user() ? Views::user($request->user()) : null,
-                'permissions' => $request->user() ? array_values(array_filter(config('guidance.permissions.'.$request->user()->role, []), fn ($p) => $request->user()->checkPermissionTo($p))) : [],
+                'user' => $user ? Views::user($user) : null,
+                'permissions' => $user ? array_values(array_filter(config('guidance.permissions.'.$user->role, []), fn ($p) => $user->checkPermissionTo($p))) : [],
+            ],
+            'integrations' => [
+                'google' => [
+                    'enabled' => ! empty(config('services.google.client_id')),
+                    'client_id' => config('services.google.client_id'),
+                ],
+                'recaptcha' => [
+                    'enabled' => ! empty(config('services.recaptcha.site_key')),
+                    'site_key' => config('services.recaptcha.site_key'),
+                ],
             ],
         ];
     }

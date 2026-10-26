@@ -58,7 +58,7 @@ class ReportController extends Controller
         if ($selectedCollege !== 'all') {
             $studentQuery->where(function ($q) use ($selectedCollege) {
                 $q->where('college', $selectedCollege)
-                  ->orWhere('college.code', $selectedCollege);
+                    ->orWhere('college.code', $selectedCollege);
             });
         }
         $filteredStudentIds = ($selectedCollege !== 'all')
@@ -97,7 +97,7 @@ class ReportController extends Controller
         if ($selectedCollege !== 'all') {
             $testingQuery->where(function ($q) use ($selectedCollege) {
                 $q->where('college', $selectedCollege)
-                  ->orWhere('college.code', $selectedCollege);
+                    ->orWhere('college.code', $selectedCollege);
             });
         }
         if ($selectedStatus !== 'all') {
@@ -330,9 +330,9 @@ class ReportController extends Controller
                 }
             }
 
-            if ($ap->preferred_period === 'AM') {
+            if (strtoupper($ap->preferred_period ?? '') === 'AM') {
                 $morningCount++;
-            } elseif ($ap->preferred_period === 'PM') {
+            } elseif (strtoupper($ap->preferred_period ?? '') === 'PM') {
                 $afternoonCount++;
             } elseif ($ap->scheduled_time) {
                 $hour = (int) substr($ap->scheduled_time, 0, 2);
@@ -470,15 +470,18 @@ class ReportController extends Controller
             case 'this_week':
                 $start = $now->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
                 $end = $now->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
                 return [$start, $end, 'this_week', $start->toDateString(), $end->toDateString()];
             case 'this_month':
                 $start = $now->copy()->startOfMonth()->startOfDay();
                 $end = $now->copy()->endOfMonth()->endOfDay();
+
                 return [$start, $end, 'this_month', $start->toDateString(), $end->toDateString()];
             case 'last_month':
                 $last = $now->copy()->subMonth();
                 $start = $last->copy()->startOfMonth()->startOfDay();
                 $end = $last->copy()->endOfMonth()->endOfDay();
+
                 return [$start, $end, 'last_month', $start->toDateString(), $end->toDateString()];
             case 'semester':
                 $month = $now->month;
@@ -493,15 +496,18 @@ class ReportController extends Controller
                     $start = Carbon::create($year, 6, 1)->startOfDay();
                     $end = Carbon::create($year, 7, 31)->endOfDay();
                 }
+
                 return [$start, $end, 'semester', $start->toDateString(), $end->toDateString()];
             case 'school_year':
                 $year = $now->month >= 8 ? $now->year : $now->year - 1;
                 $start = Carbon::create($year, 8, 1)->startOfDay();
                 $end = Carbon::create($year + 1, 7, 31)->endOfDay();
+
                 return [$start, $end, 'school_year', $start->toDateString(), $end->toDateString()];
             case 'all':
                 $start = Carbon::create(2020, 1, 1)->startOfDay();
                 $end = $now->copy()->endOfDay();
+
                 return [$start, $end, 'all', $start->toDateString(), $end->toDateString()];
             case 'custom':
             default:
@@ -511,10 +517,12 @@ class ReportController extends Controller
                 if ($from) {
                     $start = Carbon::parse($from)->startOfDay();
                     $end = $now->copy()->endOfDay();
+
                     return [$start, $end, $preset ?? 'custom', $from, $end->toDateString()];
                 }
                 $start = $now->copy()->startOfMonth()->startOfDay();
                 $end = $now->copy()->endOfDay();
+
                 return [$start, $end, $preset ?? 'this_month', $start->toDateString(), $end->toDateString()];
         }
     }

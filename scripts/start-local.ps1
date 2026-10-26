@@ -3,26 +3,12 @@ $projectRoot = Split-Path $PSScriptRoot -Parent
 $runtimeDirectory = Join-Path $projectRoot '.runtime'
 $phpBinary = Join-Path $runtimeDirectory 'php/php.exe'
 $localConfig = Join-Path $runtimeDirectory 'php/php.ini'
-$mongoDirectory = Join-Path $projectRoot '.runtime/mongodb-server'
-$mongoBinary = Get-ChildItem -LiteralPath $mongoDirectory -Filter mongod.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $mongoBinary -or -not (Test-Path -LiteralPath $phpBinary) -or -not (Test-Path -LiteralPath $localConfig)) {
-    throw 'Local runtime is incomplete. Follow laravel/README.md to configure PHP and a MongoDB replica set.'
-}
-$listener = Get-NetTCPConnection -LocalPort 27028 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($listener) {
-    $runningMongo = Get-Process -Id $listener.OwningProcess
-    if ($runningMongo.Path -ne $mongoBinary.FullName) { throw 'Port 27028 is occupied by a different process. No changes were made.' }
-} else {
-    New-Item -ItemType Directory -Path (Join-Path $projectRoot '.runtime/mongo-data') -Force | Out-Null
-    $process = Start-Process -FilePath $mongoBinary.FullName -WorkingDirectory $projectRoot -ArgumentList @('--dbpath','.runtime/mongo-data','--port','27028','--bind_ip','127.0.0.1','--replSet','guidance','--logpath','.runtime/mongo.log','--logappend') -WindowStyle Hidden -PassThru
-    $process.Id | Set-Content -LiteralPath (Join-Path $projectRoot '.runtime/mongo.pid')
-    Start-Sleep -Seconds 2
+if (-not (Test-Path -LiteralPath $phpBinary) -or -not (Test-Path -LiteralPath $localConfig)) {
+    throw 'Local PHP runtime is incomplete. Follow laravel/README.md to configure PHP.'
 }
 $previousConfig = $env:PHPRC
 try {
     $env:PHPRC = $localConfig
-    & $phpBinary (Join-Path $PSScriptRoot 'init-local-mongo.php')
-    if ($LASTEXITCODE -ne 0) { throw 'Local MongoDB initialization failed.' }
     Push-Location (Join-Path $projectRoot 'laravel')
     & $phpBinary artisan guidance:setup
     if ($LASTEXITCODE -ne 0) { throw 'Database setup failed.' }

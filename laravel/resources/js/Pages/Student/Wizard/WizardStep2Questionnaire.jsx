@@ -1,12 +1,17 @@
 import { Card, Button } from "@/Components/Office";
-import { TIME_SLOTS, AVERAGE_SLEEP_OPTIONS } from "@/Support/guidanceConstants";
+import { AVERAGE_SLEEP_OPTIONS } from "@/Support/guidanceConstants";
 
 export default function WizardStep2Questionnaire({
     appointmentForm,
     onBack,
     onContinue,
 }) {
-    const minDate = new Date().toISOString().split("T")[0];
+    const minDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Manila",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(new Date());
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -22,25 +27,49 @@ export default function WizardStep2Questionnaire({
                         Step 2 of 4: Initial Visit Questionnaire &amp; Schedule
                     </strong>
                     Please provide the reasons for your visit and request your
-                    preferred face-to-face counseling schedule at the SWEU
-                    guidance office.
+                    preferred counseling mode, date, and time.
                 </div>
             </div>
 
             {/* Schedule Preference */}
             <Card
-                title="Session Venue & Preferred Schedule"
-                description="Counseling sessions are conducted in-person at the SWEU Guidance Office."
+                title="Counseling Mode & Preferred Schedule"
+                description="Choose a preferred time from 8:00 AM to 5:00 PM every day, in 30-minute intervals. Staff will assign an available counselor. All times are Philippine time."
             >
                 <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Counseling Venue
-                        </label>
-                        <div className="rounded-lg border border-sky-200 bg-sky-50/60 px-3.5 py-2.5 text-xs font-medium text-sky-900 flex items-center gap-2">
-                            <span>👥</span>
-                            <span>Face-to-Face (SWEU Guidance Office)</span>
-                        </div>
+                        <fieldset>
+                            <legend className="mb-2 text-xs font-semibold text-slate-700">
+                                Counseling Mode *
+                            </legend>
+                            {[
+                                ["face_to_face", "Face-to-Face (F2F)"],
+                                ["virtual", "Virtual (Online)"],
+                            ].map(([value, label]) => (
+                                <label
+                                    key={value}
+                                    className="mb-2 flex items-center gap-2 text-sm text-slate-700"
+                                >
+                                    <input
+                                        type="radio"
+                                        name="channel"
+                                        required
+                                        value={value}
+                                        checked={
+                                            appointmentForm.data.channel ===
+                                            value
+                                        }
+                                        onChange={() =>
+                                            appointmentForm.setData(
+                                                "channel",
+                                                value,
+                                            )
+                                        }
+                                    />
+                                    {label}
+                                </label>
+                            ))}
+                        </fieldset>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -63,30 +92,30 @@ export default function WizardStep2Questionnaire({
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            <label htmlFor="preferred-time" className="block text-xs font-semibold text-slate-700 mb-1">
                                 Preferred Time *
                             </label>
-                            <select
+                            <input
+                                id="preferred-time"
+                                type="time"
                                 required
+                                min="08:00"
+                                max="17:00"
+                                step="1800"
                                 value={appointmentForm.data.scheduled_time}
-                                onChange={(e) =>
-                                    appointmentForm.setData(
-                                        "scheduled_time",
-                                        e.target.value,
-                                    )
-                                }
+                                onChange={(e) => appointmentForm.setData("scheduled_time", e.target.value)}
                                 className="w-full rounded-lg border-sky-200 text-xs px-3 py-2 focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                            >
-                                {TIME_SLOTS.map((slot) => (
-                                    <option key={slot} value={slot}>
-                                        {slot} (PST)
-                                    </option>
-                                ))}
-                            </select>
+                            />
                         </div>
                     </div>
                 </div>
             </Card>
+
+            {Object.values(appointmentForm.errors).map((error, index) => (
+                <p key={index} role="alert" className="text-sm text-red-700">
+                    {error}
+                </p>
+            ))}
 
             {/* Questionnaire */}
             <Card

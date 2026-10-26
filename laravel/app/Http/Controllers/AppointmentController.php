@@ -22,7 +22,11 @@ class AppointmentController extends Controller
         $student = Student::where('user_id', Ids::object($request->user()->id))->first();
         $appointments = $student ? Views::appointments(Appointment::where('student_id', Ids::object($student->id))->latest()->paginate(15)) : null;
 
-        return Inertia::render('Student/BookAppointment', ['appointments' => $appointments, 'hasIntake' => (bool) $student]);
+        return Inertia::render('Student/BookAppointment', [
+            'appointments' => $appointments,
+            'hasIntake' => (bool) $student,
+            'followUps' => Appointments::pendingFollowUps($student),
+        ]);
     }
 
     public function wizard(Request $request)
@@ -56,11 +60,11 @@ class AppointmentController extends Controller
     public function update(Request $request, string $appointment, Appointments $service)
     {
         $rules = [
-            'action' => 'required|in:assign,urgent,accept,counselor_accept,student_confirm,request_reassignment,reschedule,complete,cancel',
+            'action' => 'required|in:assign,urgent,accept,counselor_accept,student_confirm,student_decline,request_reassignment,reschedule,complete,cancel',
             'version' => 'required|integer|min:1',
             'counselor_id' => 'required_if:action,assign|nullable|string|regex:/^[a-f0-9]{24}$/i',
             'onboarding_note' => 'nullable|string|max:500',
-            'note' => 'required_if:action,request_reassignment|nullable|string|max:1000',
+            'note' => 'required_if:action,request_reassignment,student_decline|nullable|string|max:1000',
         ];
 
         if ($request->input('action') === 'reschedule') {
