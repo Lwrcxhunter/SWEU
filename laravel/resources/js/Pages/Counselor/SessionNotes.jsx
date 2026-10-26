@@ -32,17 +32,12 @@ export default function SessionNotes({
     const [slotsLoading, setSlotsLoading] = useState(false);
     const followUp = useForm({
         targetDate: "",
-<<<<<<< HEAD
         scheduledTime: "",
-        mode: appointment.channel === "online" ? "Virtual" : "F2F",
-=======
-        timeSlot: "AM",
         mode: ["virtual", "online", "telecounseling"].includes(
             appointment.channel,
         )
             ? "Virtual"
             : "F2F",
->>>>>>> 47baedd8aad5f4594ef4f42774f1752249fe60fb
     });
     const form = useForm({
         notes: session?.notes || "",

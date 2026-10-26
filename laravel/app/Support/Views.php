@@ -73,7 +73,6 @@ class Views
             'signed_at' => $appointment->signed_at ? ($appointment->signed_at instanceof \DateTimeInterface ? $appointment->signed_at->format('Y-m-d H:i:s') : (string) $appointment->signed_at) : null,
             'channel' => $appointment->channel,
             'type' => $appointment->type,
-            'urgency_level' => $appointment->urgency_level,
             'scheduled_date' => $appointment->scheduled_date,
             'scheduled_time' => $appointment->scheduled_time,
             'preferred_period' => $appointment->preferred_period ?? ($appointment->scheduled_time ? ((int) $appointment->scheduled_time < 12 ? 'AM' : 'PM') : null),

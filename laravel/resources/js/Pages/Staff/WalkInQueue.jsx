@@ -10,7 +10,6 @@ import {
     ListFilter,
     Filter,
     X,
-    AlertTriangle,
     ArrowRight,
     ChevronDown,
     CheckCircle2,
@@ -169,29 +168,6 @@ export default function WalkInQueue({
                 </div>
             }
         >
-            {!isCalendar && metrics.urgent_count > 0 && (
-                <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50/90 p-4 md:p-5 text-sm text-rose-950 shadow-sm shadow-rose-950/5">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-600 text-white shadow-sm">
-                            <AlertTriangle size={18} />
-                        </div>
-                        <p className="font-bold text-rose-900">
-                            {metrics.urgent_count} urgent walk-in
-                            {metrics.urgent_count > 1 ? "s" : ""} require
-                            immediate triage
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-rose-700 active:scale-[0.98] transition-all"
-                        onClick={() => navigate({ stage: "urgent" })}
-                    >
-                        <span>Review</span>
-                        <ArrowRight size={14} />
-                    </button>
-                </div>
-            )}
-
             {isCalendar ? (
                 <CounselorCalendar
                     counselors={counselors}

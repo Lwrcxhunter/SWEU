@@ -15,7 +15,7 @@ class AlertController extends Controller
             return Inertia::render('Alerts', []);
         }
 
-        return Inertia::render('Alerts', ['alerts' => OfficeAlert::where('user_id', Ids::object($request->user()->id))->latest()->paginate(20)
+        return Inertia::render('Alerts', ['alerts' => OfficeAlert::where('kind', '!=', 'urgent')->where('user_id', Ids::object($request->user()->id))->latest()->paginate(20)
             ->through(fn ($a) => ['id' => (string) $a->id, 'message' => $a->message, 'kind' => $a->kind, 'read' => (bool) $a->read_at])]);
     }
 

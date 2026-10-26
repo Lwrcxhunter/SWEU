@@ -34,7 +34,6 @@ class ReportController extends Controller
             'college' => 'nullable|string',
             'counselor_id' => 'nullable|string',
             'type' => 'nullable|string|in:all,walk_in,scheduled',
-            'urgency' => 'nullable|string|in:all,urgent,standard',
         ]);
 
         [$start, $end, $activePreset, $from, $to] = $this->resolveDateRange(
@@ -48,7 +47,6 @@ class ReportController extends Controller
         $selectedService = $filters['service'] ?? 'all';
         $selectedStatus = $filters['status'] ?? 'all';
         $selectedType = $filters['type'] ?? 'all';
-        $selectedUrgency = $filters['urgency'] ?? 'all';
 
         // Preload active counselors
         $counselors = User::where('role', 'counselor')
@@ -83,9 +81,6 @@ class ReportController extends Controller
             } else {
                 $appointmentQuery->where(fn ($q) => $q->whereNull('type')->orWhere('type', '!=', 'walk_in'));
             }
-        }
-        if ($selectedUrgency !== 'all') {
-            $appointmentQuery->where('urgency_level', $selectedUrgency);
         }
         if ($selectedStatus !== 'all') {
             if ($selectedStatus === 'assigned') {
@@ -178,7 +173,6 @@ class ReportController extends Controller
             'total_appointments' => (clone $appointmentQuery)->count(),
             'walk_ins' => (clone $appointmentQuery)->where('type', 'walk_in')->count(),
             'scheduled' => (clone $appointmentQuery)->where(fn ($q) => $q->whereNull('type')->orWhere('type', '!=', 'walk_in'))->count(),
-            'urgent' => (clone $appointmentQuery)->where('urgency_level', 'urgent')->count(),
             'completed_appointments' => (clone $appointmentQuery)->where('status', 'completed')->count(),
             'total_testing' => (clone $testingQuery)->count(),
             'approved_testing' => (clone $testingQuery)->where('status', 'approved')->count(),
@@ -240,7 +234,6 @@ class ReportController extends Controller
                 ->where('counselor_id', Ids::object($cid));
             $assignedCount = (clone $cAppts)->count();
             $completedCount = (clone $cAppts)->where('status', 'completed')->count();
-            $urgentCount = (clone $cAppts)->where('urgency_level', 'urgent')->count();
             $casesCount = CounselingCase::whereBetween('created_at', [$start, $end])
                 ->where('counselor_id', Ids::object($cid))->count();
 
@@ -249,7 +242,6 @@ class ReportController extends Controller
                 'name' => $c->full_name,
                 'assigned' => $assignedCount,
                 'completed' => $completedCount,
-                'urgent' => $urgentCount,
                 'cases' => $casesCount,
             ];
         }
@@ -268,7 +260,6 @@ class ReportController extends Controller
                     'time' => $ap->scheduled_time ?? ($ap->preferred_period ?? '—'),
                     'college' => $studentCollegeLookup[$sid] ?? '—',
                     'type' => $ap->type === 'walk_in' ? 'Walk-in' : 'Scheduled',
-                    'urgency' => $ap->urgency_level ?? 'standard',
                     'counselor' => isset($counselorsMap[$cid]) ? $counselorsMap[$cid]->full_name : 'Unassigned',
                     'status' => $ap->status,
                     'created_at' => $ap->created_at ? Carbon::parse($ap->created_at)->toIso8601String() : '',
@@ -286,7 +277,6 @@ class ReportController extends Controller
                     'time' => $tq->preferred_session ?? '—',
                     'college' => strtoupper($code),
                     'type' => $tq->test_type ?? 'Psychological Test',
-                    'urgency' => 'standard',
                     'counselor' => $tq->requester_name ?? 'Faculty/Coordinator',
                     'status' => $tq->status,
                     'created_at' => $tq->created_at ? Carbon::parse($tq->created_at)->toIso8601String() : '',
@@ -307,14 +297,12 @@ class ReportController extends Controller
 
             $mAppts = Appointment::whereBetween('created_at', [$mStart, $mEnd])->count();
             $mTests = TestingRequest::whereBetween('created_at', [$mStart, $mEnd])->count();
-            $mUrgent = Appointment::whereBetween('created_at', [$mStart, $mEnd])->where('urgency_level', 'urgent')->count();
             $mWalkIn = Appointment::whereBetween('created_at', [$mStart, $mEnd])->where('type', 'walk_in')->count();
 
             $monthlyTrends[] = [
                 'month' => $mLabel,
                 'appointments' => $mAppts,
                 'testing' => $mTests,
-                'urgent' => $mUrgent,
                 'walk_ins' => $mWalkIn,
                 'total' => $mAppts + $mTests,
             ];
@@ -368,11 +356,6 @@ class ReportController extends Controller
                 'morning_pct' => $totalTimes > 0 ? round(($morningCount / $totalTimes) * 100, 1) : 50,
                 'afternoon_pct' => $totalTimes > 0 ? round(($afternoonCount / $totalTimes) * 100, 1) : 50,
             ],
-            'urgencyRatio' => [
-                'urgent' => $kpis['urgent'],
-                'standard' => max(0, $kpis['total_appointments'] - $kpis['urgent']),
-                'urgent_pct' => $kpis['total_appointments'] > 0 ? round(($kpis['urgent'] / $kpis['total_appointments']) * 100, 1) : 0,
-            ],
             'typeRatio' => [
                 'walk_in' => $kpis['walk_ins'],
                 'scheduled' => $kpis['scheduled'],
@@ -397,7 +380,6 @@ class ReportController extends Controller
                 fputcsv($out, ['Total Appointments', $kpis['total_appointments']], ',', '"', '');
                 fputcsv($out, ['Walk-in Appointments', $kpis['walk_ins']], ',', '"', '');
                 fputcsv($out, ['Scheduled Appointments', $kpis['scheduled']], ',', '"', '');
-                fputcsv($out, ['Urgent Cases Triaged', $kpis['urgent']], ',', '"', '');
                 fputcsv($out, ['Completed Sessions', $kpis['completed_appointments']], ',', '"', '');
                 fputcsv($out, ['Total Testing Requests', $kpis['total_testing']], ',', '"', '');
                 fputcsv($out, ['Approved Testing Requests', $kpis['approved_testing']], ',', '"', '');
@@ -422,13 +404,12 @@ class ReportController extends Controller
                 // Section 4: Counselor Caseload
                 fputcsv($out, [], ',', '"', '');
                 fputcsv($out, ['--- COUNSELOR CASELOAD ---'], ',', '"', '');
-                fputcsv($out, ['Counselor Name', 'Assigned Appointments', 'Completed Sessions', 'Urgent Cases', 'Cases Managed'], ',', '"', '');
+                fputcsv($out, ['Counselor Name', 'Assigned Appointments', 'Completed Sessions', 'Cases Managed'], ',', '"', '');
                 foreach ($counselorBreakdown as $cb) {
                     fputcsv($out, [
                         $cb['name'],
                         $cb['assigned'],
                         $cb['completed'],
-                        $cb['urgent'],
                         $cb['cases'],
                     ], ',', '"', '');
                 }
@@ -458,7 +439,6 @@ class ReportController extends Controller
                 'college' => $selectedCollege,
                 'counselor_id' => $selectedCounselor,
                 'type' => $selectedType,
-                'urgency' => $selectedUrgency,
             ],
             'from' => $from,
             'to' => $to,

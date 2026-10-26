@@ -64,7 +64,7 @@ class AppointmentController extends Controller
     public function update(Request $request, string $appointment, Appointments $service)
     {
         $rules = [
-            'action' => 'required|in:assign,urgent,accept,counselor_accept,student_confirm,student_decline,request_reassignment,reschedule,complete,cancel',
+            'action' => 'required|in:assign,accept,counselor_accept,student_confirm,student_decline,request_reassignment,reschedule,complete,cancel',
             'version' => 'required|integer|min:1',
             'counselor_id' => 'required_if:action,assign|nullable|string|regex:/^[a-f0-9]{24}$/i',
             'onboarding_note' => 'nullable|string|max:500',

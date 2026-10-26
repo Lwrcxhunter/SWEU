@@ -147,17 +147,17 @@ class StaffAvailabilityTest extends GuidanceTestCase
         $this->assertNull($appointment->fresh()->counselor_id);
     }
 
-    public function test_urgent_assignment_still_requires_on_duty_and_checks_leave(): void
+    public function test_legacy_urgent_flag_does_not_bypass_counseling_hours(): void
     {
         $staff = $this->user('staff');
-        $counselor = $this->user('counselor', ['on_duty' => false]);
+        $counselor = $this->user('counselor');
         $appointment = $this->appointment($counselor, status: 'pending_assignment');
-        $appointment->update(['counselor_id' => null, 'type' => 'walk_in', 'urgency_level' => 'urgent']);
+        $appointment->update(['counselor_id' => null, 'type' => 'walk_in', 'urgency_level' => 'urgent', 'scheduled_time' => '18:00']);
         $this->actingAs($staff)->get('/queue')->assertInertia(fn (Assert $page) => $page
-            ->where('appointments.data.0.assignment_options.0.status', 'off_duty'));
-        $counselor->update(['on_duty' => true, 'leaves' => [['date' => today()->toDateString()]]]);
+            ->where('appointments.data.0.assignment_options.0.available', false));
         $this->patch('/appointments/'.$appointment->id, ['action' => 'assign', 'version' => 1, 'counselor_id' => (string) $counselor->id])
             ->assertSessionHasErrors('counselor_id');
+        $this->assertNull($appointment->fresh()->counselor_id);
     }
 
     public function test_filters_apply_before_pagination_and_keep_testing_count(): void

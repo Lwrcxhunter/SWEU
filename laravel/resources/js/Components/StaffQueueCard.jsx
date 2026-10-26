@@ -76,8 +76,7 @@ export default function StaffQueueCard({ item, counselors = [] }) {
     const available = options.filter((c) => c.availability?.available);
     const unavailable = options.filter((c) => !c.availability?.available);
     const selected = options.find((c) => c.id === form.data.counselor_id);
-    const urgent = item.urgency_level === "urgent";
-    const needsTime = !item.scheduled_time && !urgent;
+    const needsTime = !item.scheduled_time;
     const canAssign =
         selected?.availability?.available &&
         (!needsTime ||
@@ -133,12 +132,6 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                 {item.student?.full_name ||
                                     "Unavailable student account"}
                             </h3>
-                            {urgent && !closed && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-700 border border-rose-200">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
-                                    Urgent
-                                </span>
-                            )}
                         </div>
                         <p className="mt-0.5 text-xs text-slate-500 font-medium">
                             <span className="font-semibold text-slate-700">
@@ -538,16 +531,6 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                         </div>
                         {!closed && (
                             <div className="flex flex-wrap gap-2.5">
-                                {item.type === "walk_in" && !urgent && (
-                                    <Button
-                                        secondary
-                                        disabled={form.processing}
-                                        onClick={() => perform("urgent")}
-                                        className="rounded-xl px-3 py-1.5 text-xs"
-                                    >
-                                        Flag urgent
-                                    </Button>
-                                )}
                                 <button
                                     type="button"
                                     disabled={form.processing}

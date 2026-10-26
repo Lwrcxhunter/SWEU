@@ -142,20 +142,16 @@ class GuidanceTest extends GuidanceTestCase
         $this->post('/appointments', ['channel' => 'invalid', 'scheduled_date' => '2026-10-01', 'scheduled_time' => '09:11'])->assertSessionHasErrors(['channel', 'scheduled_date', 'scheduled_time']);
     }
 
-    public function test_urgent_queue_alerts_only_on_duty_available_counselors(): void
+    public function test_removed_urgent_action_is_rejected_without_changing_the_appointment(): void
     {
         $staff = $this->user('staff');
-        $ready = $this->user('counselor');
-        $this->user('counselor', ['on_duty' => false]);
-        $this->user('counselor', ['available' => false]);
         $a = app(Appointments::class)->walkIn($this->student());
-        $this->actingAs($staff)->patch('/appointments/'.$a->id, ['action' => 'urgent', 'version' => 1])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame('urgent', $a->fresh()->urgency_level);
-        $alerts = OfficeAlert::where('kind', 'urgent')->get();
-        $this->assertCount(1, $alerts);
-        $this->assertTrue(Ids::same($ready->id, $alerts->first()->user_id));
-        $this->patch('/appointments/'.$a->id, ['action' => 'assign', 'version' => 2, 'counselor_id' => (string) $ready->id])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame('assigned_pending_counselor', $a->fresh()->status);
+        $this->actingAs($staff)->patch('/appointments/'.$a->id, ['action' => 'urgent', 'version' => 1])
+            ->assertSessionHasErrors('action');
+        $this->assertSame('pending_assignment', $a->fresh()->status);
+        $this->assertSame(1, $a->fresh()->version);
+        $this->assertNull($a->fresh()->urgency_level);
+        $this->assertSame(0, OfficeAlert::where('kind', 'urgent')->count());
     }
 
     public function test_stale_updates_and_illegal_transitions_do_not_overwrite(): void
@@ -342,16 +338,15 @@ class GuidanceTest extends GuidanceTestCase
         $this->assertFalse(CounselingSession::first()->is_flagged_for_followup);
     }
 
-    public function test_normal_walk_in_uses_slot_boundaries_and_urgent_assignment_bypasses_them(): void
+    public function test_walk_in_assignment_preserves_slot_boundaries(): void
     {
-        $this->travelTo(Carbon::parse('2026-10-04 10:13:00', 'Asia/Manila'));
+        $this->travelTo(Carbon::parse('2026-10-05 10:13:00', 'Asia/Manila'));
         $a = app(Appointments::class)->walkIn($this->student());
         $this->assertSame('10:30', $a->scheduled_time);
         $staff = $this->user('staff');
         $counselor = $this->user('counselor');
-        $this->actingAs($staff)->patch('/appointments/'.$a->id, ['action' => 'urgent', 'version' => 1])->assertRedirect()->assertSessionHasNoErrors();
-        $this->patch('/appointments/'.$a->id, ['action' => 'assign', 'version' => 2, 'counselor_id' => (string) $counselor->id])->assertRedirect()->assertSessionHasNoErrors();
-        $this->assertSame('10:13', $a->fresh()->scheduled_time);
-        $this->assertNull($a->fresh()->slot_key);
+        $this->actingAs($staff)->patch('/appointments/'.$a->id, ['action' => 'assign', 'version' => 1, 'counselor_id' => (string) $counselor->id])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('10:30', $a->fresh()->scheduled_time);
+        $this->assertNotNull($a->fresh()->slot_key);
     }
 }

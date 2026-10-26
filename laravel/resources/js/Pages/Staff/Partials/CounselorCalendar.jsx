@@ -596,9 +596,8 @@ export default function CounselorCalendar({
                 </div>
             )}
             <p className="border-t border-sky-100 bg-slate-50/50 px-5 py-3 text-xs leading-5 text-slate-500">
-                Schedule view: 8:00 AM–5:00 PM, with a noon break. “On duty now”
-                applies to urgent walk-ins; use the dated time blocks for
-                advance bookings. Availability is checked again when assigning.
+                Use the dated time blocks to check counselor availability.
+                Availability is checked again when assigning.
             </p>
         </section>
     );

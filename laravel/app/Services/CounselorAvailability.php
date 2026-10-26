@@ -23,13 +23,10 @@ class CounselorAvailability
     ];
 
     // Appointments currently reserve one 30-minute slot throughout the application.
-    public function check(User $counselor, string $date, ?string $time = null, ?string $period = null, iterable $bookings = [], ?string $excludeId = null, bool $urgent = false): array
+    public function check(User $counselor, string $date, ?string $time = null, ?string $period = null, iterable $bookings = [], ?string $excludeId = null): array
     {
         if (! $counselor->active) {
             return $this->result('unavailable', 'Unavailable', 'Not accepting new bookings.');
-        }
-        if ($urgent && ! $counselor->on_duty) {
-            return $this->result('off_duty', 'Off duty', 'Urgent walk-ins require an on-duty counselor.');
         }
         $savedSchedule = CounselorSchedule::where('counselor_id', Ids::object((string) $counselor->id))->first();
         foreach ($counselor->getLeaves() as $leave) {
@@ -64,7 +61,7 @@ class CounselorAvailability
             $checks = [];
             $times = [];
             foreach ($this->times(strtoupper($period)) as $candidate) {
-                $check = $this->check($counselor, $date, $candidate, $period, $bookings, $excludeId, $urgent);
+                $check = $this->check($counselor, $date, $candidate, $period, $bookings, $excludeId);
                 $checks[] = $check;
                 if ($check['available']) {
                     $times[] = $candidate;
@@ -126,30 +123,28 @@ class CounselorAvailability
         if (! $counselor->available) {
             return $this->result('unavailable', 'Unavailable', 'Not accepting new bookings.');
         }
-        if (! $urgent) {
-            $withinHours = false;
-            if ($savedSchedule) {
-                $dayOfWeek = CarbonImmutable::parse($date)->dayOfWeek;
-                foreach ($savedSchedule->availability ?? [] as $slot) {
-                    if ((int) $slot['dayOfWeek'] === $dayOfWeek
-                        && $start >= $this->minutes($slot['startTime'])
-                        && $end <= $this->minutes($slot['endTime'])) {
-                        $withinHours = true;
-                        break;
-                    }
-                }
-            } else {
-                foreach ($counselor->getCounselorSchedule() as $slot) {
-                    [$slotStart, $slotEnd] = $this->range($slot);
-                    if (strcasecmp($slot['day'] ?? '', $day) === 0 && $start >= $slotStart && $end <= $slotEnd) {
-                        $withinHours = true;
-                        break;
-                    }
+        $withinHours = false;
+        if ($savedSchedule) {
+            $dayOfWeek = CarbonImmutable::parse($date)->dayOfWeek;
+            foreach ($savedSchedule->availability ?? [] as $slot) {
+                if ((int) $slot['dayOfWeek'] === $dayOfWeek
+                    && $start >= $this->minutes($slot['startTime'])
+                    && $end <= $this->minutes($slot['endTime'])) {
+                    $withinHours = true;
+                    break;
                 }
             }
-            if (! $withinHours) {
-                return $this->result('off_schedule', 'Outside counseling hours', 'No counseling hours cover this appointment.');
+        } else {
+            foreach ($counselor->getCounselorSchedule() as $slot) {
+                [$slotStart, $slotEnd] = $this->range($slot);
+                if (strcasecmp($slot['day'] ?? '', $day) === 0 && $start >= $slotStart && $end <= $slotEnd) {
+                    $withinHours = true;
+                    break;
+                }
             }
+        }
+        if (! $withinHours) {
+            return $this->result('off_schedule', 'Outside counseling hours', 'No counseling hours cover this appointment.');
         }
 
         return array_merge($this->result('available', 'Available', 'Available for counseling assignment.'), ['times' => [$time]]);

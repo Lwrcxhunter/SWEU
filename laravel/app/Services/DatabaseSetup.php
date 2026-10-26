@@ -21,7 +21,7 @@ class DatabaseSetup
         $db->appointments->createIndex(['slot_key' => 1], ['unique' => true, 'partialFilterExpression' => ['slot_key' => ['$type' => 'string']]]);
         $db->appointments->createIndex(['counselor_id' => 1, 'scheduled_date' => 1]);
         $db->appointments->createIndex(['student_id' => 1, 'created_at' => -1]);
-        $db->appointments->createIndex(['status' => 1, 'urgency_level' => -1, 'created_at' => 1]);
+        $db->appointments->createIndex(['status' => 1, 'created_at' => 1]);
         $db->counseling_sessions->createIndex(['appointment_id' => 1], ['unique' => true]);
         $db->counseling_sessions->createIndex(
             ['case_id' => 1, 'session_number' => 1],

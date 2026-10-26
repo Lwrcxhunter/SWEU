@@ -325,13 +325,6 @@ export function StatusBadge({ status, className = "" }) {
 
 export function Badge({ value, className = "" }) {
     let style = "bg-sky-50 text-sky-800 border-sky-200";
-    if (value === "urgent") {
-        style = "bg-rose-50 text-rose-700 border-rose-200";
-    } else if (["completed", "closed", "accepted"].includes(value)) {
-        style = "bg-emerald-50 text-emerald-700 border-emerald-200";
-    } else if (["pending", "action_needed"].includes(value)) {
-        style = "bg-amber-50 text-amber-700 border-amber-200";
-    }
 
     return (
         <span
@@ -382,11 +375,6 @@ export function AppointmentSummary({ item }) {
                     {item.student?.school_id_number && (
                         <span className="text-xs text-slate-400">
                             ({item.student.school_id_number})
-                        </span>
-                    )}
-                    {item.urgency_level === "urgent" && (
-                        <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rose-800">
-                            Urgent
                         </span>
                     )}
                 </div>

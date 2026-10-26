@@ -50,14 +50,13 @@ class CounselorSchedules
         $data = $this->validate($schedule);
         $appointments = Appointment::where('counselor_id', Ids::object($counselorId))
             ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
-            ->get(['_id', 'scheduled_date', 'scheduled_time', 'urgency_level']);
+            ->get(['_id', 'scheduled_date', 'scheduled_time']);
         $conflicts = $appointments->filter(fn (Appointment $appointment) => ! $this->allowsWithSchedule(
             $data,
             [
                 'scheduled_date' => $appointment->scheduled_date,
                 'scheduled_time' => $appointment->scheduled_time,
             ],
-            $appointment->urgency_level === 'urgent',
         ));
 
         if ($conflicts->isNotEmpty()) {
@@ -75,17 +74,17 @@ class CounselorSchedules
         );
     }
 
-    public function allowsAppointment(string $counselorId, array $appointment, bool $urgent = false): bool
+    public function allowsAppointment(string $counselorId, array $appointment): bool
     {
         $schedule = CounselorSchedule::where('counselor_id', Ids::object($counselorId))->first();
         if (! $schedule) {
             return true;
         }
 
-        return $this->allowsWithSchedule($schedule->toArray(), $appointment, $urgent);
+        return $this->allowsWithSchedule($schedule->toArray(), $appointment);
     }
 
-    private function allowsWithSchedule(array $schedule, array $appointment, bool $urgent = false): bool
+    private function allowsWithSchedule(array $schedule, array $appointment): bool
     {
         $date = Carbon::createFromFormat('Y-m-d', $appointment['scheduled_date'], config('app.timezone'));
         $weekday = $date->dayOfWeek;
@@ -100,10 +99,6 @@ class CounselorSchedules
             if ($startAt->lt($leaveEnd) && $endAt->gt($leaveStart)) {
                 return false;
             }
-        }
-
-        if ($urgent) {
-            return true;
         }
 
         $withinAvailability = collect($schedule['availability'] ?? [])->contains(

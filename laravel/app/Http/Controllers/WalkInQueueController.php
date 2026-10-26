@@ -27,7 +27,7 @@ class WalkInQueueController extends Controller
         }
 
         $filters = $request->validate([
-            'stage' => 'nullable|in:all,unassigned,waiting,student,confirmed,urgent,completed,cancelled',
+            'stage' => 'nullable|in:all,unassigned,waiting,student,confirmed,completed,cancelled',
             'search' => 'nullable|string|max:100',
             'appointment_date' => 'nullable|date_format:Y-m-d',
             'calendar_date' => 'nullable|date_format:Y-m-d',
@@ -48,7 +48,6 @@ class WalkInQueueController extends Controller
             'waiting' => $queue->whereNotNull('counselor_id')->whereIn('status', ['assigned', 'assigned_pending_accept', 'assigned_pending_counselor', 'rescheduled']),
             'student' => $queue->where('status', 'counselor_accepted_pending_student'),
             'confirmed' => $queue->whereIn('status', ['accepted', 'confirmed']),
-            'urgent' => $queue->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)->where('urgency_level', 'urgent'),
             'completed', 'cancelled' => $queue->where('status', $stage),
             default => null,
         };
@@ -67,7 +66,7 @@ class WalkInQueueController extends Controller
         $counselorIds = $users->map(fn ($user) => Ids::object((string) $user->id))->all();
         $schedulesMap = CounselorSchedule::whereIn('counselor_id', $counselorIds)->get()->keyBy(fn ($s) => (string) $s->counselor_id);
 
-        $allAppointmentsSummary = Appointment::all(['status', 'counselor_id', 'urgency_level']);
+        $allAppointmentsSummary = Appointment::all(['status', 'counselor_id']);
         $activeAppointmentsSummary = $allAppointmentsSummary->whereIn('status', CounselorAvailability::ACTIVE_STATUSES);
         $activeSessionsByCounselor = $activeAppointmentsSummary
             ->filter(fn ($a) => ! empty($a->counselor_id))
@@ -96,23 +95,19 @@ class WalkInQueueController extends Controller
 
                     return $appointment;
                 }
-                $urgent = $appointment['urgency_level'] === 'urgent';
                 $appointmentsByCounselor = $byCounselor;
                 $appointment['assignment_options'] = $users->map(
-                    function ($user) use ($appointment, $urgent, $availability, $schedules, $appointmentsByCounselor, $schedulesMap) {
+                    function ($user) use ($appointment, $availability, $schedules, $appointmentsByCounselor, $schedulesMap) {
                         $counselorBookings = $appointmentsByCounselor->get((string) $user->id, collect());
-                        $scheduledDate = $urgent ? today()->toDateString() : $appointment['scheduled_date'];
-                        $scheduledTime = $urgent
-                            ? now()->format('H:i')
-                            : ($appointment['scheduled_time'] ?? null);
+                        $scheduledDate = $appointment['scheduled_date'];
+                        $scheduledTime = $appointment['scheduled_time'] ?? null;
                         $result = $availability->check(
                             $user,
                             $scheduledDate,
                             $scheduledTime,
-                            $urgent ? null : ($appointment['preferred_period'] ?? null),
+                            $appointment['preferred_period'] ?? null,
                             $counselorBookings,
                             $appointment['id'],
-                            $urgent,
                         );
                         $schedule = $schedulesMap->get((string) $user->id);
                         if ($result['available'] && $schedule) {
@@ -120,7 +115,6 @@ class WalkInQueueController extends Controller
                                 $result['available'] = $schedules->allowsAppointment(
                                     (string) $user->id,
                                     ['scheduled_date' => $scheduledDate, 'scheduled_time' => $scheduledTime],
-                                    $urgent,
                                 );
                             } else {
                                 $result['times'] = array_values(array_filter(
@@ -219,7 +213,6 @@ class WalkInQueueController extends Controller
                 'confirmed_count' => $allAppointmentsSummary->whereIn('status', ['accepted', 'confirmed'])->count(),
                 'completed_count' => $allAppointmentsSummary->where('status', 'completed')->count(),
                 'cancelled_count' => $allAppointmentsSummary->where('status', 'cancelled')->count(),
-                'urgent_count' => $activeAppointmentsSummary->where('urgency_level', 'urgent')->count(),
                 'open_testing_count' => TestingRequest::where('status', 'pending')->count(),
                 'counselors_on_duty' => $users->where('on_duty', true)->count(),
                 'counselors_total' => $users->count(),

@@ -291,13 +291,7 @@ export default function BookAppointment({
                                                                       : "Schedule Pending Assignment"}
                                                             </span>
                                                         </h3>
-                                                        {item.urgency_level ===
-                                                            "urgent" && (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase tracking-wide">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
-                                                                Urgent Priority
-                                                            </span>
-                                                        )}
+
                                                         {item.type ===
                                                             "follow_up" && (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2 py-0.5 text-[10px] font-bold text-violet-700 uppercase tracking-wide">

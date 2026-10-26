@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import Sidebar from "@/Components/Sidebar";
 import Header from "@/Components/Header";
@@ -10,12 +10,7 @@ export default function AuthenticatedLayout({
     children,
     action,
 }) {
-    const {
-        auth,
-        flash,
-        unreadAlerts = [],
-        unreadAlertCount = 0,
-    } = usePage().props;
+    const { auth, flash, unreadAlertCount = 0 } = usePage().props;
 
     const [menu, setMenu] = useState(false);
     const refreshNotifications =
@@ -47,7 +42,10 @@ export default function AuthenticatedLayout({
         document.addEventListener("visibilitychange", handleVisibilityChange);
         return () => {
             clearInterval(timer);
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
         };
     }, [refreshNotifications]);
 
@@ -94,24 +92,6 @@ export default function AuthenticatedLayout({
                                     {action}
                                 </div>
                             )}
-                        </div>
-                    )}
-
-                    {/* Urgent Alert Banner */}
-                    {unreadAlerts.some((a) => a.kind === "urgent") && (
-                        <div
-                            role="alert"
-                            className="mb-5 rounded-2xl border border-rose-200 bg-rose-50/90 px-5 py-4 text-xs sm:text-sm text-rose-900 shadow-sm flex items-center justify-between gap-3"
-                        >
-                            <span>
-                                An urgent walk-in needs front-desk coordination.
-                            </span>
-                            <Link
-                                href={route("alerts.index")}
-                                className="font-bold underline hover:text-rose-950 shrink-0"
-                            >
-                                Review alerts &rarr;
-                            </Link>
                         </div>
                     )}
 

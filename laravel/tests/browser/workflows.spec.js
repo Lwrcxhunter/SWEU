@@ -201,10 +201,9 @@ test("student, staff, counselor, faculty and administrator workflows", async ({
     await logout();
 
     await login("staff");
-    await page
-        .getByRole("button", { name: "Flag urgent & alert counselors" })
-        .click();
-    await expect(page.getByText("Appointment updated.")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Flag urgent/ })).toHaveCount(
+        0,
+    );
     await expect(page.getByText("Academic workload")).toHaveCount(0);
     await page.screenshot({
         path: "test-results/staff-queue.png",
@@ -225,7 +224,7 @@ test("student, staff, counselor, faculty and administrator workflows", async ({
     await login("counselor");
     await expect(
         page.getByText("An urgent walk-in needs front-desk coordination."),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await page.getByRole("button", { name: "Accept request" }).click();
     await expect(page.getByText("Appointment updated.")).toBeVisible();
     await page.getByRole("link", { name: "View intake & notes" }).click();
