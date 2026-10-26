@@ -27,15 +27,15 @@ export default function Office({
 export function Card({ title, description, children, className = "" }) {
     return (
         <section
-            className={`office-card rounded-2xl border border-sky-100 bg-white p-5 md:p-6 shadow-sm shadow-sky-950/5 ${className}`}
+            className={`office-card rounded-xl border border-[#DCE5DF] bg-[#FFFFFF] p-5 shadow-[0_8px_24px_rgba(49,92,82,0.06)] md:p-6 ${className}`}
         >
             {title && (
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-base font-semibold text-[#315C52]">
                     {title}
                 </h2>
             )}
             {description && (
-                <p className="mt-1 text-xs leading-5 text-slate-500">
+                <p className="mt-1 text-xs leading-5 text-[#6F9D91]">
                     {description}
                 </p>
             )}
@@ -139,8 +139,8 @@ export function Button({
             aria-busy={isBusy}
             className={`office-button ${secondary ? "office-button-secondary" : "office-button-primary"} ${
                 secondary
-                    ? "border border-sky-200 bg-white text-sky-800 hover:bg-sky-50 focus:ring-sky-300"
-                    : "bg-sky-600 hover:bg-sky-700 text-white font-medium focus:ring-sky-400"
+                    ?                                         "border border-[#DCE5DF] bg-white text-[#315C52] hover:bg-[#DDEBE5] focus:ring-[#6F9D91]/30"
+                    : "bg-[#315C52] hover:bg-[#24483F] text-white font-medium focus:ring-[#6F9D91]/30"
             } inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
             {...props}
         >
@@ -196,7 +196,7 @@ export function Empty({
 }) {
     return (
         <div
-            className={`rounded-2xl border border-dashed border-sky-200 bg-white/70 px-6 py-10 text-center shadow-sm ${className}`}
+            className={`rounded-xl border border-dashed border-[#cbd9d0] bg-[#fffefa] px-6 py-10 text-center shadow-sm ${className}`}
         >
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 border border-sky-100 text-xl text-sky-600">
                 {icon || "📋"}

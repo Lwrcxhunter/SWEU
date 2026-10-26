@@ -38,14 +38,14 @@ export default function AuthenticatedLayout({
     }, [refreshNotifications]);
 
     return (
-        <div className="min-h-screen bg-sky-50/60 text-slate-800 font-sans antialiased">
+        <div className="min-h-screen bg-[#F7F5EF] text-[#315C52] font-sans antialiased">
             <Head title={title} />
 
             {/* Sidebar Navigation */}
             <Sidebar auth={auth} menu={menu} setMenu={setMenu} />
 
             {/* Main App Layout */}
-            <div className="lg:pl-64 flex flex-col min-h-screen transition-all">
+            <div className="lg:pl-[248px] flex flex-col min-h-screen transition-all">
                 {/* Global Header */}
                 <Header
                     auth={auth}
@@ -54,29 +54,28 @@ export default function AuthenticatedLayout({
                 />
 
                 {/* Main Content Area */}
-                <main className="workspace-main flex-1 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-                    {/* Page Hero Header Banner (Powder Blue Gradient) */}
+                <main className="workspace-main flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
                     {(title || eyebrow || action) && (
-                        <div className="mb-8 rounded-2xl bg-gradient-to-r from-sky-500 to-sky-600 text-white p-6 md:p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                            <div className="space-y-2 max-w-2xl">
+                        <div className="mb-7 flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
+                            <div className="max-w-3xl space-y-1">
                                 {eyebrow && (
-                                    <span className="inline-block rounded-full bg-white/20 backdrop-blur-sm px-3 py-1 text-[11px] font-bold tracking-wider uppercase text-white">
+                                    <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6F9D91]">
                                         {eyebrow}
                                     </span>
                                 )}
                                 {title && (
-                                    <h1 className="text-2xl font-bold md:text-3xl tracking-tight text-white">
+                                    <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#315C52] md:text-[30px]">
                                         {title}
                                     </h1>
                                 )}
                                 {description && (
-                                    <p className="text-sm leading-relaxed text-sky-100">
+                                    <p className="text-sm leading-relaxed text-[#6F9D91]">
                                         {description}
                                     </p>
                                 )}
                             </div>
                             {action && (
-                                <div className="shrink-0 pt-1 md:pt-0">
+                                <div className="shrink-0">
                                     {action}
                                 </div>
                             )}
@@ -87,7 +86,7 @@ export default function AuthenticatedLayout({
                     {unreadAlerts.some((a) => a.kind === "urgent") && (
                         <div
                             role="alert"
-                            className="mb-5 rounded-2xl border border-rose-200 bg-rose-50/90 px-5 py-4 text-xs sm:text-sm text-rose-900 shadow-sm flex items-center justify-between gap-3"
+                            className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50/90 px-5 py-4 text-xs text-rose-900 shadow-sm sm:text-sm"
                         >
                             <span>
                                 An urgent walk-in needs front-desk coordination.
@@ -105,7 +104,7 @@ export default function AuthenticatedLayout({
                     {flash?.success && (
                         <div
                             role="status"
-                            className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-xs sm:text-sm text-sky-900 shadow-sm flex items-center gap-2"
+                            className="mb-6 flex items-center gap-2 rounded-xl border border-[#cbded8] bg-[#edf4ef] px-5 py-4 text-xs text-[#245b54] shadow-sm sm:text-sm"
                         >
                             <svg
                                 className="w-5 h-5 text-sky-600 shrink-0"
@@ -128,7 +127,7 @@ export default function AuthenticatedLayout({
                     {children}
 
                     {/* App Footer */}
-                    <footer className="mt-16 border-t border-sky-100 pt-6 text-[11px] text-slate-400 flex flex-wrap justify-between items-center gap-2">
+                    <footer className="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-[#e1e4dc] pt-6 text-[11px] text-[#80908a]">
                         <span>
                             Bukidnon State University &bull; Student Welfare and
                             Engagement Unit (SWEU)

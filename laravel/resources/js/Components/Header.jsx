@@ -35,13 +35,13 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
     ];
 
     return (
-        <header className="workspace-header sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-sky-100 bg-white/85 backdrop-blur-md px-4 sm:px-6 lg:px-8">
+        <header className="workspace-header sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-[#DCE5DF] bg-[#F7F5EF]/90 px-4 backdrop-blur-md sm:px-6 lg:px-10">
             {/* Mobile / Compact Sidebar Toggle */}
             <div className="flex items-center gap-3">
                 <button
                     type="button"
                     onClick={onToggleMenu}
-                    className="lg:hidden p-2 rounded-xl border border-sky-200 text-sky-800 hover:bg-sky-50 transition"
+                    className="rounded-xl border border-[#cbd9d0] p-2 text-[#245b54] transition hover:bg-[#edf4ef] lg:hidden"
                     aria-label="Menu"
                 >
                     <MenuIcon className="h-5 w-5" />
@@ -57,7 +57,7 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
                 <Dropdown as="div" className="relative">
                     <MenuButton
                         aria-label={`Notifications, ${unreadCount} unread`}
-                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-sky-200 bg-sky-50/70 text-sky-700 hover:bg-sky-100 hover:text-sky-900 transition"
+                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#DCE5DF] bg-white/60 text-[#315C52] transition hover:bg-white hover:text-[#315C52]"
                     >
                         <Bell className="h-4 w-4" />
                         {unreadCount > 0 && (
@@ -125,9 +125,9 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
                 <Dropdown as="div" className="relative">
                     <MenuButton
                         aria-label="Open profile menu"
-                        className="flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50/50 p-1.5 pr-2.5 hover:bg-sky-100/60 transition"
+                        className="flex items-center gap-2 rounded-xl border border-[#DCE5DF] bg-white/60 p-1.5 pr-2.5 transition hover:bg-white"
                     >
-                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-sky-600 font-bold text-xs text-white shadow-sm">
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#315C52] font-bold text-xs text-white shadow-sm">
                             {initial}
                         </span>
                         <div className="hidden sm:block text-left">

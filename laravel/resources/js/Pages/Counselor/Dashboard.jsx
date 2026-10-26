@@ -1,15 +1,75 @@
-import { Link, router } from "@inertiajs/react";
-import { useEffect, useState } from "react";
-import Office, { Button, Card, Empty, Pagination } from "@/Components/Office";
-import CounselorAppointmentCard from "@/Components/CounselorAppointmentCard";
+import { Link, router, usePage } from "@inertiajs/react";
+import { useEffect } from "react";
+import {
+    Bell,
+    BriefcaseBusiness,
+    CalendarDays,
+    CheckCircle2,
+    ChevronRight,
+    Clock3,
+    Heart,
+    Megaphone,
+    UsersRound,
+} from "lucide-react";
+import Office, { Empty, Pagination } from "@/Components/Office";
+
+const updates = [
+    {
+        title: "Wellness Workshop: Managing Academic Stress",
+        meta: "Oct 24, 2025 · 9:00 AM - 12:00 PM · Guidance Office",
+        detail: "Open for all enrolled students. Limited slots.",
+        icon: UsersRound,
+        tone: "bg-[#DDEBE5] text-[#315C52]",
+    },
+    {
+        title: "Mental Health Awareness Month",
+        meta: "Oct 20, 2025 · University-wide",
+        detail: "Let's break the stigma. Take care of your mind.",
+        icon: Heart,
+        tone: "bg-[#DDEBE5] text-[#315C52]",
+    },
+    {
+        title: "Career Guidance Webinar",
+        meta: "Oct 16, 2025 · 2:00 PM - 4:00 PM · Online (MS Teams)",
+        detail: "For graduating students and final year.",
+        icon: BriefcaseBusiness,
+        tone: "bg-[#DDEBE5] text-[#315C52]",
+    },
+];
+
+function StatCard({ label, value, detail, icon: Icon, tone }) {
+    return (
+        <div className="flex min-h-[116px] items-start gap-3 rounded-xl border border-[#DCE5DF] bg-white p-4 shadow-[0_8px_24px_rgba(49,92,82,0.06)]">
+            <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${tone}`}>
+                <Icon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-[#315C52]">{label}</p>
+                <p className="mt-1 text-2xl font-bold leading-none text-[#315C52]">{value}</p>
+                <p className="mt-2 text-[10px] text-[#6F9D91]">{detail}</p>
+            </div>
+        </div>
+    );
+}
+
+function formatTime(value) {
+    if (!value) return "Time to be scheduled";
+    const [hour, minute] = value.split(":").map(Number);
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
 
 export default function Dashboard({ appointments, followups }) {
-    const [exportRange, setExportRange] = useState("day");
-    const [exportFormat, setExportFormat] = useState("csv");
-    const [exportFrom, setExportFrom] = useState("");
-    const [exportTo, setExportTo] = useState("");
-    const [exporting, setExporting] = useState(false);
-    const [exportError, setExportError] = useState("");
+    const { auth } = usePage().props;
+    const firstName = auth.user.full_name?.trim().split(/\s+/)[0] || "Counselor";
+    const appointmentItems = appointments.data || [];
+    const pendingCount = appointmentItems.filter((item) =>
+        ["pending", "pending_assignment", "assigned_pending_counselor"].includes(item.status),
+    ).length;
+    const completedCount = appointmentItems.filter((item) =>
+        ["completed", "closed"].includes(item.status),
+    ).length;
 
     useEffect(() => {
         const timer = setInterval(
@@ -19,169 +79,126 @@ export default function Dashboard({ appointments, followups }) {
         return () => clearInterval(timer);
     }, []);
 
-    const downloadReport = () => {
-        setExportError("");
-        if (
-            exportRange === "custom" &&
-            (!exportFrom || !exportTo || exportFrom > exportTo)
-        ) {
-            setExportError("Choose a valid custom date range.");
-            return;
-        }
-
-        const params = new URLSearchParams({
-            range: exportRange,
-            format: exportFormat,
-        });
-        if (exportRange === "custom") {
-            params.set("from", exportFrom);
-            params.set("to", exportTo);
-        }
-        const url = `${route("counselor.reports.sessions")}?${params.toString()}`;
-        if (exportFormat === "pdf")
-            window.open(url, "_blank", "noopener,noreferrer");
-        else window.location.assign(url);
-
-        setExporting(true);
-        window.setTimeout(() => setExporting(false), 1800);
-    };
+    const schedule = appointmentItems.slice(0, 5);
 
     return (
         <Office
-            title="Care, one conversation at a time."
-            eyebrow="Counselor workspace"
-            description="Review your assigned requests and keep follow-ups in view."
+            title={`Good morning, ${firstName}!`}
+            eyebrow=""
+            description="Here's a quick look at your day and the latest updates from the Guidance and Counseling Office."
         >
-            <div className="grid gap-6 xl:grid-cols-[1fr_350px]">
-                <Card title="My appointments">
-                    {!appointments.data.length ? (
-                        <Empty>No assigned appointments yet.</Empty>
-                    ) : (
-                        <div className="space-y-4">
-                            {appointments.data.map((a) => (
-                                <CounselorAppointmentCard key={a.id} item={a} />
-                            ))}
-                        </div>
-                    )}
-                    <Pagination data={appointments} />
-                </Card>
-                <div className="space-y-6">
-                    <Card title="Export case and session log">
-                        <div className="space-y-3">
-                            <label className="block text-xs font-semibold text-slate-700">
-                                Date range
-                                <select
-                                    value={exportRange}
-                                    onChange={(event) =>
-                                        setExportRange(event.target.value)
-                                    }
-                                    className="control mt-2"
-                                >
-                                    <option value="day">Today</option>
-                                    <option value="week">This week</option>
-                                    <option value="month">This month</option>
-                                    <option value="custom">Custom range</option>
-                                </select>
-                            </label>
-                            {exportRange === "custom" && (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label className="text-xs font-semibold text-slate-700">
-                                        From
-                                        <input
-                                            type="date"
-                                            value={exportFrom}
-                                            onChange={(event) =>
-                                                setExportFrom(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            className="control mt-2"
-                                        />
-                                    </label>
-                                    <label className="text-xs font-semibold text-slate-700">
-                                        To
-                                        <input
-                                            type="date"
-                                            value={exportTo}
-                                            onChange={(event) =>
-                                                setExportTo(event.target.value)
-                                            }
-                                            className="control mt-2"
-                                        />
-                                    </label>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard
+                    label="Recent Updates"
+                    value={updates.length}
+                    detail="new announcements"
+                    icon={Megaphone}
+                    tone="bg-[#F3E7DC] text-[#8D684E]"
+                />
+                <StatCard
+                    label="Today's Appointments"
+                    value={appointmentItems.length}
+                    detail="scheduled"
+                    icon={CalendarDays}
+                    tone="bg-[#DDEBE5] text-[#315C52]"
+                />
+                <StatCard
+                    label="Pending Requests"
+                    value={pendingCount}
+                    detail="needs attention"
+                    icon={Clock3}
+                    tone="bg-[#F3E7DC] text-[#8D684E]"
+                />
+                <StatCard
+                    label="Completed Sessions"
+                    value={completedCount}
+                    detail="this week"
+                    icon={CheckCircle2}
+                    tone="bg-[#E7EFE6] text-[#315C52]"
+                />
+            </div>
+
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+                <section className="overflow-hidden rounded-xl border border-[#DCE5DF] bg-white shadow-[0_8px_24px_rgba(49,92,82,0.06)]">
+                    <div className="flex items-center justify-between border-b border-[#EDF0EC] px-4 py-4">
+                        <h2 className="text-sm font-bold text-[#315C52]">Recent Updates</h2>
+                        <button type="button" className="text-[10px] font-semibold text-[#6F9D91] hover:text-[#315C52]">
+                            View all
+                        </button>
+                    </div>
+                    <div className="divide-y divide-[#EDF0EC] px-4">
+                        {updates.map((update) => {
+                            const Icon = update.icon;
+                            return (
+                                <div key={update.title} className="flex items-start gap-3 py-4">
+                                    <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${update.tone}`}>
+                                        <Icon className="h-4 w-4" aria-hidden="true" />
+                                    </span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-bold text-[#315C52]">{update.title}</p>
+                                        <p className="mt-1 text-[10px] text-[#6F9D91]">{update.meta}</p>
+                                        <p className="mt-1 text-[10px] text-[#6F9D91]">{update.detail}</p>
+                                    </div>
+                                    <ChevronRight className="mt-2 h-4 w-4 shrink-0 text-[#6F9D91]" />
                                 </div>
-                            )}
-                            <label className="block text-xs font-semibold text-slate-700">
-                                Format
-                                <select
-                                    value={exportFormat}
-                                    onChange={(event) =>
-                                        setExportFormat(event.target.value)
-                                    }
-                                    className="control mt-2"
-                                >
-                                    <option value="csv">CSV / Excel</option>
-                                    <option value="pdf">Printable PDF</option>
-                                </select>
-                            </label>
-                            {exportError && (
-                                <p
-                                    role="alert"
-                                    className="text-xs text-rose-700"
-                                >
-                                    {exportError}
-                                </p>
-                            )}
-                            <Button
-                                type="button"
-                                disabled={exporting}
-                                onClick={downloadReport}
-                            >
-                                {exporting ? "Preparing export…" : "Download"}
-                            </Button>
-                            {exportFormat === "pdf" && (
-                                <p className="text-[11px] leading-5 text-slate-500">
-                                    Opens a print-ready page. Choose “Save as
-                                    PDF” in the browser print dialog.
-                                </p>
-                            )}
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <div className="space-y-5">
+                    <section className="overflow-hidden rounded-xl border border-[#DCE5DF] bg-white shadow-[0_8px_24px_rgba(49,92,82,0.06)]">
+                        <div className="flex items-center justify-between border-b border-[#EDF0EC] px-4 py-4">
+                            <h2 className="text-sm font-bold text-[#315C52]">Today's Schedule</h2>
+                            <Link href={route("counselor.schedule")} className="text-[10px] font-semibold text-[#6F9D91] hover:text-[#315C52]">
+                                View calendar
+                            </Link>
                         </div>
-                    </Card>
-                    <Card
-                        title="Weekly schedule"
-                        description="Manage counseling hours, class blocks, and leave dates. Assignment status remains controlled separately."
-                    >
-                        <Link
-                            href={route("counselor.schedule")}
-                            className="inline-flex rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-                        >
-                            Open schedule planner
-                        </Link>
-                    </Card>
-                    <Card
-                        title="Follow-up list"
-                        description="Cases you flagged for continued support."
-                    >
-                        {followups.data.length ? (
-                            followups.data.map((f) => (
-                                <Link
-                                    key={f.appointment_id}
-                                    href={route("notes.show", f.appointment_id)}
-                                    className="block border-b border-sky-100/70 py-4 hover:text-sky-700 transition"
-                                >
-                                    <p className="text-sm font-semibold text-slate-800">
-                                        {f.student.full_name}
-                                    </p>
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        Follow up: {f.next_followup_date}
-                                    </p>
-                                </Link>
-                            ))
+                        {schedule.length ? (
+                            <div className="divide-y divide-[#EDF0EC] px-4">
+                                {schedule.map((item) => (
+                                    <Link
+                                        key={item.id}
+                                        href={route("notes.show", item.id)}
+                                        className="flex items-center gap-3 py-3 transition hover:bg-[#F7F5EF]"
+                                    >
+                                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-[#6F9D91] text-[#315C52]">
+                                            <Clock3 className="h-3.5 w-3.5" />
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[10px] font-semibold text-[#315C52]">
+                                                {formatTime(item.scheduled_time)}
+                                            </p>
+                                            <p className="truncate text-[10px] text-[#6F9D91]">
+                                                {item.type?.replaceAll("_", " ") || "Individual Counseling"}
+                                                {item.student?.full_name ? ` · ${item.student.full_name}` : ""}
+                                            </p>
+                                        </div>
+                                        <span className="rounded-full bg-[#DDEBE5] px-2 py-1 text-[9px] font-semibold capitalize text-[#315C52]">
+                                            {item.type === "meeting" ? "Meeting" : "Session"}
+                                        </span>
+                                    </Link>
+                                ))}
+                            </div>
                         ) : (
-                            <Empty>No follow-ups flagged.</Empty>
+                            <div className="p-4">
+                                <Empty>No appointments are scheduled.</Empty>
+                            </div>
                         )}
-                        <Pagination data={followups} />
-                    </Card>
+                        <div className="px-4 pb-3">
+                            <Pagination data={appointments} />
+                        </div>
+                    </section>
+
+                    <div className="rounded-xl border border-[#E8E2D6] bg-[#F1EEE5] px-5 py-5">
+                        <div className="flex items-center">
+                            <p className="wellness-quote text-[11px] leading-5 text-[#6F8177]">
+                                "You don't have to have it all figured out.<br />
+                                You just have to take the next right step."
+                                <span className="mt-1 block text-right text-[10px]">- Unknown</span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </Office>

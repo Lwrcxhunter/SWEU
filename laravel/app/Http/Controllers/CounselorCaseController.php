@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Services\CounselorAvailability;
 use App\Support\Ids;
+use App\Support\Views;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use MongoDB\BSON\UTCDateTime;
@@ -46,7 +47,42 @@ class CounselorCaseController extends Controller
             ];
         });
 
-        return Inertia::render('Counselor/Cases', ['cases' => $cases]);
+        $appointments = Appointment::where('counselor_id', $counselorId)
+            ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
+            ->whereBetween('scheduled_date', [
+                today()->subDays(30)->toDateString(),
+                today()->addDays(90)->toDateString(),
+            ])
+            ->orderBy('scheduled_date')
+            ->orderBy('scheduled_time')
+            ->get();
+
+        $appointmentViews = collect(Views::appointments($appointments->all()))
+            ->map(fn (array $appointment) => [
+                'id' => $appointment['id'],
+                'case_id' => $appointment['case_id'],
+                'student_name' => $appointment['student']['full_name'] ?? 'Unavailable account',
+                'scheduled_date' => $appointment['scheduled_date'],
+                'scheduled_time' => $appointment['scheduled_time'],
+                'type' => $appointment['type'],
+                'status' => $appointment['status'],
+            ])
+            ->values()
+            ->all();
+
+        $caseStatusCounts = CounselingCase::where('counselor_id', $counselorId)
+            ->get(['status'])
+            ->countBy('status')
+            ->all();
+
+        return Inertia::render('Counselor/Cases', [
+            'cases' => $cases,
+            'appointments' => $appointmentViews,
+            'caseStatusCounts' => $caseStatusCounts,
+            'tab' => in_array($request->string('tab')->toString(), ['schedule', 'ongoing', 'hold', 'closed'], true)
+                ? $request->string('tab')->toString()
+                : 'schedule',
+        ]);
     }
 
     public function show(Request $request, string $case)

@@ -32,17 +32,12 @@ export default function SessionNotes({
     const [slotsLoading, setSlotsLoading] = useState(false);
     const followUp = useForm({
         targetDate: "",
-<<<<<<< HEAD
-        scheduledTime: "",
-        mode: appointment.channel === "online" ? "Virtual" : "F2F",
-=======
         timeSlot: "AM",
         mode: ["virtual", "online", "telecounseling"].includes(
             appointment.channel,
         )
             ? "Virtual"
             : "F2F",
->>>>>>> 47baedd8aad5f4594ef4f42774f1752249fe60fb
     });
     const form = useForm({
         notes: session?.notes || "",
@@ -119,9 +114,9 @@ export default function SessionNotes({
     };
     return (
         <Office
-            title="A private space for care."
-            eyebrow="Counseling record"
-            description="Session notes are visible only to you as the assigned counselor."
+            title="Session notes"
+            eyebrow="Counseling case"
+            description="Record observations and next steps for this confidential student session."
         >
             <div className="grid gap-6 xl:grid-cols-[330px_1fr]">
                 <div className="space-y-6">

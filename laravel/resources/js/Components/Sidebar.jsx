@@ -22,7 +22,7 @@ export function Brand({ light = false }) {
             />
             <div className="min-w-0">
                 <div
-                    className={`text-base font-bold tracking-tight leading-tight ${
+                    className={`text-[15px] font-bold tracking-tight leading-tight ${
                         light ? "text-white" : "text-slate-800"
                     }`}
                 >
@@ -30,8 +30,8 @@ export function Brand({ light = false }) {
                     <span
                         className={
                             light
-                                ? "text-sky-300 font-semibold"
-                                : "text-sky-600 font-semibold"
+                                ? "text-[#a8d7c8] font-semibold"
+                                : "text-[#2f7168] font-semibold"
                         }
                     >
                         Guidance
@@ -39,7 +39,7 @@ export function Brand({ light = false }) {
                 </div>
                 <div
                     className={`text-[8.5px] font-semibold uppercase tracking-wider leading-tight ${
-                        light ? "text-sky-100/80" : "text-slate-500"
+                        light                         ? "text-[#c2d7cf]" : "text-slate-500"
                     }`}
                 >
                     Student Welfare &amp; Engagement Unit
@@ -69,19 +69,34 @@ export default function Sidebar({ auth, menu, setMenu }) {
     } else if (role === "counselor" && can("appointments.manage")) {
         navItems.push({
             name: "counselor.dashboard",
-            label: "My Caseload",
+            label: "Dashboard",
             icon: UserCheck,
-        });
-        navItems.push({
-            name: "counselor.schedule",
-            label: "My Schedule",
-            icon: Calendar,
         });
         if (can("notes.manage")) {
             navItems.push({
                 name: "counselor.cases.index",
-                label: "Counseling Cases",
+                label: "Caseload",
                 icon: ClipboardList,
+                active:
+                    route().current("counselor.cases.index") &&
+                    ["", "schedule"].includes(
+                        new URLSearchParams(url.split("?")[1] || "").get("tab") || "",
+                    ),
+            });
+            navItems.push({
+                name: "counselor.schedule",
+                label: "My Schedule",
+                icon: Calendar,
+            });
+            navItems.push({
+                name: "counselor.cases.index",
+                href: `${route("counselor.cases.index")}?tab=ongoing`,
+                label: "Counseling Cases",
+                icon: Users,
+                active:
+                    route().current("counselor.cases.index") &&
+                    new URLSearchParams(url.split("?")[1] || "").get("tab") ===
+                        "ongoing",
             });
             navItems.push({
                 name: "counselor.analytics",
@@ -162,7 +177,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
             {/* Mobile Backdrop Overlay */}
             {menu && (
                 <div
-                    className="fixed inset-0 z-40 bg-sky-950/40 backdrop-blur-xs lg:hidden transition-opacity"
+                    className="fixed inset-0 z-40 bg-[#102f2d]/55 backdrop-blur-xs lg:hidden transition-opacity"
                     onClick={() => setMenu(false)}
                     aria-hidden="true"
                 />
@@ -170,18 +185,18 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
             {/* Sidebar Element */}
             <aside
-                className={`workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gradient-to-b from-sky-100/70 via-sky-50/40 to-white border-r border-sky-100 text-slate-800 transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 ${
+                className={`workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col bg-[#315C52] text-white transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 ${
                     menu
                         ? "translate-x-0 shadow-2xl"
                         : "-translate-x-full lg:translate-x-0"
                 }`}
             >
                 {/* Header / Brand */}
-                <div className="flex shrink-0 items-center justify-between px-6 py-6 border-b border-sky-100/60">
+                <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
                     <Brand />
                     <button
                         type="button"
-                        className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-sky-100/80 transition"
+                        className="rounded-lg p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white lg:hidden"
                         onClick={() => setMenu(false)}
                         aria-label="Close menu"
                     >
@@ -190,17 +205,17 @@ export default function Sidebar({ auth, menu, setMenu }) {
                 </div>
 
                 {/* Scrollable Navigation */}
-                <div className="min-h-0 flex-1 overflow-y-auto scrollbar-none px-4 py-5">
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 scrollbar-none">
                     <p
                         className={
                             role === "staff"
-                                ? "px-3 pb-3 text-xs font-medium text-slate-500"
-                                : "px-3 pb-3 text-[10px] font-bold tracking-[.2em] uppercase text-sky-800/60"
+                                ? "px-3 pb-3 text-[10px] font-bold uppercase tracking-[.16em] text-white/50"
+                                : "px-3 pb-3 text-[10px] font-bold uppercase tracking-[.16em] text-white/50"
                         }
                     >
                         {role === "staff" ? "Staff workspace" : "Workspace"}
                     </p>
-                    <nav aria-label="Main navigation" className="space-y-1.5">
+                    <nav aria-label="Main navigation" className="space-y-1">
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive =
@@ -208,18 +223,18 @@ export default function Sidebar({ auth, menu, setMenu }) {
                             return (
                                 <Link
                                     key={item.label}
-                                    href={route(item.name, item.params)}
+                                    href={item.href || route(item.name, item.params)}
                                     aria-label={item.ariaLabel || item.label}
                                     aria-current={isActive ? "page" : undefined}
                                     onClick={() => setMenu(false)}
-                                    className={`workspace-nav-link flex items-center gap-3.5 rounded-xl px-3.5 py-2.5 text-xs font-medium transition ${
+                                    className={`workspace-nav-link flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-medium transition ${
                                         isActive
-                                            ? "bg-sky-600 text-white font-semibold shadow-sm shadow-sky-600/25"
-                                            : "text-slate-600 hover:bg-sky-100/70 hover:text-sky-900"
+                                            ? "bg-[#DDEBE5] text-[#315C52] font-semibold shadow-sm shadow-black/10"
+                                            : "text-white/70 hover:bg-white/10 hover:text-white"
                                     }`}
                                 >
                                     <Icon
-                                        className={`h-4 w-4 shrink-0 ${isActive ? "text-white" : "text-slate-500"}`}
+                                        className={`h-4 w-4 shrink-0 ${isActive ? "text-[#315C52]" : "text-white/60"}`}
                                     />
                                     <span className="truncate">
                                         {item.label}
@@ -232,16 +247,16 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
                 {/* Footer with Role Pill & Anchored Sign Out */}
                 <div
-                    className="shrink-0 border-t border-sky-100 bg-white/60 p-4"
+                    className="shrink-0 border-t border-white/10 p-4"
                     data-testid="sidebar-signout"
                 >
                     <Link
                         href={route("logout")}
                         method="post"
                         as="button"
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
                     >
-                        <LogOut className="h-4 w-4 shrink-0 text-rose-500" />
+                        <LogOut className="h-4 w-4 shrink-0 text-white/60" />
                         <span>Sign out</span>
                     </Link>
                 </div>

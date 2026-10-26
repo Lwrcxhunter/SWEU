@@ -9,6 +9,15 @@
     "format": "npm --prefix laravel run format",
     "format:check": "npm --prefix laravel run format:check",
     "test:browser": "npm --prefix laravel run test:browser"
+  },
+  "dependencies": {
+    "@fullcalendar/core": "^6.1.22",
+    "@fullcalendar/daygrid": "^6.1.22",
+    "@fullcalendar/interaction": "^6.1.22",
+    "@fullcalendar/react": "^6.1.22",
+    "@fullcalendar/timegrid": "^6.1.22",
+    "lucide-react": "^1.61.0",
+    "recharts": "^3.10.1",
+    "temporal-polyfill": "^1.0.6"
   }
 }
-
