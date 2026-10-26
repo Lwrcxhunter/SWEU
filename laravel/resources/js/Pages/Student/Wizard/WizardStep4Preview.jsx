@@ -512,19 +512,22 @@ export default function WizardStep4Preview({
                                             Counseling Type / Venue
                                         </th>
                                         <td className="w-1/4 border border-slate-200 px-2.5 py-1.5 text-slate-900 font-bold">
-                                            FACE-TO-FACE (SWEU GUIDANCE OFFICE)
+                                            {appointmentForm.data.channel ===
+                                            "virtual"
+                                                ? "VIRTUAL (ONLINE)"
+                                                : "FACE-TO-FACE (SWEU GUIDANCE OFFICE)"}
                                         </td>
                                         <th className="w-1/4 border border-slate-200 bg-slate-50/80 px-2.5 py-1.5 text-left font-semibold text-slate-600">
-                                            Appointment Schedule
+                                            Preferred Schedule
                                         </th>
                                         <td className="w-1/4 border border-slate-200 px-2.5 py-1.5 text-slate-900 font-semibold">
                                             {appointmentForm.data
                                                 .scheduled_date ||
                                                 "To be scheduled"}{" "}
-                                            at{" "}
-                                            {appointmentForm.data
-                                                .scheduled_time || "09:00"}{" "}
-                                            (PST)
+                                            {appointmentForm.data.scheduled_time
+                                                ? new Date(`2000-01-01T${appointmentForm.data.scheduled_time}:00`).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+                                                : "To be scheduled"}{" "}
+                                            (Philippine time)
                                         </td>
                                     </tr>
                                     <tr>
@@ -694,6 +697,12 @@ export default function WizardStep4Preview({
                     </div>
                 )}
             </div>
+
+            {Object.values(appointmentForm.errors).map((error, index) => (
+                <p key={index} role="alert" className="text-sm text-red-700">
+                    {error}
+                </p>
+            ))}
 
             {/* Actions Bar */}
             <div className="flex justify-between items-center pt-4 border-t border-slate-200">

@@ -8,12 +8,21 @@ use App\Models\OfficeAlert;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\Ids;
+use App\Support\Views;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use MongoDB\BSON\UTCDateTime;
 
 class Appointments
 {
+    public static function pendingFollowUps(?Student $student): array
+    {
+        return $student ? Views::appointments(Appointment::where('student_id', Ids::object($student->id))
+            ->where('type', 'follow_up')
+            ->where('status', 'counselor_accepted_pending_student')
+            ->orderBy('scheduled_date')->orderBy('scheduled_time')->get()) : [];
+    }
+
     public function __construct(
         private readonly CounselingCases $cases,
         private readonly CounselorSchedules $schedules,
@@ -39,12 +48,12 @@ class Appointments
             $appointment = Appointment::create([
                 'student_id' => Ids::object($student->id),
                 'counselor_id' => null,
-                'channel' => $data['channel'] ?? 'face_to_face',
+                'channel' => in_array($data['channel'] ?? '', ['virtual', 'online', 'telecounseling'], true) ? 'virtual' : 'face_to_face',
                 'type' => 'online_booking',
                 'urgency_level' => 'normal',
                 'scheduled_date' => $data['scheduled_date'],
                 'scheduled_time' => $data['scheduled_time'] ?? null,
-                'preferred_period' => $data['preferred_period'] ?? null,
+                'preferred_period' => isset($data['preferred_period']) ? strtolower($data['preferred_period']) : null,
                 'status' => 'pending_assignment',
                 'version' => 1,
                 'slot_key' => null,
@@ -98,7 +107,7 @@ class Appointments
                 throw ValidationException::withMessages(['action' => 'This appointment changed. Refresh before trying again.']);
             }
             $action = $data['action'];
-            if (in_array($appointment->status, ['completed', 'cancelled'])) {
+            if (in_array($appointment->status, ['completed', 'cancelled', 'declined_by_student']) && ! ($action === 'reschedule' && $isCounselor && $appointment->status === 'declined_by_student')) {
                 throw ValidationException::withMessages(['action' => 'This appointment is already closed.']);
             }
             if ($action === 'urgent') {
@@ -191,6 +200,23 @@ class Appointments
                 }
                 $appointment->student_accepted_at = now()->toDateTimeString();
                 $appointment->status = 'confirmed';
+            } elseif ($action === 'student_decline') {
+                abort_unless($isStudent, 403);
+                if ($appointment->type !== 'follow_up' || $appointment->status !== 'counselor_accepted_pending_student') {
+                    throw ValidationException::withMessages(['action' => 'Only a follow-up awaiting your response can be declined.']);
+                }
+                $note = trim($data['note'] ?? '');
+                if ($note === '') {
+                    throw ValidationException::withMessages(['note' => 'Please explain why you are declining this follow-up session.']);
+                }
+                $appointment->status = 'declined_by_student';
+                $appointment->student_declined_at = now()->toDateTimeString();
+                $appointment->student_decline_note = $note;
+                $appointment->student_accepted_at = null;
+                $appointment->slot_key = null;
+                if ($appointment->counselor_id && ($counselor = User::find($appointment->counselor_id))) {
+                    $this->alert($counselor, $appointment, 'appointment', 'Student declined the follow-up session. Reason: '.$note);
+                }
             } elseif ($action === 'request_reassignment') {
                 abort_unless($isCounselor, 403);
                 if ($appointment->status !== 'assigned_pending_counselor') {
@@ -236,6 +262,9 @@ class Appointments
                 $appointment->slot_key = null;
             } elseif ($action === 'cancel') {
                 abort_unless($isStaff || $isCounselor || $isStudent, 403);
+                if ($isStudent && $appointment->type === 'follow_up' && $appointment->status === 'counselor_accepted_pending_student') {
+                    throw ValidationException::withMessages(['action' => 'Use Decline / Request Change and provide a reason for this follow-up.']);
+                }
                 $appointment->status = 'cancelled';
                 $appointment->slot_key = null;
             } else {
@@ -247,8 +276,9 @@ class Appointments
                 $this->cases->createCaseFromAppointment($appointment);
             }
             $session = CounselingSession::where('appointment_id', Ids::object($appointment->id))->first();
-            if ($session && in_array($action, ['cancel', 'complete', 'reschedule'], true)) {
+            if ($session && in_array($action, ['cancel', 'complete', 'reschedule', 'student_decline'], true)) {
                 $sessionUpdate = match ($action) {
+                    'student_decline' => ['status' => 'cancelled', 'cancelled_at' => now()->toDateTimeString(), 'student_declined_at' => $appointment->student_declined_at, 'student_decline_note' => $appointment->student_decline_note],
                     'cancel' => ['status' => 'cancelled', 'cancelled_at' => now()->toDateTimeString()],
                     'complete' => ['status' => 'completed', 'completed_at' => now()->toDateTimeString()],
                     'reschedule' => [

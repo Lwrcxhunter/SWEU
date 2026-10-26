@@ -4,6 +4,8 @@ const RecaptchaWidget = forwardRef(function RecaptchaWidget(
     { siteKey, onChange, onExpired, onError },
     ref
 ) {
+    const callbacksRef = useRef({ onChange, onExpired, onError });
+    callbacksRef.current = { onChange, onExpired, onError };
     const containerRef = useRef(null);
     const widgetIdRef = useRef(null);
     const [scriptReady, setScriptReady] = useState(false);
@@ -17,7 +19,7 @@ const RecaptchaWidget = forwardRef(function RecaptchaWidget(
                     // ignore
                 }
             }
-            if (onChange) onChange('');
+            callbacksRef.current.onChange?.('');
         },
     }));
 
@@ -53,10 +55,10 @@ const RecaptchaWidget = forwardRef(function RecaptchaWidget(
             }
         };
         script.onerror = () => {
-            if (onError) onError('Unable to load reCAPTCHA challenge. Check connection.');
+            callbacksRef.current.onError?.('Unable to load reCAPTCHA challenge. Check connection.');
         };
         document.head.appendChild(script);
-    }, [siteKey, onError]);
+    }, [siteKey]);
 
     useEffect(() => {
         if (!scriptReady || !siteKey || !containerRef.current || !window.grecaptcha?.render) {
@@ -72,26 +74,27 @@ const RecaptchaWidget = forwardRef(function RecaptchaWidget(
                 sitekey: siteKey,
                 size: 'normal',
                 callback: (token) => {
-                    if (onChange) onChange(token);
+                    callbacksRef.current.onChange?.(token);
                 },
                 'expired-callback': () => {
-                    if (onExpired) onExpired();
-                    if (onChange) onChange('');
+                    callbacksRef.current.onExpired?.();
+                    callbacksRef.current.onChange?.('');
                 },
                 'error-callback': () => {
-                    if (onError) onError('reCAPTCHA verification error.');
-                    if (onChange) onChange('');
+                    callbacksRef.current.onError?.('reCAPTCHA verification error.');
+                    callbacksRef.current.onChange?.('');
                 },
             });
         } catch (err) {
             console.error('reCAPTCHA render error:', err);
+            callbacksRef.current.onError?.('Unable to display reCAPTCHA. Please reload and try again.');
         }
 
         return () => {
             widgetIdRef.current = null;
             if (containerRef.current) containerRef.current.replaceChildren();
         };
-    }, [scriptReady, siteKey, onChange, onExpired, onError]);
+    }, [scriptReady, siteKey]);
 
     if (!siteKey) return null;
 

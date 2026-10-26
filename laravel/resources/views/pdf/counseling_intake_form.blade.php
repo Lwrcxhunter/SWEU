@@ -490,9 +490,9 @@
                                     <table class="grid">
                                         <tr>
                                             <th>Counseling Type / Venue</th>
-                                            <td><strong>FACE-TO-FACE (SWEU GUIDANCE OFFICE)</strong></td>
+                                            <td><strong>{{ in_array($appointment->channel, ['virtual', 'online', 'telecounseling'], true) ? 'VIRTUAL (ONLINE)' : 'FACE-TO-FACE (SWEU GUIDANCE OFFICE)' }}</strong></td>
                                             <th>Appointment Schedule</th>
-                                            <td>{{ $appointment->scheduled_date ?? 'To be scheduled' }} at {{ $appointment->scheduled_time ?? '' }}</td>
+                                            <td>{{ $appointment->scheduled_date ?? 'To be scheduled' }} · {{ $appointment->scheduled_time ?? (strtoupper($appointment->preferred_period ?? '').' preferred window; exact time pending assignment') }} (Philippine time)</td>
                                         </tr>
                                         <tr>
                                             <th>Assigned Counselor</th>

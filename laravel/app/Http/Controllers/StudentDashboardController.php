@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Student;
-use App\Models\TestingRequest;
+use App\Services\Appointments;
 use App\Support\Ids;
 use App\Support\StudentInformation;
 use Illuminate\Http\Request;
@@ -20,21 +20,16 @@ class StudentDashboardController extends Controller
         $clock = now();
         $appointments = Appointment::where('student_id', $studentId)->where(function ($query) use ($clock) {
             $query->where('scheduled_date', '>', $clock->toDateString())
-                ->orWhere(fn ($today) => $today->where('scheduled_date', $clock->toDateString())->where('scheduled_time', '>=', $clock->format('H:i')));
+                ->orWhere(fn ($today) => $today->where('scheduled_date', $clock->toDateString())
+                    ->where(fn ($time) => $time->whereNull('scheduled_time')->orWhere('scheduled_time', '>=', $clock->format('H:i'))));
         });
-        $testing = [];
-        foreach (['GAMA', 'Other'] as $type) {
-            foreach (['pending', 'approved', 'completed'] as $status) {
-                $testing[] = ['type' => $type, 'status' => $status, 'count' => $student
-                    ? TestingRequest::where('student_id', $studentId)->where('test_type', $type)->where('status', $status)->count() : 0];
-            }
-        }
+
         return Inertia::render('Student/Dashboard', [
             'student' => $student ? StudentInformation::forOwner($student) : null,
+            'followUps' => Appointments::pendingFollowUps($student),
             'summary' => [
-                'pending_appointments' => $student ? (clone $appointments)->whereIn('status', ['pending', 'assigned'])->count() : 0,
-                'scheduled_appointments' => $student ? (clone $appointments)->where('status', 'accepted')->count() : 0,
-                'testing' => $testing,
+                'pending_appointments' => $student ? (clone $appointments)->whereIn('status', ['pending', 'assigned', 'pending_assignment', 'assigned_pending_counselor', 'counselor_accepted_pending_student', 'reassignment_requested', 'rescheduled', 'assigned_pending_accept'])->count() : 0,
+                'scheduled_appointments' => $student ? (clone $appointments)->whereIn('status', ['accepted', 'confirmed'])->count() : 0,
             ],
         ]);
     }

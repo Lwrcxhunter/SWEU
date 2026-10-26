@@ -7,6 +7,16 @@ use Illuminate\Validation\Rule;
 
 class AppointmentRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $channel = $this->input('channel', 'face_to_face');
+        $period = $this->input('preferred_period');
+        $this->merge([
+            'channel' => in_array($channel, ['online', 'telecounseling'], true) ? 'virtual' : $channel,
+            'preferred_period' => is_string($period) ? strtolower($period) : $period,
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -15,10 +25,10 @@ class AppointmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'channel' => ['nullable', Rule::in(['face_to_face', 'online', 'telecounseling'])],
+            'channel' => ['required', Rule::in(['face_to_face', 'virtual'])],
             'scheduled_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'scheduled_time' => ['required_without:preferred_period', 'nullable', 'date_format:H:i', 'regex:/^\d{2}:(00|30)$/'],
-            'preferred_period' => ['required_without:scheduled_time', 'nullable', Rule::in(['AM', 'PM'])],
+            'scheduled_time' => ['required_without:preferred_period', 'nullable', 'date_format:H:i', 'regex:/^(?:(?:0[89]|1[0-6]):(?:00|30)|17:00)$/'],
+            'preferred_period' => ['required_without:scheduled_time', 'nullable', Rule::in(['am', 'pm'])],
             'reason' => ['nullable', 'string', 'max:2000'],
             'expectations' => ['nullable', 'string', 'max:2000'],
             'average_sleep' => ['nullable', 'string', 'max:50'],

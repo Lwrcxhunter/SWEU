@@ -23,7 +23,11 @@ export default function SessionNotes({
     const followUp = useForm({
         targetDate: "",
         timeSlot: "AM",
-        mode: appointment.channel === "online" ? "Virtual" : "F2F",
+        mode: ["virtual", "online", "telecounseling"].includes(
+            appointment.channel,
+        )
+            ? "Virtual"
+            : "F2F",
     });
     const form = useForm({
         notes: session?.notes || "",
