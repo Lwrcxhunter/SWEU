@@ -77,7 +77,9 @@ export default function WalkInQueue({
                 onSuccess: (page) => {
                     const newItems = page.props.appointments?.data || [];
                     setLoadedAppointments((prev) => {
-                        const existingIds = new Set(prev.map((item) => item.id));
+                        const existingIds = new Set(
+                            prev.map((item) => item.id),
+                        );
                         const filteredNew = newItems.filter(
                             (item) => !existingIds.has(item.id),
                         );
@@ -120,10 +122,7 @@ export default function WalkInQueue({
 
     useEffect(() => {
         const timer = setInterval(() => {
-            if (
-                !document.hidden &&
-                !document.activeElement?.closest("form")
-            )
+            if (!document.hidden && !document.activeElement?.closest("form"))
                 refresh();
         }, 15000);
         return () => clearInterval(timer);
@@ -177,7 +176,9 @@ export default function WalkInQueue({
                             <AlertTriangle size={18} />
                         </div>
                         <p className="font-bold text-rose-900">
-                            {metrics.urgent_count} urgent walk-in{metrics.urgent_count > 1 ? "s" : ""} require immediate triage
+                            {metrics.urgent_count} urgent walk-in
+                            {metrics.urgent_count > 1 ? "s" : ""} require
+                            immediate triage
                         </p>
                     </div>
                     <button
@@ -314,7 +315,8 @@ export default function WalkInQueue({
 
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm text-slate-500 font-medium px-1">
                         <p className="tabular-nums font-semibold text-slate-700">
-                            Showing {loadedAppointments.length} of {appointments?.total ?? 0} appointments
+                            Showing {loadedAppointments.length} of{" "}
+                            {appointments?.total ?? 0} appointments
                         </p>
                     </div>
 
@@ -401,7 +403,10 @@ export default function WalkInQueue({
                     ) : null}
                 </section>
             )}
-            <p className="mt-6 text-xs text-slate-400 flex items-center gap-1.5" role="status">
+            <p
+                className="mt-6 text-xs text-slate-400 flex items-center gap-1.5"
+                role="status"
+            >
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {refreshError
                     ? "Update failed. Click Refresh."

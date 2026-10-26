@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
 use App\Models\CounselorSchedule;
 use App\Support\Ids;
 use Carbon\Carbon;
@@ -9,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 
 class CounselorSchedules
 {
+    public function __construct(private readonly CounselorAvailability $availability) {}
+
     public function validate(array $data): array
     {
         foreach (['availability', 'classSchedule', 'leaves'] as $category) {
@@ -44,9 +47,31 @@ class CounselorSchedules
 
     public function save(string $counselorId, array $schedule): CounselorSchedule
     {
+        $data = $this->validate($schedule);
+        $appointments = Appointment::where('counselor_id', Ids::object($counselorId))
+            ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
+            ->get(['_id', 'scheduled_date', 'scheduled_time', 'urgency_level']);
+        $conflicts = $appointments->filter(fn (Appointment $appointment) => ! $this->allowsWithSchedule(
+            $data,
+            [
+                'scheduled_date' => $appointment->scheduled_date,
+                'scheduled_time' => $appointment->scheduled_time,
+            ],
+            $appointment->urgency_level === 'urgent',
+        ));
+
+        if ($conflicts->isNotEmpty()) {
+            $dates = $conflicts
+                ->map(fn (Appointment $appointment) => trim($appointment->scheduled_date.' '.$appointment->scheduled_time))
+                ->implode(', ');
+            throw ValidationException::withMessages([
+                'availability' => 'These changes conflict with existing appointments ('.$dates.'). Reschedule or cancel those appointments before saving.',
+            ]);
+        }
+
         return CounselorSchedule::updateOrCreate(
             ['counselor_id' => Ids::object($counselorId)],
-            $this->validate($schedule),
+            $data,
         );
     }
 
@@ -57,6 +82,11 @@ class CounselorSchedules
             return true;
         }
 
+        return $this->allowsWithSchedule($schedule->toArray(), $appointment, $urgent);
+    }
+
+    private function allowsWithSchedule(array $schedule, array $appointment, bool $urgent = false): bool
+    {
         $date = Carbon::createFromFormat('Y-m-d', $appointment['scheduled_date'], config('app.timezone'));
         $weekday = $date->dayOfWeek;
         $start = $this->minutes($appointment['scheduled_time']);
@@ -64,7 +94,7 @@ class CounselorSchedules
         $startAt = Carbon::createFromFormat('Y-m-d H:i', $appointment['scheduled_date'].' '.$appointment['scheduled_time'], config('app.timezone'));
         $endAt = $startAt->copy()->addMinutes(30);
 
-        foreach ($schedule->leaves ?? [] as $leave) {
+        foreach ($schedule['leaves'] ?? [] as $leave) {
             $leaveStart = Carbon::parse($leave['startDateTime'], config('app.timezone'));
             $leaveEnd = Carbon::parse($leave['endDateTime'], config('app.timezone'));
             if ($startAt->lt($leaveEnd) && $endAt->gt($leaveStart)) {
@@ -76,7 +106,7 @@ class CounselorSchedules
             return true;
         }
 
-        $withinAvailability = collect($schedule->availability ?? [])->contains(
+        $withinAvailability = collect($schedule['availability'] ?? [])->contains(
             fn ($entry) => (int) $entry['dayOfWeek'] === $weekday
                 && $this->minutes($entry['startTime']) <= $start
                 && $this->minutes($entry['endTime']) >= $end,
@@ -85,7 +115,7 @@ class CounselorSchedules
             return false;
         }
 
-        return ! collect($schedule->classSchedule ?? [])->contains(
+        return ! collect($schedule['classSchedule'] ?? [])->contains(
             fn ($entry) => (int) $entry['dayOfWeek'] === $weekday
                 && $this->timeOverlap(
                     $appointment['scheduled_time'],

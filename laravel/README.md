@@ -10,7 +10,7 @@ From the project root:
 .\scripts\start-local.ps1
 ```
 
-Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and MongoDB installation in `.runtime/`. It does not install a Windows service or edit machine-wide PHP settings. Keep that terminal open while using the application. MongoDB runs on loopback port 27028; the Laravel development server runs on loopback port 8000.
+Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and the MongoDB Atlas connection configured in `.env`. It does not start a local MongoDB process, install a Windows service, or edit machine-wide PHP settings. Keep that terminal open while using the application. The Laravel development server runs on loopback port 8000.
 
 In another terminal, create the first administrator:
 
@@ -26,7 +26,7 @@ To stop the web server, press Ctrl+C in its terminal. The local MongoDB process 
 
 1. Install PHP 8.2 or newer with MongoDB, OpenSSL, mbstring, fileinfo, XML, DOM, and the standard Laravel extensions. The generated Composer lockfile targets PHP 8.2 compatibility; this build was executed with PHP 8.4.
 2. Install Composer and a current Node.js LTS version.
-3. Provide a MongoDB replica set. Transactions are required for appointment/alert consistency and versioned note changes; a standalone MongoDB server is insufficient. For local development a single-member replica set is enough.
+3. Provide a MongoDB Atlas cluster or another MongoDB replica set. Transactions are required for appointment/alert consistency and versioned note changes; a standalone MongoDB server is insufficient.
 4. In this directory:
 
 ```sh
@@ -37,7 +37,7 @@ npm ci
 npm run build
 ```
 
-5. Set `MONGODB_URI` and `MONGODB_DATABASE` in `.env`. The example points to the local `guidance` replica set at `127.0.0.1:27028`.
+5. Set `MONGODB_URI` and `MONGODB_DATABASE` in `.env`. The deployed configuration uses MongoDB Atlas. Keep the URI out of source control and use a database user with only the permissions required by this application.
 6. Run `php artisan guidance:setup` to create collections, unique indexes, and initial role grants. The command preserves existing grants and records. It does not delete data. There are no SQL migrations to run.
 7. Run `php artisan guidance:admin`, then `php artisan serve` for local development.
 
@@ -49,10 +49,10 @@ Official runtime documentation: [MongoDB PHP installation](https://www.mongodb.c
 
 | Role | Workspace and actions |
 |---|---|
-| Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; request GAMA or other testing; view own status and notifications. |
-| Faculty / Coordinator | Submit standardized testing requests for student batches and monitor testing statuses. No intake narratives or counseling notes are returned. |
-| Staff / psychometrician | View the active queue; assess urgency; alert and assign counselors; manage counselor availability calendar; process testing requests queue; export aggregate CSV reports. |
-| Counselor | View assigned appointments and intake; accept/reschedule/complete sessions; record encrypted notes; manage case closure and follow-up sessions; flag and resolve follow-ups; plan weekly availability, class blocks, and leave; export their own case/session summaries; receive in-app alerts. |
+| Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; request testing; view own status and notifications. |
+| Faculty | Submit testing requests and track their statuses. No intake narratives or counseling notes are returned. |
+| Staff / psychometrician | View the active queue; assess urgency; alert and assign counselors; manage the counselor availability calendar; process testing requests; export aggregate CSV reports. |
+| Counselor | View assigned appointments and case folders; accept/reschedule/complete sessions; record encrypted notes; manage case closure and follow-up sessions; plan weekly availability, class blocks, and leave; review private workload analytics; export their own case/session summaries; receive in-app alerts. |
 | Head counselor | Read case notes in the audit workspace after each access is recorded; cannot edit notes or view intake narratives. |
 | Administrator | Create/disable accounts, change roles, map multiple colleges per counselor, and restrict role permissions. Administrators have no clinical note access. |
 
@@ -64,11 +64,13 @@ Testing progresses through `pending → approved → completed`. Appointment upd
 
 Appointment confirmation is a two-step process: staff assignment moves a request to `assigned_pending_counselor`; counselor acceptance moves it to `counselor_accepted_pending_student`; and only the owning student can confirm it as `confirmed`. Counselors can request reassignment with a required note while an assignment is awaiting their response. The note is shown to staff in the front-desk queue and is not included in the student's appointment view.
 
-Accepting an assigned appointment opens a counselor-owned case with an atomic `CASE-YYYY-NNNN` number and its first scheduled session. The counselor can review the case session history, close the active session with a `completed/stable` outcome, or schedule an AM/PM face-to-face or virtual follow-up under the same case. Follow-up appointments reserve the counselor's slot and remain pending student confirmation. Case numbering and per-case session numbers have database uniqueness constraints.
+Accepting an assigned appointment opens a counselor-owned case with an atomic `CASE-YYYY-NNNN` number and its first scheduled session. The counselor can open a case folder containing the permitted student/intake summary and chronological session history; session notes remain individually permission-checked. Counselors can close a case with a `completed/stable` outcome or schedule a face-to-face or virtual follow-up at an available 30-minute time under the same case. Follow-up appointments reserve the counselor's slot and remain pending student confirmation. Case numbering, appointment slots, and per-case session numbers have database uniqueness constraints.
 
-Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. Schedule overlaps and conflicts are rejected; regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Urgent assignments can occur outside regular availability but cannot overlap leave. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
+Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. The weekly calendar distinguishes those recurring periods from actual appointments and provides appointment links. Schedule overlaps and conflicts are rejected; changing availability is blocked when it would invalidate an active appointment, until the booking is resolved. Regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Urgent assignments can occur outside regular availability but cannot overlap leave. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
 
-Clinical notes are strictly confidential to the assigned counselor who authored them. Operational staff session lists exclude notes. Counselors can export only their own case/session summaries as JSON or UTF-8 CSV, or open a print-friendly HTML report and use the browser's print-to-PDF option. Exports contain case number, session date/time, mode, status, and category, never intake narratives or clinical notes.
+New case closures record the closing counselor's ObjectId in `closed_by` alongside the closure date. Historical closed cases are not rewritten; records without that field display the closure actor as unrecorded. These enhancements use the existing MongoDB collections and require no collection migration.
+
+Clinical notes are strictly confidential to the assigned counselor who authored them. Operational staff session lists exclude notes. Counselor analytics summarize only the signed-in counselor's cases, appointments, and follow-up sessions; they never include intake narratives or clinical notes. Counselors can export only their own case/session summaries as JSON or UTF-8 CSV, or open a print-friendly HTML report and use the browser's print-to-PDF option. Exports contain case number, session date/time, mode, status, and category, never intake narratives or clinical notes.
 
 ## Data and authorization design
 

@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Search, Calendar as CalendarIcon, Clock, Building, RotateCcw } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    Calendar as CalendarIcon,
+    Clock,
+    Building,
+    RotateCcw,
+} from "lucide-react";
 import { formatSessionTime } from "@/Support/guidanceConstants";
 
 const styles = {
@@ -65,9 +73,7 @@ function ScheduleBlock({ block, compact = false }) {
         >
             <p
                 className={
-                    compact
-                        ? "text-[10px] font-bold"
-                        : "text-xs font-bold"
+                    compact ? "text-[10px] font-bold" : "text-xs font-bold"
                 }
             >
                 {compact && block.available
@@ -85,7 +91,9 @@ function ScheduleBlock({ block, compact = false }) {
                 )}
             </p>
             {block.status === "in_class" && (
-                <p className="mt-1 text-[11px] font-medium leading-tight">{block.reason}</p>
+                <p className="mt-1 text-[11px] font-medium leading-tight">
+                    {block.reason}
+                </p>
             )}
         </div>
     );
@@ -402,7 +410,10 @@ export default function CounselorCalendar({
                         </thead>
                         <tbody>
                             {filtered.map((counselor) => (
-                                <tr key={counselor.id} className="hover:bg-sky-50/20 transition-colors">
+                                <tr
+                                    key={counselor.id}
+                                    className="hover:bg-sky-50/20 transition-colors"
+                                >
                                     <th
                                         scope="row"
                                         className="sticky left-0 z-10 w-48 border-b border-r border-sky-100 bg-white/95 backdrop-blur-sm p-4 align-top"

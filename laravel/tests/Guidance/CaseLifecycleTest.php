@@ -5,6 +5,7 @@ namespace Tests\Guidance;
 use App\Models\Appointment;
 use App\Models\CounselingCase;
 use App\Models\CounselingSession;
+use App\Models\CounselorSchedule;
 use App\Services\CounselingCases;
 use App\Support\Ids;
 
@@ -49,6 +50,7 @@ class CaseLifecycleTest extends GuidanceTestCase
             ->assertJsonPath('case.outcome', 'completed/stable');
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/close')->assertStatus(409);
 
+        $this->assertTrue(Ids::same($counselor->id, $case->fresh()->closed_by));
         $this->assertSame('completed', CounselingSession::where('case_id', Ids::object($case->id))->firstOrFail()->status);
         $this->assertSame('completed', $appointment->fresh()->status);
     }
@@ -59,10 +61,19 @@ class CaseLifecycleTest extends GuidanceTestCase
         $appointment = $this->appointment($counselor);
         app(CounselingCases::class)->createCaseFromAppointment($appointment);
         $case = CounselingCase::where('appointment_id', Ids::object($appointment->id))->firstOrFail();
+        CounselorSchedule::create([
+            'counselor_id' => Ids::object($counselor->id),
+            'availability' => [
+                ['dayOfWeek' => 2, 'startTime' => '14:00', 'endTime' => '15:00'],
+                ['dayOfWeek' => 3, 'startTime' => '09:00', 'endTime' => '10:00'],
+            ],
+            'classSchedule' => [],
+            'leaves' => [],
+        ]);
 
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/follow-up', [
             'targetDate' => '2026-10-06',
-            'timeSlot' => 'PM',
+            'scheduledTime' => '14:30',
             'mode' => 'Virtual',
         ])->assertCreated()
             ->assertJsonPath('case.status', 'follow_up')
@@ -88,7 +99,7 @@ class CaseLifecycleTest extends GuidanceTestCase
         ])->assertRedirect()->assertSessionHasNoErrors();
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/follow-up', [
             'targetDate' => '2026-10-07',
-            'timeSlot' => 'AM',
+            'scheduledTime' => '09:30',
             'mode' => 'F2F',
         ])->assertCreated()->assertJsonPath('session.session_number', 3);
 
@@ -108,7 +119,7 @@ class CaseLifecycleTest extends GuidanceTestCase
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/close')->assertOk();
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/follow-up', [
             'targetDate' => '2026-10-06',
-            'timeSlot' => 'AM',
+            'scheduledTime' => '10:00',
             'mode' => 'F2F',
         ])->assertStatus(409);
 
@@ -155,11 +166,33 @@ class CaseLifecycleTest extends GuidanceTestCase
 
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/follow-up', [
             'targetDate' => '2026-10-04',
-            'timeSlot' => 'MIDNIGHT',
+            'scheduledTime' => '00:00',
             'mode' => 'Unknown',
         ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['targetDate', 'timeSlot', 'mode']);
+            ->assertJsonValidationErrors(['targetDate', 'scheduledTime', 'mode']);
 
         $this->assertSame(1, CounselingSession::where('case_id', Ids::object($case->id))->count());
+    }
+
+    public function test_follow_up_slot_lookup_returns_only_open_times_for_the_assigned_counselor(): void
+    {
+        $counselor = $this->user('counselor');
+        $appointment = $this->appointment($counselor);
+        $case = app(CounselingCases::class)->createCaseFromAppointment($appointment);
+        $booked = $this->appointment($counselor, status: 'confirmed');
+        $booked->update([
+            'scheduled_date' => '2026-10-06',
+            'scheduled_time' => '10:00',
+        ]);
+
+        $this->actingAs($counselor)
+            ->getJson('/api/cases/'.$case->id.'/follow-up-slots?date=2026-10-06')
+            ->assertOk()
+            ->assertJsonMissing(['10:00'])
+            ->assertJsonFragment(['09:30']);
+
+        $this->actingAs($this->user('counselor'))
+            ->getJson('/api/cases/'.$case->id.'/follow-up-slots?date=2026-10-06')
+            ->assertForbidden();
     }
 }

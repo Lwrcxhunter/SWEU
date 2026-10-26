@@ -196,19 +196,25 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                         <span
                             className={
                                 "h-1.5 w-1.5 rounded-full " +
-                                (["accepted", "confirmed", "completed"].includes(
-                                    item.status,
-                                )
+                                ([
+                                    "accepted",
+                                    "confirmed",
+                                    "completed",
+                                ].includes(item.status)
                                     ? "bg-emerald-600"
                                     : closed
                                       ? "bg-slate-400"
                                       : "bg-amber-500 animate-pulse")
                             }
                         />
-                        {labels[item.status] || item.status.replaceAll("_", " ")}
+                        {labels[item.status] ||
+                            item.status.replaceAll("_", " ")}
                     </span>
                     <p className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                        <UserCheck size={14} className="shrink-0 text-sky-600" />
+                        <UserCheck
+                            size={14}
+                            className="shrink-0 text-sky-600"
+                        />
                         <span>{item.counselor_name || "Unassigned"}</span>
                     </p>
                 </div>
@@ -259,7 +265,8 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                 [
                                     "Assignment sent",
                                     !!item.counselor_id &&
-                                        item.status !== "reassignment_requested",
+                                        item.status !==
+                                            "reassignment_requested",
                                 ],
                                 [
                                     "Counselor accepted",
@@ -408,7 +415,8 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                             {!!unavailable.length && (
                                 <details className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all">
                                     <summary className="cursor-pointer text-xs font-semibold text-slate-600 hover:text-slate-900 select-none">
-                                        Unavailable counselors ({unavailable.length})
+                                        Unavailable counselors (
+                                        {unavailable.length})
                                     </summary>
                                     <ul className="mt-3 divide-y divide-slate-100">
                                         {unavailable.map((c) => (
@@ -421,12 +429,18 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                                 </span>
                                                 <span className="text-slate-500 flex items-center gap-1.5">
                                                     <span className="rounded-md bg-slate-100 px-2 py-0.5 font-medium text-slate-600">
-                                                        {c.availability?.badge ||
+                                                        {c.availability
+                                                            ?.badge ||
                                                             "Availability unknown"}
                                                     </span>
                                                     {c.availability?.reason && (
                                                         <span className="text-slate-400 text-[11px]">
-                                                            ({c.availability.reason})
+                                                            (
+                                                            {
+                                                                c.availability
+                                                                    .reason
+                                                            }
+                                                            )
                                                         </span>
                                                     )}
                                                 </span>
@@ -495,7 +509,9 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                             </p>
                             {item.onboarding_note && (
                                 <p className="whitespace-pre-wrap rounded-lg bg-sky-50/60 p-2.5 text-xs text-sky-900 border border-sky-100">
-                                    <strong className="font-bold">Instructions: </strong>
+                                    <strong className="font-bold">
+                                        Instructions:{" "}
+                                    </strong>
                                     {item.onboarding_note}
                                 </p>
                             )}

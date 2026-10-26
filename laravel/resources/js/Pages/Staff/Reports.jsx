@@ -125,17 +125,15 @@ export default function Reports({
         .slice(0, 5);
 
     return (
-        <Office
-            title="Reports & Analytics Hub"
-            eyebrow={null}
-        >
+        <Office title="Reports & Analytics Hub" eyebrow={null}>
             {/* Print-Only Official University Header */}
             <div className="hidden print:block mb-8 text-center border-b pb-6">
                 <h1 className="text-xl font-bold uppercase tracking-wider text-slate-900">
                     Bukidnon State University
                 </h1>
                 <p className="text-sm font-semibold text-slate-700">
-                    Student Welfare and Evaluation Unit (SWEU) · Guidance and Counseling Office
+                    Student Welfare and Evaluation Unit (SWEU) · Guidance and
+                    Counseling Office
                 </p>
                 <h2 className="mt-4 text-lg font-bold text-slate-900 underline">
                     OFFICIAL GUIDANCE ACCOMPLISHMENT & PERFORMANCE REPORT
@@ -145,7 +143,8 @@ export default function Reports({
                         <strong>Reporting Period:</strong> {from} to {to}
                     </span>
                     <span>
-                        <strong>Generated:</strong> {new Date().toLocaleDateString("en-PH")}
+                        <strong>Generated:</strong>{" "}
+                        {new Date().toLocaleDateString("en-PH")}
                     </span>
                     {form.data.college !== "all" && (
                         <span>
@@ -162,13 +161,20 @@ export default function Reports({
                         <span>Guidance Reports & Analytics</span>
                         {activeFilterCount > 0 && (
                             <span className="rounded-full bg-sky-100 text-sky-800 text-xs font-bold px-2.5 py-0.5">
-                                {activeFilterCount} filter{activeFilterCount > 1 ? "s" : ""} active
+                                {activeFilterCount} filter
+                                {activeFilterCount > 1 ? "s" : ""} active
                             </span>
                         )}
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        Reporting Period: <span className="font-semibold text-slate-700">{from}</span> to{" "}
-                        <span className="font-semibold text-slate-700">{to}</span>
+                        Reporting Period:{" "}
+                        <span className="font-semibold text-slate-700">
+                            {from}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-semibold text-slate-700">
+                            {to}
+                        </span>
                     </p>
                 </div>
 
@@ -184,7 +190,10 @@ export default function Reports({
 
                     <a
                         className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-white px-3.5 py-2 text-xs font-bold text-sky-800 shadow-xs hover:bg-sky-50 transition active:scale-[0.98]"
-                        href={route("reports.index", { ...form.data, download: 1 })}
+                        href={route("reports.index", {
+                            ...form.data,
+                            download: 1,
+                        })}
                     >
                         <Download size={14} className="text-sky-600" />
                         Download CSV
@@ -215,7 +224,14 @@ export default function Reports({
                             : "text-slate-600 hover:text-slate-900")
                     }
                 >
-                    <BarChart3 size={15} className={hubView === "analytics" ? "text-sky-600" : "text-slate-400"} />
+                    <BarChart3
+                        size={15}
+                        className={
+                            hubView === "analytics"
+                                ? "text-sky-600"
+                                : "text-slate-400"
+                        }
+                    />
                     <span>Analytics & Trends</span>
                 </button>
                 <button
@@ -228,7 +244,14 @@ export default function Reports({
                             : "text-slate-600 hover:text-slate-900")
                     }
                 >
-                    <FileText size={15} className={hubView === "reports" ? "text-sky-600" : "text-slate-400"} />
+                    <FileText
+                        size={15}
+                        className={
+                            hubView === "reports"
+                                ? "text-sky-600"
+                                : "text-slate-400"
+                        }
+                    />
                     <span>Accomplishment Reports</span>
                 </button>
             </div>
@@ -285,7 +308,11 @@ export default function Reports({
                         className="text-slate-400 hover:text-slate-600 transition"
                         aria-label="Toggle filters"
                     >
-                        {filtersOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        {filtersOpen ? (
+                            <ChevronUp size={16} />
+                        ) : (
+                            <ChevronDown size={16} />
+                        )}
                     </button>
                 </div>
 
@@ -300,12 +327,20 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.service}
-                                    onChange={(e) => form.setData("service", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData("service", e.target.value)
+                                    }
                                 >
                                     <option value="all">All Services</option>
-                                    <option value="appointments">Counseling Appointments & Walk-ins</option>
-                                    <option value="testing">Psychological Testing Requests</option>
-                                    <option value="cases">Counseling Cases</option>
+                                    <option value="appointments">
+                                        Counseling Appointments & Walk-ins
+                                    </option>
+                                    <option value="testing">
+                                        Psychological Testing Requests
+                                    </option>
+                                    <option value="cases">
+                                        Counseling Cases
+                                    </option>
                                 </select>
                             </div>
 
@@ -317,15 +352,25 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.status}
-                                    onChange={(e) => form.setData("status", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData("status", e.target.value)
+                                    }
                                 >
                                     <option value="all">All Statuses</option>
                                     <option value="pending">Pending</option>
-                                    <option value="assigned">Assigned / Awaiting Counselor</option>
-                                    <option value="confirmed">Confirmed / Accepted</option>
-                                    <option value="completed">Completed / Closed</option>
+                                    <option value="assigned">
+                                        Assigned / Awaiting Counselor
+                                    </option>
+                                    <option value="confirmed">
+                                        Confirmed / Accepted
+                                    </option>
+                                    <option value="completed">
+                                        Completed / Closed
+                                    </option>
                                     <option value="cancelled">Cancelled</option>
-                                    <option value="approved">Approved (Testing)</option>
+                                    <option value="approved">
+                                        Approved (Testing)
+                                    </option>
                                 </select>
                             </div>
 
@@ -337,7 +382,9 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.college}
-                                    onChange={(e) => form.setData("college", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData("college", e.target.value)
+                                    }
                                 >
                                     <option value="all">All Colleges</option>
                                     {colleges.map((col) => (
@@ -356,7 +403,12 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.counselor_id}
-                                    onChange={(e) => form.setData("counselor_id", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            "counselor_id",
+                                            e.target.value,
+                                        )
+                                    }
                                 >
                                     <option value="all">All Counselors</option>
                                     {counselors.map((c) => (
@@ -375,11 +427,19 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.type}
-                                    onChange={(e) => form.setData("type", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData("type", e.target.value)
+                                    }
                                 >
-                                    <option value="all">All Delivery Modes</option>
-                                    <option value="walk_in">Walk-in Visit</option>
-                                    <option value="scheduled">Scheduled Pre-booking</option>
+                                    <option value="all">
+                                        All Delivery Modes
+                                    </option>
+                                    <option value="walk_in">
+                                        Walk-in Visit
+                                    </option>
+                                    <option value="scheduled">
+                                        Scheduled Pre-booking
+                                    </option>
                                 </select>
                             </div>
 
@@ -391,11 +451,19 @@ export default function Reports({
                                 <select
                                     className="control w-full text-xs rounded-xl"
                                     value={form.data.urgency}
-                                    onChange={(e) => form.setData("urgency", e.target.value)}
+                                    onChange={(e) =>
+                                        form.setData("urgency", e.target.value)
+                                    }
                                 >
-                                    <option value="all">All Urgency Levels</option>
-                                    <option value="urgent">Urgent / Immediate Crisis</option>
-                                    <option value="standard">Standard Routine</option>
+                                    <option value="all">
+                                        All Urgency Levels
+                                    </option>
+                                    <option value="urgent">
+                                        Urgent / Immediate Crisis
+                                    </option>
+                                    <option value="standard">
+                                        Standard Routine
+                                    </option>
                                 </select>
                             </div>
 
@@ -440,7 +508,12 @@ export default function Reports({
 
                         <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <span className="text-xs text-slate-500">
-                                Active range: <strong className="text-slate-800">{from}</strong> to <strong className="text-slate-800">{to}</strong>
+                                Active range:{" "}
+                                <strong className="text-slate-800">
+                                    {from}
+                                </strong>{" "}
+                                to{" "}
+                                <strong className="text-slate-800">{to}</strong>
                             </span>
 
                             <div className="flex items-center gap-2">
@@ -477,7 +550,8 @@ export default function Reports({
                         {kpis.total_appointments || 0}
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500 font-medium">
-                        {kpis.walk_ins || 0} Walk-ins · {kpis.scheduled || 0} Scheduled
+                        {kpis.walk_ins || 0} Walk-ins · {kpis.scheduled || 0}{" "}
+                        Scheduled
                     </div>
                 </div>
 
@@ -534,7 +608,8 @@ export default function Reports({
                         {kpis.total_testing || 0}
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500 font-medium">
-                        {kpis.approved_testing || 0} Approved · {kpis.completed_testing || 0} Done
+                        {kpis.approved_testing || 0} Approved ·{" "}
+                        {kpis.completed_testing || 0} Done
                     </div>
                 </div>
 
@@ -552,7 +627,9 @@ export default function Reports({
                         {kpis.total_cases || 0}
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500 font-medium">
-                        {kpis.closed_cases || 0} Closed · {(kpis.total_cases || 0) - (kpis.closed_cases || 0)} Active
+                        {kpis.closed_cases || 0} Closed ·{" "}
+                        {(kpis.total_cases || 0) - (kpis.closed_cases || 0)}{" "}
+                        Active
                     </div>
                 </div>
             </div>
@@ -567,11 +644,16 @@ export default function Reports({
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 mb-5 border-b border-sky-100">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <TrendingUp size={16} className="text-sky-600" />
+                                    <TrendingUp
+                                        size={16}
+                                        className="text-sky-600"
+                                    />
                                     <span>Six-Month Service Volume Trends</span>
                                 </h3>
                                 <p className="text-xs text-slate-500">
-                                    Historical trajectory of counseling appointments, walk-ins, and psychological tests
+                                    Historical trajectory of counseling
+                                    appointments, walk-ins, and psychological
+                                    tests
                                 </p>
                             </div>
                             <div className="flex items-center gap-4 text-xs font-semibold">
@@ -593,15 +675,27 @@ export default function Reports({
                         ) : (
                             <div className="grid grid-cols-6 gap-2 sm:gap-4 items-end pt-8 pb-4 h-56">
                                 {monthlyData.map((m, idx) => {
-                                    const apptHeight = Math.round(((m.appointments || 0) / maxMonthlyTotal) * 100);
-                                    const testHeight = Math.round(((m.testing || 0) / maxMonthlyTotal) * 100);
+                                    const apptHeight = Math.round(
+                                        ((m.appointments || 0) /
+                                            maxMonthlyTotal) *
+                                            100,
+                                    );
+                                    const testHeight = Math.round(
+                                        ((m.testing || 0) / maxMonthlyTotal) *
+                                            100,
+                                    );
                                     return (
-                                        <div key={idx} className="flex flex-col items-center h-full justify-end group">
+                                        <div
+                                            key={idx}
+                                            className="flex flex-col items-center h-full justify-end group"
+                                        >
                                             <div className="w-full max-w-14 flex items-end justify-center gap-1.5 h-40 pb-2 border-b border-slate-200">
                                                 {/* Appointments bar */}
                                                 <div
                                                     className="w-1/2 bg-sky-600 rounded-t-md transition-all group-hover:bg-sky-700 relative"
-                                                    style={{ height: `${Math.max(apptHeight, 4)}%` }}
+                                                    style={{
+                                                        height: `${Math.max(apptHeight, 4)}%`,
+                                                    }}
                                                     title={`${m.month} Appointments: ${m.appointments}`}
                                                 >
                                                     <span className="opacity-0 group-hover:opacity-100 transition absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-1.5 rounded-md pointer-events-none whitespace-nowrap z-10">
@@ -611,7 +705,9 @@ export default function Reports({
                                                 {/* Testing bar */}
                                                 <div
                                                     className="w-1/2 bg-emerald-500 rounded-t-md transition-all group-hover:bg-emerald-600 relative"
-                                                    style={{ height: `${Math.max(testHeight, 4)}%` }}
+                                                    style={{
+                                                        height: `${Math.max(testHeight, 4)}%`,
+                                                    }}
                                                     title={`${m.month} Testing: ${m.testing}`}
                                                 >
                                                     <span className="opacity-0 group-hover:opacity-100 transition absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-0.5 px-1.5 rounded-md pointer-events-none whitespace-nowrap z-10">
@@ -639,27 +735,38 @@ export default function Reports({
                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                        <Calendar size={16} className="text-sky-600" />
+                                        <Calendar
+                                            size={16}
+                                            className="text-sky-600"
+                                        />
                                         <span>Busiest Days of the Week</span>
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Helps staff staff on-duty triage desks accordingly
+                                        Helps staff staff on-duty triage desks
+                                        accordingly
                                     </p>
                                 </div>
                             </div>
 
                             <div className="space-y-3 pt-2">
                                 {dayData.map((d) => {
-                                    const widthPct = Math.round(((d.count || 0) / maxDayCount) * 100);
+                                    const widthPct = Math.round(
+                                        ((d.count || 0) / maxDayCount) * 100,
+                                    );
                                     return (
-                                        <div key={d.day} className="flex items-center gap-3 text-xs">
+                                        <div
+                                            key={d.day}
+                                            className="flex items-center gap-3 text-xs"
+                                        >
                                             <span className="w-10 font-bold text-slate-700">
                                                 {d.day}
                                             </span>
                                             <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
                                                 <div
                                                     className="h-full bg-sky-600 rounded-full transition-all"
-                                                    style={{ width: `${Math.max(widthPct, 3)}%` }}
+                                                    style={{
+                                                        width: `${Math.max(widthPct, 3)}%`,
+                                                    }}
                                                 ></div>
                                             </div>
                                             <span className="w-16 text-right font-semibold text-slate-700 tabular-nums">
@@ -676,11 +783,17 @@ export default function Reports({
                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                        <Clock size={16} className="text-sky-600" />
-                                        <span>Time-of-Day & Triage Distribution</span>
+                                        <Clock
+                                            size={16}
+                                            className="text-sky-600"
+                                        />
+                                        <span>
+                                            Time-of-Day & Triage Distribution
+                                        </span>
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Morning vs Afternoon consultation preferences
+                                        Morning vs Afternoon consultation
+                                        preferences
                                     </p>
                                 </div>
                             </div>
@@ -691,22 +804,29 @@ export default function Reports({
                                     <div className="flex justify-between text-xs font-semibold mb-1.5">
                                         <span className="flex items-center gap-1 text-amber-700">
                                             <Sun size={13} />
-                                            Morning (8 AM – 12 PM): {analytics.timeOfDay?.morning || 0}
+                                            Morning (8 AM – 12 PM):{" "}
+                                            {analytics.timeOfDay?.morning || 0}
                                         </span>
                                         <span className="flex items-center gap-1 text-indigo-700">
                                             <Moon size={13} />
-                                            Afternoon (1 PM – 5 PM): {analytics.timeOfDay?.afternoon || 0}
+                                            Afternoon (1 PM – 5 PM):{" "}
+                                            {analytics.timeOfDay?.afternoon ||
+                                                0}
                                         </span>
                                     </div>
                                     <div className="h-3.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
                                         <div
                                             className="h-full bg-amber-400 transition-all"
-                                            style={{ width: `${analytics.timeOfDay?.morning_pct || 50}%` }}
+                                            style={{
+                                                width: `${analytics.timeOfDay?.morning_pct || 50}%`,
+                                            }}
                                             title={`Morning: ${analytics.timeOfDay?.morning_pct}%`}
                                         ></div>
                                         <div
                                             className="h-full bg-indigo-500 transition-all"
-                                            style={{ width: `${analytics.timeOfDay?.afternoon_pct || 50}%` }}
+                                            style={{
+                                                width: `${analytics.timeOfDay?.afternoon_pct || 50}%`,
+                                            }}
                                             title={`Afternoon: ${analytics.timeOfDay?.afternoon_pct}%`}
                                         ></div>
                                     </div>
@@ -716,20 +836,31 @@ export default function Reports({
                                 <div className="pt-2 border-t border-slate-100">
                                     <div className="flex justify-between text-xs font-semibold mb-1.5">
                                         <span className="text-slate-700">
-                                            Walk-in Visits: {analytics.typeRatio?.walk_in || 0} ({analytics.typeRatio?.walk_in_pct || 0}%)
+                                            Walk-in Visits:{" "}
+                                            {analytics.typeRatio?.walk_in || 0}{" "}
+                                            (
+                                            {analytics.typeRatio?.walk_in_pct ||
+                                                0}
+                                            %)
                                         </span>
                                         <span className="text-slate-500">
-                                            Scheduled: {analytics.typeRatio?.scheduled || 0}
+                                            Scheduled:{" "}
+                                            {analytics.typeRatio?.scheduled ||
+                                                0}
                                         </span>
                                     </div>
                                     <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden flex">
                                         <div
                                             className="h-full bg-sky-600 transition-all"
-                                            style={{ width: `${analytics.typeRatio?.walk_in_pct || 0}%` }}
+                                            style={{
+                                                width: `${analytics.typeRatio?.walk_in_pct || 0}%`,
+                                            }}
                                         ></div>
                                         <div
                                             className="h-full bg-slate-300 transition-all"
-                                            style={{ width: `${100 - (analytics.typeRatio?.walk_in_pct || 0)}%` }}
+                                            style={{
+                                                width: `${100 - (analytics.typeRatio?.walk_in_pct || 0)}%`,
+                                            }}
                                         ></div>
                                     </div>
                                 </div>
@@ -739,20 +870,32 @@ export default function Reports({
                                     <div className="flex justify-between text-xs font-semibold mb-1.5">
                                         <span className="text-rose-700 flex items-center gap-1">
                                             <AlertTriangle size={12} />
-                                            Urgent Crisis: {analytics.urgencyRatio?.urgent || 0} ({analytics.urgencyRatio?.urgent_pct || 0}%)
+                                            Urgent Crisis:{" "}
+                                            {analytics.urgencyRatio?.urgent ||
+                                                0}{" "}
+                                            (
+                                            {analytics.urgencyRatio
+                                                ?.urgent_pct || 0}
+                                            %)
                                         </span>
                                         <span className="text-slate-600">
-                                            Standard Routine: {analytics.urgencyRatio?.standard || 0}
+                                            Standard Routine:{" "}
+                                            {analytics.urgencyRatio?.standard ||
+                                                0}
                                         </span>
                                     </div>
                                     <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
                                         <div
                                             className="h-full bg-rose-600 transition-all"
-                                            style={{ width: `${analytics.urgencyRatio?.urgent_pct || 0}%` }}
+                                            style={{
+                                                width: `${analytics.urgencyRatio?.urgent_pct || 0}%`,
+                                            }}
                                         ></div>
                                         <div
                                             className="h-full bg-slate-300 transition-all"
-                                            style={{ width: `${100 - (analytics.urgencyRatio?.urgent_pct || 0)}%` }}
+                                            style={{
+                                                width: `${100 - (analytics.urgencyRatio?.urgent_pct || 0)}%`,
+                                            }}
                                         ></div>
                                     </div>
                                 </div>
@@ -765,11 +908,17 @@ export default function Reports({
                         <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <Building2 size={16} className="text-sky-600" />
-                                    <span>Highest Demand by Academic College</span>
+                                    <Building2
+                                        size={16}
+                                        className="text-sky-600"
+                                    />
+                                    <span>
+                                        Highest Demand by Academic College
+                                    </span>
                                 </h3>
                                 <p className="text-xs text-slate-500">
-                                    Colleges with the highest student welfare interactions
+                                    Colleges with the highest student welfare
+                                    interactions
                                 </p>
                             </div>
                             <button
@@ -786,13 +935,18 @@ export default function Reports({
 
                         <div className="space-y-4 pt-1">
                             {topColleges.map((col, rank) => (
-                                <div key={col.code} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                                <div
+                                    key={col.code}
+                                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                                >
                                     <div className="flex items-center gap-2.5 min-w-48">
                                         <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-800 flex items-center justify-center font-black text-[10px]">
                                             {rank + 1}
                                         </span>
                                         <div>
-                                            <strong className="text-slate-800">{col.code}</strong>
+                                            <strong className="text-slate-800">
+                                                {col.code}
+                                            </strong>
                                             <span className="text-slate-400 ml-1.5 hidden sm:inline">
                                                 {col.name}
                                             </span>
@@ -802,7 +956,9 @@ export default function Reports({
                                         <div className="flex-1 h-3 rounded-full bg-slate-100 overflow-hidden">
                                             <div
                                                 className="h-full bg-sky-600 rounded-full transition-all"
-                                                style={{ width: `${Math.min(100, col.percentage || 0)}%` }}
+                                                style={{
+                                                    width: `${Math.min(100, col.percentage || 0)}%`,
+                                                }}
                                             ></div>
                                         </div>
                                         <span className="font-bold text-slate-800 tabular-nums w-20 text-right">
@@ -824,10 +980,30 @@ export default function Reports({
                     {/* View Tabs Navigation (Hidden on Print) */}
                     <div className="print:hidden border-b border-sky-100 mb-6 flex flex-wrap gap-2">
                         {[
-                            { id: "services", label: "Service Breakdown", icon: BarChart3, count: rows.length },
-                            { id: "colleges", label: "College Distribution", icon: Building2, count: collegeBreakdown.length },
-                            { id: "counselors", label: "Counselor Caseload", icon: Users, count: counselorBreakdown.length },
-                            { id: "activity", label: "Operational Activity Log", icon: Activity, count: recentRecords.length },
+                            {
+                                id: "services",
+                                label: "Service Breakdown",
+                                icon: BarChart3,
+                                count: rows.length,
+                            },
+                            {
+                                id: "colleges",
+                                label: "College Distribution",
+                                icon: Building2,
+                                count: collegeBreakdown.length,
+                            },
+                            {
+                                id: "counselors",
+                                label: "Counselor Caseload",
+                                icon: Users,
+                                count: counselorBreakdown.length,
+                            },
+                            {
+                                id: "activity",
+                                label: "Operational Activity Log",
+                                icon: Activity,
+                                count: recentRecords.length,
+                            },
                         ].map((tab) => {
                             const Icon = tab.icon;
                             const isActive = reportTab === tab.id;
@@ -848,7 +1024,9 @@ export default function Reports({
                                     <span
                                         className={
                                             "rounded-full px-2 py-0.5 text-[10px] tabular-nums " +
-                                            (isActive ? "bg-sky-200/80 text-sky-900" : "bg-slate-100 text-slate-600")
+                                            (isActive
+                                                ? "bg-sky-200/80 text-sky-900"
+                                                : "bg-slate-100 text-slate-600")
                                         }
                                     >
                                         {tab.count}
@@ -859,7 +1037,8 @@ export default function Reports({
                     </div>
 
                     {/* Tab 1: Service Metrics Matrix (Official Accreditation View) */}
-                    {(reportTab === "services" || typeof window === "undefined") && (
+                    {(reportTab === "services" ||
+                        typeof window === "undefined") && (
                         <Card className="mb-6">
                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                                 <div>
@@ -867,7 +1046,8 @@ export default function Reports({
                                         Institutional Service Summary Metrics
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Official distribution of requests across core guidance services
+                                        Official distribution of requests across
+                                        core guidance services
                                     </p>
                                 </div>
                                 <span className="text-xs font-bold text-slate-700 tabular-nums">
@@ -879,40 +1059,67 @@ export default function Reports({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-sky-100 bg-slate-50/80 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                            <th className="py-3 px-4">Service</th>
-                                            <th className="py-3 px-4">Status</th>
-                                            <th className="py-3 px-4 text-right">Volume</th>
-                                            <th className="py-3 px-4 text-right">Share (%)</th>
+                                            <th className="py-3 px-4">
+                                                Service
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                Status
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Volume
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Share (%)
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-sky-50">
                                         {rows.length === 0 ? (
                                             <tr>
-                                                <td colSpan="4" className="py-8 text-center text-xs text-slate-500">
-                                                    No service records found for the selected filter criteria.
+                                                <td
+                                                    colSpan="4"
+                                                    className="py-8 text-center text-xs text-slate-500"
+                                                >
+                                                    No service records found for
+                                                    the selected filter
+                                                    criteria.
                                                 </td>
                                             </tr>
                                         ) : (
                                             rows.map((r) => {
                                                 const share =
                                                     totalServiceCount > 0
-                                                        ? Math.round(((r.count || 0) / totalServiceCount) * 100)
+                                                        ? Math.round(
+                                                              ((r.count || 0) /
+                                                                  totalServiceCount) *
+                                                                  100,
+                                                          )
                                                         : 0;
                                                 return (
                                                     <tr
-                                                        key={r.service + r.status}
+                                                        key={
+                                                            r.service + r.status
+                                                        }
                                                         className="hover:bg-sky-50/30 transition-colors"
                                                     >
                                                         <td className="py-3 px-4 font-semibold text-slate-800">
-                                                            {r.service === "Appointment"
+                                                            {r.service ===
+                                                            "Appointment"
                                                                 ? "Counseling Appointment"
-                                                                : r.service === "TestingRequest"
+                                                                : r.service ===
+                                                                    "TestingRequest"
                                                                   ? "Psychological Testing"
-                                                                  : r.service.replace(/([a-z])([A-Z])/g, "$1 $2")}
+                                                                  : r.service.replace(
+                                                                        /([a-z])([A-Z])/g,
+                                                                        "$1 $2",
+                                                                    )}
                                                         </td>
                                                         <td className="py-3 px-4">
                                                             <span className="inline-block rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 capitalize">
-                                                                {r.status.replaceAll("_", " ")}
+                                                                {r.status.replaceAll(
+                                                                    "_",
+                                                                    " ",
+                                                                )}
                                                             </span>
                                                         </td>
                                                         <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums">
@@ -937,10 +1144,12 @@ export default function Reports({
                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900">
-                                        Student Services by College / Academic Unit
+                                        Student Services by College / Academic
+                                        Unit
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Utilization and service touchpoints across colleges
+                                        Utilization and service touchpoints
+                                        across colleges
                                     </p>
                                 </div>
                             </div>
@@ -950,11 +1159,21 @@ export default function Reports({
                                     <thead>
                                         <tr className="border-b border-sky-100 bg-slate-50/80 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
                                             <th className="py-3 px-4">Code</th>
-                                            <th className="py-3 px-4">College Name</th>
-                                            <th className="py-3 px-4 text-right">Appointments</th>
-                                            <th className="py-3 px-4 text-right">Testing</th>
-                                            <th className="py-3 px-4 text-right">Total</th>
-                                            <th className="py-3 px-4 text-right w-36">Distribution</th>
+                                            <th className="py-3 px-4">
+                                                College Name
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Appointments
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Testing
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Total
+                                            </th>
+                                            <th className="py-3 px-4 text-right w-36">
+                                                Distribution
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-sky-50">
@@ -983,7 +1202,9 @@ export default function Reports({
                                                         <div className="w-16 h-2 rounded-full bg-slate-100 overflow-hidden">
                                                             <div
                                                                 className="h-full bg-sky-600 rounded-full"
-                                                                style={{ width: `${Math.min(100, col.percentage || 0)}%` }}
+                                                                style={{
+                                                                    width: `${Math.min(100, col.percentage || 0)}%`,
+                                                                }}
                                                             ></div>
                                                         </div>
                                                         <span className="text-xs font-semibold text-slate-600 tabular-nums w-8">
@@ -1005,10 +1226,12 @@ export default function Reports({
                             <div className="flex items-center justify-between pb-3 mb-4 border-b border-sky-100">
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900">
-                                        Counselor Caseload & Service Distribution
+                                        Counselor Caseload & Service
+                                        Distribution
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Active assignments, completed consultations, and crisis interventions
+                                        Active assignments, completed
+                                        consultations, and crisis interventions
                                     </p>
                                 </div>
                             </div>
@@ -1017,18 +1240,32 @@ export default function Reports({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-sky-100 bg-slate-50/80 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                            <th className="py-3 px-4">Counselor Name</th>
-                                            <th className="py-3 px-4 text-right">Assigned</th>
-                                            <th className="py-3 px-4 text-right">Completed Sessions</th>
-                                            <th className="py-3 px-4 text-right">Urgent Handled</th>
-                                            <th className="py-3 px-4 text-right">Cases Managed</th>
+                                            <th className="py-3 px-4">
+                                                Counselor Name
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Assigned
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Completed Sessions
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Urgent Handled
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Cases Managed
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-sky-50">
                                         {counselorBreakdown.length === 0 ? (
                                             <tr>
-                                                <td colSpan="5" className="py-8 text-center text-xs text-slate-500">
-                                                    No counselor records registered in the system.
+                                                <td
+                                                    colSpan="5"
+                                                    className="py-8 text-center text-xs text-slate-500"
+                                                >
+                                                    No counselor records
+                                                    registered in the system.
                                                 </td>
                                             </tr>
                                         ) : (
@@ -1073,7 +1310,8 @@ export default function Reports({
                                         Operational Activity Log
                                     </h3>
                                     <p className="text-xs text-slate-500">
-                                        Confidentiality-protected log of recent service transactions
+                                        Confidentiality-protected log of recent
+                                        service transactions
                                     </p>
                                 </div>
                                 <span className="text-xs text-slate-400">
@@ -1085,20 +1323,38 @@ export default function Reports({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b border-sky-100 bg-slate-50/80 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                                            <th className="py-3 px-4">Date & Time</th>
-                                            <th className="py-3 px-4">Service</th>
-                                            <th className="py-3 px-4">College</th>
-                                            <th className="py-3 px-4">Mode / Type</th>
-                                            <th className="py-3 px-4">Urgency</th>
-                                            <th className="py-3 px-4">Assigned To</th>
-                                            <th className="py-3 px-4 text-right">Status</th>
+                                            <th className="py-3 px-4">
+                                                Date & Time
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                Service
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                College
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                Mode / Type
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                Urgency
+                                            </th>
+                                            <th className="py-3 px-4">
+                                                Assigned To
+                                            </th>
+                                            <th className="py-3 px-4 text-right">
+                                                Status
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-sky-50">
                                         {recentRecords.length === 0 ? (
                                             <tr>
-                                                <td colSpan="7" className="py-8 text-center text-xs text-slate-500">
-                                                    No operational records match the current filter criteria.
+                                                <td
+                                                    colSpan="7"
+                                                    className="py-8 text-center text-xs text-slate-500"
+                                                >
+                                                    No operational records match
+                                                    the current filter criteria.
                                                 </td>
                                             </tr>
                                         ) : (
@@ -1108,7 +1364,10 @@ export default function Reports({
                                                     className="hover:bg-sky-50/30 transition-colors text-xs"
                                                 >
                                                     <td className="py-3 px-4 font-medium text-slate-800 whitespace-nowrap">
-                                                        {rec.date} <span className="text-slate-400">· {rec.time}</span>
+                                                        {rec.date}{" "}
+                                                        <span className="text-slate-400">
+                                                            · {rec.time}
+                                                        </span>
                                                     </td>
                                                     <td className="py-3 px-4 font-semibold text-slate-900">
                                                         {rec.service}
@@ -1122,19 +1381,24 @@ export default function Reports({
                                                         {rec.type}
                                                     </td>
                                                     <td className="py-3 px-4">
-                                                        {rec.urgency === "urgent" ? (
+                                                        {rec.urgency ===
+                                                        "urgent" ? (
                                                             <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase">
                                                                 Urgent
                                                             </span>
                                                         ) : (
-                                                            <span className="text-slate-500 font-medium">Standard</span>
+                                                            <span className="text-slate-500 font-medium">
+                                                                Standard
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="py-3 px-4 text-slate-700 font-medium">
                                                         {rec.counselor}
                                                     </td>
                                                     <td className="py-3 px-4 text-right">
-                                                        <StatusBadge status={rec.status} />
+                                                        <StatusBadge
+                                                            status={rec.status}
+                                                        />
                                                     </td>
                                                 </tr>
                                             ))
@@ -1151,18 +1415,26 @@ export default function Reports({
             <div className="hidden print:block mt-12 pt-8 border-t border-slate-300">
                 <div className="grid grid-cols-2 gap-8 text-xs text-slate-800">
                     <div>
-                        <p className="font-semibold text-slate-500 mb-12">Prepared by:</p>
+                        <p className="font-semibold text-slate-500 mb-12">
+                            Prepared by:
+                        </p>
                         <p className="font-bold border-b border-slate-800 pb-1 w-64">
                             Guidance Office Staff / Psychometrician
                         </p>
-                        <p className="text-[10px] text-slate-500 mt-1">Student Welfare and Evaluation Unit</p>
+                        <p className="text-[10px] text-slate-500 mt-1">
+                            Student Welfare and Evaluation Unit
+                        </p>
                     </div>
                     <div>
-                        <p className="font-semibold text-slate-500 mb-12">Noted by:</p>
+                        <p className="font-semibold text-slate-500 mb-12">
+                            Noted by:
+                        </p>
                         <p className="font-bold border-b border-slate-800 pb-1 w-64">
                             University Guidance Center Director
                         </p>
-                        <p className="text-[10px] text-slate-500 mt-1">Bukidnon State University</p>
+                        <p className="text-[10px] text-slate-500 mt-1">
+                            Bukidnon State University
+                        </p>
                     </div>
                 </div>
             </div>

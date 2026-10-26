@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Link, router, useForm } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Office, {
     Card,
     Field,
@@ -11,6 +11,12 @@ import Office, {
 } from "@/Components/Office";
 import { TIME_SLOTS } from "@/Support/guidanceConstants";
 
+function tomorrow() {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export default function SessionNotes({
     appointment,
     intake,
@@ -20,14 +26,23 @@ export default function SessionNotes({
     const [showFollowUp, setShowFollowUp] = useState(false);
     const [caseProcessing, setCaseProcessing] = useState(false);
     const [caseError, setCaseError] = useState("");
+    const [caseSuccess, setCaseSuccess] = useState("");
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [slotsError, setSlotsError] = useState("");
+    const [slotsLoading, setSlotsLoading] = useState(false);
     const followUp = useForm({
         targetDate: "",
+<<<<<<< HEAD
+        scheduledTime: "",
+        mode: appointment.channel === "online" ? "Virtual" : "F2F",
+=======
         timeSlot: "AM",
         mode: ["virtual", "online", "telecounseling"].includes(
             appointment.channel,
         )
             ? "Virtual"
             : "F2F",
+>>>>>>> 47baedd8aad5f4594ef4f42774f1752249fe60fb
     });
     const form = useForm({
         notes: session?.notes || "",
@@ -39,16 +54,57 @@ export default function SessionNotes({
             "10:00",
         version: session?.version || 0,
     });
+    useEffect(() => {
+        if (!followUp.data.targetDate || !showFollowUp || !caseRecord) {
+            setAvailableSlots([]);
+            setSlotsError("");
+            setSlotsLoading(false);
+            return;
+        }
+
+        let active = true;
+        setSlotsLoading(true);
+        setAvailableSlots([]);
+        setSlotsError("");
+        followUp.setData("scheduledTime", "");
+        axios
+            .get(route("cases.follow-up-slots", caseRecord.id), {
+                params: { date: followUp.data.targetDate },
+            })
+            .then(({ data }) => {
+                if (active) setAvailableSlots(data.slots);
+            })
+            .catch((error) => {
+                if (!active) return;
+                setSlotsError(
+                    error.response?.data?.message ||
+                        "Available times could not be loaded. Try again.",
+                );
+            })
+            .finally(() => {
+                if (active) setSlotsLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, [caseRecord?.id, followUp.data.targetDate, showFollowUp]);
     const editable =
         Boolean(session) ||
         ["accepted", "completed"].includes(appointment.status);
     const changeCase = async (action, payload = {}) => {
         setCaseProcessing(true);
         setCaseError("");
+        setCaseSuccess("");
         followUp.clearErrors();
         try {
             await axios.post(route(`cases.${action}`, caseRecord.id), payload);
             setShowFollowUp(false);
+            setCaseSuccess(
+                action === "close"
+                    ? "Case closed. Its history remains available."
+                    : "Follow-up scheduled; the student can review it in their appointments.",
+            );
             router.reload({ preserveScroll: true });
         } catch (error) {
             const response = error.response?.data;
@@ -213,6 +269,14 @@ export default function SessionNotes({
                                 {caseError}
                             </p>
                         )}
+                        {caseSuccess && (
+                            <p
+                                role="status"
+                                className="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+                            >
+                                {caseSuccess}
+                            </p>
+                        )}
                         <div className="space-y-4">
                             <h3 className="text-sm font-semibold text-slate-800">
                                 Session history
@@ -315,17 +379,47 @@ export default function SessionNotes({
                                 label="Date"
                                 type="date"
                                 required
+                                min={tomorrow()}
                             />
-                            <Field
-                                form={followUp}
-                                name="timeSlot"
-                                label="Time slot"
-                                type="select"
-                                required
-                            >
-                                <option value="AM">AM</option>
-                                <option value="PM">PM</option>
-                            </Field>
+                            {followUp.data.targetDate && (
+                                <Field
+                                    form={followUp}
+                                    name="scheduledTime"
+                                    label="Available 30-minute time"
+                                    type="select"
+                                    required
+                                    disabled={slotsLoading}
+                                >
+                                    <option value="">
+                                        {slotsLoading
+                                            ? "Loading available times..."
+                                            : "Select an available time"}
+                                    </option>
+                                    {availableSlots.map((time) => (
+                                        <option key={time} value={time}>
+                                            {time}
+                                        </option>
+                                    ))}
+                                </Field>
+                            )}
+                            {slotsError && (
+                                <p
+                                    role="alert"
+                                    className="text-sm text-rose-700"
+                                >
+                                    {slotsError}
+                                </p>
+                            )}
+                            {followUp.data.targetDate &&
+                                !slotsLoading &&
+                                !slotsError &&
+                                availableSlots.length === 0 && (
+                                    <p className="text-sm text-amber-800">
+                                        No available times on this date. Choose
+                                        a different date or update your
+                                        schedule.
+                                    </p>
+                                )}
                             <Field
                                 form={followUp}
                                 name="mode"
@@ -346,7 +440,13 @@ export default function SessionNotes({
                                 >
                                     Cancel
                                 </Button>
-                                <Button disabled={caseProcessing}>
+                                <Button
+                                    disabled={
+                                        caseProcessing ||
+                                        slotsLoading ||
+                                        !followUp.data.scheduledTime
+                                    }
+                                >
                                     {caseProcessing
                                         ? "Scheduling..."
                                         : "Schedule Follow-Up"}

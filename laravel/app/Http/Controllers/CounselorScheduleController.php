@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\CounselorSchedule;
 use App\Models\User;
+use App\Services\CounselorAvailability;
 use App\Services\CounselorSchedules;
 use App\Support\Ids;
+use App\Support\Views;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -15,8 +18,32 @@ class CounselorScheduleController extends Controller
     public function index(Request $request)
     {
         $schedule = CounselorSchedule::where('counselor_id', Ids::object($request->user()->id))->first();
+        $appointments = Appointment::where('counselor_id', Ids::object($request->user()->id))
+            ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
+            ->whereBetween('scheduled_date', [
+                today()->subDays(30)->toDateString(),
+                today()->addDays(90)->toDateString(),
+            ])
+            ->orderBy('scheduled_date')
+            ->orderBy('scheduled_time')
+            ->get();
+        $appointmentViews = collect(Views::appointments($appointments->all()))
+            ->map(fn (array $appointment) => [
+                'id' => $appointment['id'],
+                'case_id' => $appointment['case_id'],
+                'student_name' => $appointment['student']['full_name'] ?? 'Unavailable account',
+                'scheduled_date' => $appointment['scheduled_date'],
+                'scheduled_time' => $appointment['scheduled_time'],
+                'type' => $appointment['type'],
+                'status' => $appointment['status'],
+            ])
+            ->values()
+            ->all();
 
-        return Inertia::render('Counselor/Schedule', ['schedule' => $this->serialize($schedule)]);
+        return Inertia::render('Counselor/Schedule', [
+            'schedule' => $this->serialize($schedule),
+            'appointments' => $appointmentViews,
+        ]);
     }
 
     public function showMine(Request $request)

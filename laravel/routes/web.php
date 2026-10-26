@@ -6,6 +6,8 @@ use App\Http\Controllers\AlertController;
 use App\Http\Controllers\Api\AcademicProgramController;
 use App\Http\Controllers\Api\PsgcController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\CounselorAnalyticsController;
+use App\Http\Controllers\CounselorCaseController;
 use App\Http\Controllers\CounselorScheduleController;
 use App\Http\Controllers\PersonalInformationController;
 use App\Http\Controllers\ReportController;
@@ -61,6 +63,9 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::patch('/appointments/{appointment}', [AppointmentController::class, 'update'])->middleware(['role:student|staff|counselor'])->name('appointments.update');
     Route::middleware('role:counselor')->group(function () {
         Route::get('/counselor', [SessionNoteController::class, 'dashboard'])->middleware('permission:appointments.manage')->name('counselor.dashboard');
+        Route::get('/counselor/cases', [CounselorCaseController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.cases.index');
+        Route::get('/counselor/cases/{case}', [CounselorCaseController::class, 'show'])->middleware('permission:notes.manage')->name('counselor.cases.show');
+        Route::get('/counselor/analytics', [CounselorAnalyticsController::class, 'index'])->middleware('permission:notes.manage')->name('counselor.analytics');
         Route::get('/counselor/appointments/{appointment}/notes', [SessionNoteController::class, 'show'])
             ->middleware(['permission:notes.manage', 'can.read.session.notes:appointment,read'])
             ->name('notes.show');
@@ -75,6 +80,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
             ->middleware(['permission:notes.manage', 'can.read.session.notes:appointment,write'])->name('notes.store');
         Route::post('/api/cases/{case}/close', [SessionNoteController::class, 'closeCase'])->middleware('permission:notes.manage')->name('cases.close');
         Route::post('/api/cases/{case}/follow-up', [SessionNoteController::class, 'scheduleFollowUp'])->middleware('permission:notes.manage')->name('cases.follow-up');
+        Route::get('/api/cases/{case}/follow-up-slots', [CounselorCaseController::class, 'followUpSlots'])->middleware('permission:notes.manage')->name('cases.follow-up-slots');
         Route::patch('/availability', [AdminController::class, 'availability'])->name('availability.update');
     });
     Route::middleware('role:admin')->group(function () {

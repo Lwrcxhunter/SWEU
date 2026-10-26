@@ -246,25 +246,34 @@ export default function CounselorAppointmentCard({ item }) {
                         </Button>
                     )}
 
-                    {/* Clinical Notes Direct Link */}
-                    <Link
-                        className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 transition shadow-xs inline-flex items-center gap-1.5"
-                        href={route("notes.show", item.id)}
-                    >
-                        <FileText className="w-4 h-4 text-sky-600" />
-                        <span>View intake & notes</span>
-                    </Link>
-
-                    {/* Intake PDF export */}
-                    <a
-                        className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 inline-flex items-center gap-1.5 transition shadow-xs"
-                        href={route("appointments.pdf", item.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Download className="w-4 h-4 text-sky-600" />
-                        <span>Intake PDF</span>
-                    </a>
+                    {item.case_id ? (
+                        <Link
+                            className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 transition shadow-xs inline-flex items-center gap-1.5"
+                            href={route("counselor.cases.show", item.case_id)}
+                        >
+                            <FileText className="w-4 h-4 text-sky-600" />
+                            <span>View case</span>
+                        </Link>
+                    ) : (
+                        <>
+                            <Link
+                                className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 transition shadow-xs inline-flex items-center gap-1.5"
+                                href={route("notes.show", item.id)}
+                            >
+                                <FileText className="w-4 h-4 text-sky-600" />
+                                <span>View intake & notes</span>
+                            </Link>
+                            <a
+                                className="rounded-lg border border-sky-200 bg-white px-4 py-2.5 text-sm font-semibold text-sky-800 hover:bg-sky-50 inline-flex items-center gap-1.5 transition shadow-xs"
+                                href={route("appointments.pdf", item.id)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <Download className="w-4 h-4 text-sky-600" />
+                                <span>Intake PDF</span>
+                            </a>
+                        </>
+                    )}
                 </div>
 
                 {/* Secondary Actions (Reschedule toggle & Cancel) */}

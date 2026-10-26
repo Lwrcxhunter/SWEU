@@ -77,6 +77,18 @@ export default function Sidebar({ auth, menu, setMenu }) {
             label: "My Schedule",
             icon: Calendar,
         });
+        if (can("notes.manage")) {
+            navItems.push({
+                name: "counselor.cases.index",
+                label: "Counseling Cases",
+                icon: ClipboardList,
+            });
+            navItems.push({
+                name: "counselor.analytics",
+                label: "Analytics",
+                icon: BarChart3,
+            });
+        }
     } else if (role === "staff" && can("queue.manage")) {
         navItems.push({
             name: "queue.index",

@@ -52,9 +52,7 @@ export default function AuthenticatedLayout({
     }, [refreshNotifications]);
 
     return (
-        <div
-            className="min-h-screen bg-sky-50/60 text-slate-800 font-sans antialiased"
-        >
+        <div className="min-h-screen bg-sky-50/60 text-slate-800 font-sans antialiased">
             <Head title={title} />
 
             {/* Sidebar Navigation */}

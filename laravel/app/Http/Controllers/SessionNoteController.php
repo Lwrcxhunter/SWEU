@@ -9,6 +9,7 @@ use App\Models\OfficeAlert;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\CounselingCases;
+use App\Services\CounselorAvailability;
 use App\Services\CounselorSchedules;
 use App\Support\Ids;
 use App\Support\Views;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use MongoDB\Driver\Exception\BulkWriteException;
 
 class SessionNoteController extends Controller
 {
@@ -116,7 +118,8 @@ class SessionNoteController extends Controller
     public function closeCase(Request $request, string $case)
     {
         $record = $this->caseForCounselor($request, $case);
-        $result = DB::transaction(function () use ($record) {
+        $actorId = Ids::object($request->user()->id);
+        $result = DB::transaction(function () use ($record, $actorId) {
             $record = CounselingCase::findOrFail(Ids::object($record->id));
             if ($record->status === 'closed') {
                 return response()->json(['message' => 'This case is already closed.'], 409);
@@ -143,6 +146,7 @@ class SessionNoteController extends Controller
             $record->update([
                 'status' => 'closed',
                 'closed_at' => $now,
+                'closed_by' => $actorId,
                 'closed_reason' => 'completed/stable',
                 'outcome' => 'completed/stable',
             ]);
@@ -153,107 +157,144 @@ class SessionNoteController extends Controller
         return $result;
     }
 
-    public function scheduleFollowUp(Request $request, string $case, CounselorSchedules $schedules)
-    {
+    public function scheduleFollowUp(
+        Request $request,
+        string $case,
+        CounselorSchedules $schedules,
+        CounselorAvailability $availability,
+        CounselingCases $cases,
+    ) {
+        $validTimes = array_merge($availability->times('AM'), $availability->times('PM'));
         $data = $request->validate([
             'targetDate' => ['required', 'date_format:Y-m-d', 'after:today'],
-            'timeSlot' => ['required', Rule::in(['AM', 'PM'])],
+            'scheduledTime' => [
+                'required',
+                'date_format:H:i',
+                'regex:/^\d{2}:(00|30)$/',
+                Rule::in($validTimes),
+            ],
             'mode' => ['required', Rule::in(['F2F', 'Virtual'])],
         ]);
         $record = $this->caseForCounselor($request, $case);
 
-        return DB::transaction(function () use ($record, $data, $schedules) {
-            $case = CounselingCase::findOrFail(Ids::object($record->id));
-            if ($case->status === 'closed') {
-                return response()->json(['message' => 'A follow-up cannot be added to a closed case.'], 409);
-            }
+        try {
+            return DB::transaction(function () use ($record, $data, $schedules, $availability, $cases) {
+                $case = CounselingCase::findOrFail(Ids::object($record->id));
+                if ($case->status === 'closed') {
+                    return response()->json(['message' => 'A follow-up cannot be added to a closed case.'], 409);
+                }
 
-            $scheduledTime = $data['timeSlot'] === 'AM' ? '10:00' : '14:00';
-            $channel = $data['mode'] === 'Virtual' ? 'online' : 'face_to_face';
-            if (! $schedules->allowsAppointment((string) $case->counselor_id, [
-                'scheduled_date' => $data['targetDate'],
-                'scheduled_time' => $scheduledTime,
-            ])) {
-                return response()->json(['message' => 'That counselor is unavailable during the selected schedule or leave period.'], 409);
-            }
-            $slotKey = (string) $case->counselor_id.':'.$data['targetDate'].':'.$scheduledTime;
-            if (Appointment::where('slot_key', $slotKey)->exists()) {
-                return response()->json(['message' => 'That counselor slot is already reserved. Choose another date or time slot.'], 409);
-            }
+                $scheduledTime = $data['scheduledTime'];
+                $counselor = User::findOrFail($case->counselor_id);
+                $channel = $data['mode'] === 'Virtual' ? 'online' : 'face_to_face';
+                $bookings = Appointment::where('counselor_id', Ids::object($counselor->id))
+                    ->where('scheduled_date', $data['targetDate'])
+                    ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
+                    ->get(['_id', 'counselor_id', 'scheduled_date', 'scheduled_time', 'status']);
+                $slotAvailability = $availability->check(
+                    $counselor,
+                    $data['targetDate'],
+                    $scheduledTime,
+                    null,
+                    $bookings,
+                );
+                if (! $slotAvailability['available'] || ! $schedules->allowsAppointment((string) $case->counselor_id, [
+                    'scheduled_date' => $data['targetDate'],
+                    'scheduled_time' => $scheduledTime,
+                ])) {
+                    return response()->json([
+                        'message' => 'That time is no longer available. Choose a different date or time.',
+                    ], 409);
+                }
 
-            $currentSession = CounselingSession::where('case_id', Ids::object($case->id))
-                ->orderByDesc('session_number')
-                ->first();
-            if (! $currentSession) {
-                return response()->json(['message' => 'This case has no session to follow up.'], 409);
-            }
+                $slotKey = (string) $case->counselor_id.':'.$data['targetDate'].':'.$scheduledTime;
+                if (Appointment::where('slot_key', $slotKey)->exists()) {
+                    return response()->json(['message' => 'That counselor slot is already reserved. Choose another time.'], 409);
+                }
 
-            $now = now()->toDateTimeString();
-            if (in_array($currentSession->status, ['scheduled', 'in_progress'], true)) {
-                $currentSession->update(['status' => 'completed', 'completed_at' => $now]);
-                if ($currentAppointment = Appointment::find($currentSession->appointment_id)) {
-                    $currentAppointment->update([
-                        'status' => 'completed',
-                        'slot_key' => null,
-                        'version' => (int) $currentAppointment->version + 1,
+                $currentSession = CounselingSession::where('case_id', Ids::object($case->id))
+                    ->orderByDesc('session_number')
+                    ->first();
+                if (! $currentSession) {
+                    return response()->json(['message' => 'This case has no session to follow up.'], 409);
+                }
+
+                $now = now()->toDateTimeString();
+                if (in_array($currentSession->status, ['scheduled', 'in_progress'], true)) {
+                    $currentSession->update(['status' => 'completed', 'completed_at' => $now]);
+                    if ($currentAppointment = Appointment::find($currentSession->appointment_id)) {
+                        $currentAppointment->update([
+                            'status' => 'completed',
+                            'slot_key' => null,
+                            'version' => (int) $currentAppointment->version + 1,
+                        ]);
+                    }
+                } elseif (! in_array($currentSession->status, ['completed', 'cancelled'], true)) {
+                    return response()->json(['message' => 'The latest session cannot be followed up.'], 409);
+                }
+
+                $appointment = Appointment::create([
+                    'case_id' => Ids::object($case->id),
+                    'student_id' => Ids::object($case->student_id),
+                    'counselor_id' => Ids::object($case->counselor_id),
+                    'channel' => $channel,
+                    'type' => 'follow_up',
+                    'urgency_level' => 'normal',
+                    'scheduled_date' => $data['targetDate'],
+                    'scheduled_time' => $scheduledTime,
+                    'status' => 'counselor_accepted_pending_student',
+                    'version' => 1,
+                    'slot_key' => $slotKey,
+                    'counselor_accepted_at' => now()->toDateTimeString(),
+                    'student_accepted_at' => null,
+                    'initial_visit_questionnaire' => [
+                        'reason' => 'Follow-up counseling session',
+                        'expectations' => 'Continued guidance and progress review',
+                    ],
+                ]);
+
+                $case->increment('session_count');
+                $case->update(['status' => 'follow_up']);
+                $session = CounselingSession::create([
+                    'case_id' => Ids::object($case->id),
+                    'appointment_id' => Ids::object($appointment->id),
+                    'student_id' => Ids::object($case->student_id),
+                    'counselor_id' => Ids::object($case->counselor_id),
+                    'session_date' => $data['targetDate'],
+                    'time_slot' => $cases->timeSlot($scheduledTime),
+                    'mode' => $data['mode'],
+                    'status' => 'scheduled',
+                    'is_follow_up' => true,
+                    'session_number' => (int) $case->fresh()->session_count,
+                    'version' => 0,
+                ]);
+
+                $student = Student::findOrFail($case->student_id);
+                if ($student->user_id) {
+                    OfficeAlert::create([
+                        'user_id' => Ids::object($student->user_id),
+                        'appointment_id' => Ids::object($appointment->id),
+                        'kind' => 'appointment',
+                        'message' => "Your counselor scheduled a follow-up session for {$data['targetDate']}. Please review your appointments.",
+                        'read_at' => null,
                     ]);
                 }
-            } elseif (! in_array($currentSession->status, ['completed', 'cancelled'], true)) {
-                return response()->json(['message' => 'The latest session cannot be followed up.'], 409);
-            }
 
-            $appointment = Appointment::create([
-                'case_id' => Ids::object($case->id),
-                'student_id' => Ids::object($case->student_id),
-                'counselor_id' => Ids::object($case->counselor_id),
-                'channel' => $channel,
-                'type' => 'follow_up',
-                'urgency_level' => 'normal',
-                'scheduled_date' => $data['targetDate'],
-                'scheduled_time' => $scheduledTime,
-                'status' => 'counselor_accepted_pending_student',
-                'version' => 1,
-                'slot_key' => $slotKey,
-                'counselor_accepted_at' => now()->toDateTimeString(),
-                'student_accepted_at' => null,
-                'initial_visit_questionnaire' => [
-                    'reason' => 'Follow-up counseling session',
-                    'expectations' => 'Continued guidance and progress review',
-                ],
-            ]);
-
-            $case->increment('session_count');
-            $case->update(['status' => 'follow_up']);
-            $session = CounselingSession::create([
-                'case_id' => Ids::object($case->id),
-                'appointment_id' => Ids::object($appointment->id),
-                'student_id' => Ids::object($case->student_id),
-                'counselor_id' => Ids::object($case->counselor_id),
-                'session_date' => $data['targetDate'],
-                'time_slot' => $data['timeSlot'],
-                'mode' => $data['mode'],
-                'status' => 'scheduled',
-                'is_follow_up' => true,
-                'session_number' => (int) $case->fresh()->session_count,
-                'version' => 0,
-            ]);
-
-            $student = Student::findOrFail($case->student_id);
-            if ($student->user_id) {
-                OfficeAlert::create([
-                    'user_id' => Ids::object($student->user_id),
-                    'appointment_id' => Ids::object($appointment->id),
-                    'kind' => 'appointment',
-                    'message' => "Your counselor scheduled a follow-up session for {$data['targetDate']}. Please review your appointments.",
-                    'read_at' => null,
-                ]);
+                return response()->json([
+                    'case' => $this->serializeCase($case->fresh(), false),
+                    'session' => $this->serializeSession($session),
+                ], 201);
+            });
+        } catch (BulkWriteException $exception) {
+            if ((int) $exception->getCode() !== 11000
+                || ! str_contains($exception->getMessage(), 'slot_key_1')) {
+                throw $exception;
             }
 
             return response()->json([
-                'case' => $this->serializeCase($case->fresh(), false),
-                'session' => $this->serializeSession($session),
-            ], 201);
-        });
+                'message' => 'That counselor slot was just reserved. Choose another time.',
+            ], 409);
+        }
     }
 
     private function caseForCounselor(Request $request, string $id): CounselingCase
@@ -274,6 +315,7 @@ class SessionNoteController extends Controller
             'status' => $case->status,
             'opened_at' => $case->opened_at,
             'closed_at' => $case->closed_at,
+            'closed_by' => $case->closed_by ? (string) $case->closed_by : null,
             'closed_reason' => $case->closed_reason,
             'outcome' => $case->outcome,
             'session_count' => (int) $case->session_count,
