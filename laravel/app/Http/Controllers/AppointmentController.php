@@ -19,6 +19,10 @@ class AppointmentController extends Controller
 {
     public function index(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Student/BookAppointment', ['appointments', 'hasIntake', 'followUps'])) {
+            return Inertia::render('Student/BookAppointment', []);
+        }
+
         $student = Student::where('user_id', Ids::object($request->user()->id))->first();
         $appointments = $student ? Views::appointments(Appointment::where('student_id', Ids::object($student->id))->latest()->paginate(15)) : null;
 

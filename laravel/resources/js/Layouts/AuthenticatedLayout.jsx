@@ -23,18 +23,32 @@ export default function AuthenticatedLayout({
 
     useEffect(() => {
         if (!refreshNotifications) return;
-        const timer = setInterval(
-            () =>
-                router.reload({
-                    only: [
-                        "unreadAlerts",
-                        "unreadAlertCount",
-                        ...(route().current("alerts.index") ? ["alerts"] : []),
-                    ],
-                }),
-            15000,
-        );
-        return () => clearInterval(timer);
+
+        const pollNotifications = () => {
+            if (typeof document !== "undefined" && document.hidden) return;
+            router.reload({
+                only: [
+                    "unreadAlerts",
+                    "unreadAlertCount",
+                    ...(route().current("alerts.index") ? ["alerts"] : []),
+                ],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        };
+
+        const timer = setInterval(pollNotifications, 45000);
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                pollNotifications();
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
     }, [refreshNotifications]);
 
     return (

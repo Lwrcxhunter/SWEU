@@ -16,8 +16,12 @@ use Inertia\Inertia;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Admin/Users', ['users', 'roles', 'colleges', 'grants', 'allowedPermissions'])) {
+            return Inertia::render('Admin/Users', []);
+        }
+
         return Inertia::render('Admin/Users', ['users' => User::orderBy('full_name')->paginate(20)->through(fn ($u) => Views::user($u) + ['active' => $u->active]),
             'roles' => config('guidance.roles'), 'colleges' => config('guidance.colleges'),
             'grants' => RoleGrant::all()->map(fn ($r) => ['role' => $r->name, 'permissions' => $r->permissions]),

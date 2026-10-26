@@ -31,6 +31,10 @@ class SessionNoteController extends Controller
 
     public function dashboard(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Counselor/Dashboard', ['appointments', 'followups'])) {
+            return Inertia::render('Counselor/Dashboard', []);
+        }
+
         $id = Ids::object($request->user()->id);
 
         return Inertia::render('Counselor/Dashboard', [

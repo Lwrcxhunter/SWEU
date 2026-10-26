@@ -21,6 +21,10 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Staff/Reports', ['rows', 'kpis', 'analytics', 'collegeBreakdown', 'counselorBreakdown', 'recentRecords', 'filters', 'colleges', 'counselors'])) {
+            return Inertia::render('Staff/Reports', []);
+        }
+
         $filters = $request->validate([
             'from' => 'nullable|date_format:Y-m-d',
             'to' => 'nullable|date_format:Y-m-d|after_or_equal:from',
