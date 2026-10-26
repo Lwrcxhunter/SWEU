@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useForm, router } from "@inertiajs/react";
 import Office, {
     Card,
@@ -16,8 +16,10 @@ import {
     MapPin,
     CalendarClock,
     ChevronDown,
+    LoaderCircle,
 } from "lucide-react";
 import { parseDateBadge, formatSessionTime } from "@/Support/guidanceConstants";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 import FollowUpBanner from "./FollowUpBanner";
 
 function ChannelBadge({ channel }) {
@@ -39,7 +41,10 @@ export default function BookAppointment({
     followUps = [],
 }) {
     const [reschedulingId, setReschedulingId] = useState(null);
-    const [cancellingId, setCancellingId] = useState(null);
+    const [confirmation, setConfirmation] = useState(null);
+    const [processingAction, setProcessingAction] = useState(false);
+    const [actionErrors, setActionErrors] = useState({});
+    const actionLock = useRef(false);
 
     const rescheduleForm = useForm({
         action: "reschedule",
@@ -48,47 +53,34 @@ export default function BookAppointment({
         version: 1,
     });
 
-    const actionForm = useForm({
-        action: "",
-        version: 1,
-    });
-
     const walkForm = useForm({});
 
-    const handleAccept = (appointment) => {
-        if (!confirm("Confirm this counselor-approved schedule?")) return;
-        actionForm.setData({
-            action: "student_confirm",
-            version: appointment.version,
-        });
-        router.patch(
-            route("appointments.update", appointment.id),
-            {
-                action: "student_confirm",
-                version: appointment.version,
-            },
-            {
-                preserveScroll: true,
-            },
-        );
+    const openConfirmation = (appointment, action) => {
+        if (actionLock.current || rescheduleForm.processing) return;
+        setActionErrors({});
+        setConfirmation({ appointment, action });
     };
-
-    const handleCancel = (appointment) => {
-        if (
-            !confirm(
-                "Are you sure you want to cancel this appointment request?",
-            )
-        )
-            return;
+    const handleAccept = (appointment) =>
+        openConfirmation(appointment, "student_confirm");
+    const handleCancel = (appointment) =>
+        openConfirmation(appointment, "cancel");
+    const submitConfirmation = () => {
+        if (!confirmation || actionLock.current) return;
+        actionLock.current = true;
+        setProcessingAction(true);
+        setActionErrors({});
+        const { appointment, action } = confirmation;
         router.patch(
             route("appointments.update", appointment.id),
-            {
-                action: "cancel",
-                version: appointment.version,
-            },
+            { action, version: appointment.version },
             {
                 preserveScroll: true,
-                onSuccess: () => setCancellingId(null),
+                onSuccess: () => setConfirmation(null),
+                onError: (errors) => setActionErrors(errors),
+                onFinish: () => {
+                    actionLock.current = false;
+                    setProcessingAction(false);
+                },
             },
         );
     };
@@ -131,6 +123,34 @@ export default function BookAppointment({
                 </div>
             }
         >
+            <ConfirmationModal
+                open={!!confirmation}
+                title={
+                    confirmation?.action === "cancel"
+                        ? "Cancel appointment?"
+                        : "Confirm schedule?"
+                }
+                description={
+                    confirmation?.action === "cancel"
+                        ? "This will cancel your appointment request."
+                        : "Confirm that you can attend the counselor-approved schedule."
+                }
+                confirmLabel={
+                    confirmation?.action === "cancel"
+                        ? "Cancel appointment"
+                        : "Confirm schedule"
+                }
+                processingLabel={
+                    confirmation?.action === "cancel"
+                        ? "Cancelling..."
+                        : "Confirming..."
+                }
+                destructive={confirmation?.action === "cancel"}
+                processing={processingAction}
+                errors={actionErrors}
+                onConfirm={submitConfirmation}
+                onClose={() => setConfirmation(null)}
+            />
             <FollowUpBanner appointments={followUps} />
             {!hasIntake && (
                 <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex items-start gap-3">
@@ -513,14 +533,37 @@ export default function BookAppointment({
                                                     item.type !==
                                                         "follow_up" && (
                                                         <button
+                                                            type="button"
+                                                            disabled={
+                                                                processingAction ||
+                                                                rescheduleForm.processing
+                                                            }
+                                                            aria-busy={
+                                                                processingAction &&
+                                                                confirmation
+                                                                    ?.appointment
+                                                                    .id ===
+                                                                    item.id
+                                                            }
                                                             onClick={() =>
                                                                 handleAccept(
                                                                     item,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition disabled:cursor-not-allowed disabled:opacity-60"
                                                         >
-                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            {processingAction &&
+                                                            confirmation
+                                                                ?.appointment
+                                                                .id ===
+                                                                item.id ? (
+                                                                <LoaderCircle
+                                                                    aria-hidden="true"
+                                                                    className="w-3.5 h-3.5 animate-spin motion-reduce:animate-none"
+                                                                />
+                                                            ) : (
+                                                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                                            )}
                                                             <span>
                                                                 {item.type ===
                                                                 "follow_up"
@@ -557,7 +600,8 @@ export default function BookAppointment({
                                                         <button
                                                             type="button"
                                                             disabled={
-                                                                isAssigned
+                                                                isAssigned ||
+                                                                processingAction
                                                             }
                                                             title={
                                                                 isAssigned
@@ -616,7 +660,11 @@ export default function BookAppointment({
                                                 ) && (
                                                     <button
                                                         type="button"
-                                                        disabled={isAccepted}
+                                                        disabled={
+                                                            isAccepted ||
+                                                            processingAction ||
+                                                            rescheduleForm.processing
+                                                        }
                                                         title={
                                                             isAccepted
                                                                 ? "Cancellation is not allowed once an assigned schedule has been accepted."
@@ -633,7 +681,14 @@ export default function BookAppointment({
                                                                 : "text-xs font-semibold text-rose-600 hover:text-rose-800 transition px-2 py-1"
                                                         }
                                                     >
-                                                        Cancel Request
+                                                        {processingAction &&
+                                                        confirmation
+                                                            ?.appointment.id ===
+                                                            item.id &&
+                                                        confirmation.action ===
+                                                            "cancel"
+                                                            ? "Cancelling..."
+                                                            : "Cancel Request"}
                                                     </button>
                                                 )}
                                         </div>

@@ -12,16 +12,25 @@ export default function Dashboard({ appointments, followups }) {
     const [exportError, setExportError] = useState("");
 
     useEffect(() => {
+        let refreshing = false;
+        let cancelToken;
         const poll = () => {
-            if (document.hidden) return; // skip when tab is in background
+            if (document.hidden || refreshing) return;
+            refreshing = true;
             router.reload({
                 only: ["appointments", "followups"],
                 preserveScroll: true,
                 preserveState: true,
+                onCancelToken: (token) => {
+                    cancelToken = token;
+                },
+                onFinish: () => {
+                    refreshing = false;
+                },
             });
         };
 
-        const timer = setInterval(poll, 45000); // reduced from 15s → 45s
+        const timer = setInterval(poll, 45000);
 
         // Poll immediately when tab becomes visible again
         const onVisibility = () => {
@@ -31,6 +40,7 @@ export default function Dashboard({ appointments, followups }) {
 
         return () => {
             clearInterval(timer);
+            cancelToken?.cancel();
             document.removeEventListener("visibilitychange", onVisibility);
         };
     }, []);

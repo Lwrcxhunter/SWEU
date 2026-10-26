@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import ConfirmationModal from "@/Components/ConfirmationModal";
 import { Link, useForm } from "@inertiajs/react";
 import { Button, Errors, Field } from "@/Components/Office";
 import { formatSessionTime } from "@/Support/guidanceConstants";
@@ -12,6 +13,7 @@ import {
     MapPin,
     Video,
     Globe,
+    LoaderCircle,
 } from "lucide-react";
 
 const labels = {
@@ -41,6 +43,8 @@ const dateLabel = (date) =>
 
 export default function StaffQueueCard({ item, counselors = [] }) {
     const [expanded, setExpanded] = useState(false);
+    const [confirmCancel, setConfirmCancel] = useState(false);
+    const actionLock = useRef(false);
     const form = useForm({
         counselor_id: "",
         onboarding_note: "",
@@ -83,12 +87,18 @@ export default function StaffQueueCard({ item, counselors = [] }) {
             selected.availability.times.includes(form.data.scheduled_time));
 
     const perform = (action) => {
+        if (actionLock.current) return;
+        actionLock.current = true;
         form.transform((data) => ({ ...data, action, version: item.version }));
         form.patch(route("appointments.update", item.id), {
             preserveScroll: true,
             onSuccess: () => {
                 setExpanded(false);
+                setConfirmCancel(false);
                 form.reset();
+            },
+            onFinish: () => {
+                actionLock.current = false;
             },
         });
     };
@@ -479,6 +489,12 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                     disabled={form.processing || !canAssign}
                                     className="rounded-xl px-5 py-2.5 font-bold shadow-md shadow-sky-600/20 active:scale-[0.98]"
                                 >
+                                    {form.processing && (
+                                        <LoaderCircle
+                                            aria-hidden="true"
+                                            className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                                        />
+                                    )}
                                     {form.processing
                                         ? "Sending assignment…"
                                         : "Send assignment to counselor"}
@@ -536,12 +552,8 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                                     disabled={form.processing}
                                     className="rounded-xl px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 hover:text-rose-900 active:scale-[0.98] transition-all"
                                     onClick={() => {
-                                        if (
-                                            window.confirm(
-                                                "Cancel this appointment? The student will be notified.",
-                                            )
-                                        )
-                                            perform("cancel");
+                                        form.clearErrors();
+                                        setConfirmCancel(true);
                                     }}
                                 >
                                     Cancel appointment
@@ -551,6 +563,18 @@ export default function StaffQueueCard({ item, counselors = [] }) {
                     </div>
                 </div>
             )}
+            <ConfirmationModal
+                open={confirmCancel}
+                title="Cancel appointment?"
+                description="The appointment will be cancelled and the student will be notified."
+                confirmLabel="Cancel appointment"
+                processingLabel="Cancelling..."
+                destructive
+                processing={form.processing}
+                errors={form.errors}
+                onConfirm={() => perform("cancel")}
+                onClose={() => setConfirmCancel(false)}
+            />
         </article>
     );
 }
