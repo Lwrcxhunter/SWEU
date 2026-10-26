@@ -28,7 +28,9 @@ class CounselorAvailability
         if (! $counselor->active) {
             return $this->result('unavailable', 'Unavailable', 'Not accepting new bookings.');
         }
-        $savedSchedule = CounselorSchedule::where('counselor_id', Ids::object((string) $counselor->id))->first();
+        $savedSchedule = $counselor->relationLoaded('availabilitySchedule')
+            ? $counselor->getRelation('availabilitySchedule')
+            : CounselorSchedule::where('counselor_id', Ids::object((string) $counselor->id))->first();
         foreach ($counselor->getLeaves() as $leave) {
             // Legacy entries without a status are official leave records.
             if (strtolower($leave['status'] ?? 'approved') !== 'approved') {

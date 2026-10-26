@@ -10,6 +10,33 @@ use Inertia\Testing\AssertableInertia as Assert;
 
 class StaffAvailabilityTest extends GuidanceTestCase
 {
+    public function test_week_calendar_loads_schedules_once_and_refreshes_next_request(): void
+    {
+        $staff = $this->user('staff');
+        $counselor = $this->user('counselor');
+        $db = \Illuminate\Support\Facades\DB::connection();
+        $db->enableQueryLog();
+        try {
+            $db->flushQueryLog();
+            $this->actingAs($staff)->get('/queue?calendar_view=week')->assertOk();
+            $scheduleQueries = collect($db->getQueryLog())->filter(
+                fn ($query) => str_contains($query['query'], 'counselor_schedules'),
+            );
+            $this->assertCount(1, $scheduleQueries);
+
+            \App\Models\CounselorSchedule::create([
+                'counselor_id' => Ids::object($counselor->id),
+                'availability' => [], 'classSchedule' => [], 'leaves' => [],
+            ]);
+            $this->get('/queue?calendar_date=2026-10-05')->assertInertia(fn (Assert $page) => $page
+                ->where('counselors.0.uses_default_schedule', false)
+                ->where('counselors.0.calendar.2026-10-05.AM.0.status', 'off_schedule'));
+        } finally {
+            $db->disableQueryLog();
+            $db->flushQueryLog();
+        }
+    }
+
     public function test_staff_can_distinguish_confirmation_stages_and_browse_history(): void
     {
         $staff = $this->user('staff');

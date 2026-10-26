@@ -84,7 +84,7 @@ class CounselorSchedules
         return $this->allowsWithSchedule($schedule->toArray(), $appointment);
     }
 
-    private function allowsWithSchedule(array $schedule, array $appointment): bool
+    public function allowsWithSchedule(array $schedule, array $appointment): bool
     {
         $date = Carbon::createFromFormat('Y-m-d', $appointment['scheduled_date'], config('app.timezone'));
         $weekday = $date->dayOfWeek;

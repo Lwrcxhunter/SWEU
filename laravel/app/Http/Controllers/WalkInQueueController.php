@@ -65,6 +65,10 @@ class WalkInQueueController extends Controller
         $users = User::where('role', 'counselor')->where('active', true)->orderBy('full_name')->get();
         $counselorIds = $users->map(fn ($user) => Ids::object((string) $user->id))->all();
         $schedulesMap = CounselorSchedule::whereIn('counselor_id', $counselorIds)->get()->keyBy(fn ($s) => (string) $s->counselor_id);
+        // Reuse this request's snapshot, including counselors without saved schedules.
+        foreach ($users as $user) {
+            $user->setRelation('availabilitySchedule', $schedulesMap->get((string) $user->id));
+        }
 
         $allAppointmentsSummary = Appointment::all(['status', 'counselor_id']);
         $activeAppointmentsSummary = $allAppointmentsSummary->whereIn('status', CounselorAvailability::ACTIVE_STATUSES);
@@ -112,15 +116,15 @@ class WalkInQueueController extends Controller
                         $schedule = $schedulesMap->get((string) $user->id);
                         if ($result['available'] && $schedule) {
                             if ($scheduledTime) {
-                                $result['available'] = $schedules->allowsAppointment(
-                                    (string) $user->id,
+                                $result['available'] = $schedules->allowsWithSchedule(
+                                    $schedule->toArray(),
                                     ['scheduled_date' => $scheduledDate, 'scheduled_time' => $scheduledTime],
                                 );
                             } else {
                                 $result['times'] = array_values(array_filter(
                                     $result['times'],
-                                    fn ($time) => $schedules->allowsAppointment(
-                                        (string) $user->id,
+                                    fn ($time) => $schedules->allowsWithSchedule(
+                                        $schedule->toArray(),
                                         ['scheduled_date' => $scheduledDate, 'scheduled_time' => $time],
                                     ),
                                 ));
@@ -142,10 +146,7 @@ class WalkInQueueController extends Controller
             },
         );
 
-        $scheduleIds = $users->map(fn ($user) => Ids::object($user->id))->all();
-        $schedulesByCounselor = CounselorSchedule::whereIn('counselor_id', $scheduleIds)
-            ->get()
-            ->keyBy(fn ($schedule) => (string) $schedule->counselor_id);
+        $schedulesByCounselor = $schedulesMap;
         $counselors = $users->map(function ($user) use ($dates, $availability, $schedules, $schedulesByCounselor, $byCounselor, $activeSessionsByCounselor) {
             $schedule = $schedulesByCounselor->get((string) $user->id);
             $calendar = $dates->mapWithKeys(function ($day) use ($user, $availability, $schedules, $schedule, $byCounselor) {
@@ -154,7 +155,7 @@ class WalkInQueueController extends Controller
                     foreach ($periods as &$blocks) {
                         foreach ($blocks as &$block) {
                             if ($block['status'] === 'available'
-                                && ! $schedules->allowsAppointment((string) $user->id, [
+                                && ! $schedules->allowsWithSchedule($schedule->toArray(), [
                                     'scheduled_date' => $day,
                                     'scheduled_time' => $block['start'],
                                 ])) {
