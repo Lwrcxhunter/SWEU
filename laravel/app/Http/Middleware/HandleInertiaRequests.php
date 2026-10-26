@@ -42,6 +42,16 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? Views::user($request->user()) : null,
                 'permissions' => $request->user() ? array_values(array_filter(config('guidance.permissions.'.$request->user()->role, []), fn ($p) => $request->user()->checkPermissionTo($p))) : [],
             ],
+            'integrations' => [
+                'google' => [
+                    'enabled' => ! empty(config('services.google.client_id')),
+                    'client_id' => config('services.google.client_id'),
+                ],
+                'recaptcha' => [
+                    'enabled' => ! empty(config('services.recaptcha.site_key')),
+                    'site_key' => config('services.recaptcha.site_key'),
+                ],
+            ],
         ];
     }
 }

@@ -2,9 +2,13 @@
   "name": "university-counseling-integrated",
   "version": "1.0.0",
   "private": true,
-  "description": "University counseling intake and staff portal prototype with a Node.js backend and persistent JSON data store",
-  "main": "server.js",
+  "description": "BukSU Student Welfare & Engagement Unit Guidance and Counseling System",
   "scripts": {
-    "start": "node server.js"
+    "dev": "npm --prefix laravel run dev",
+    "build": "npm --prefix laravel run build",
+    "format": "npm --prefix laravel run format",
+    "format:check": "npm --prefix laravel run format:check",
+    "test:browser": "npm --prefix laravel run test:browser"
   }
 }
+

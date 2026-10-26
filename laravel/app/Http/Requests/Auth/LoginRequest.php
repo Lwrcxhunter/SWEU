@@ -2,6 +2,9 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\Student;
+use App\Models\User;
+use App\Services\RecaptchaService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,8 +31,9 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email:strict', 'not_regex:/[\r\n]/'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'recaptcha_token' => ['nullable', 'string'],
         ];
     }
 
@@ -42,11 +46,51 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt([...$this->only('email', 'password'), 'active' => true], false)) {
-            RateLimiter::hit($this->throttleKey());
+        app(RecaptchaService::class)->verify($this->input('recaptcha_token'), $this->ip());
 
+        $loginInput = strtolower(trim($this->input('email')));
+
+        // If input does not contain @, resolve from Student school_id_number or User accounts
+        if (! str_contains($loginInput, '@')) {
+            $student = Student::where('school_id_number', $loginInput)->first();
+            if ($student && $student->user_id) {
+                $user = User::find($student->user_id);
+                if ($user) {
+                    $loginInput = $user->email;
+                }
+            } else {
+                $matchedUser = User::where('email', "{$loginInput}@student.buksu.edu.ph")
+                    ->orWhere('email', "{$loginInput}@buksu.edu.ph")
+                    ->first();
+                if ($matchedUser) {
+                    $loginInput = $matchedUser->email;
+                }
+            }
+        }
+
+        $isAllowed = str_ends_with($loginInput, '@student.buksu.edu.ph')
+            || str_ends_with($loginInput, '@buksu.edu.ph')
+            || str_ends_with($loginInput, '@faculty.buksu.edu.ph')
+            || (app()->environment('testing') && str_ends_with($loginInput, '.test'));
+
+        if (! $isAllowed) {
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'email' => 'Only BukSU institutional accounts (@student.buksu.edu.ph or @buksu.edu.ph) are permitted.',
+            ]);
+        }
+
+        try {
+            if (! Auth::attempt(['email' => $loginInput, 'password' => $this->input('password'), 'active' => true], false)) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => trans('auth.failed'),
+                ]);
+            }
+        } catch (\MongoDB\Driver\Exception\ConnectionTimeoutException|\MongoDB\Driver\Exception\ConnectionException $e) {
+            report($e);
+            throw ValidationException::withMessages([
+                'email' => 'Database connection timeout: Unable to connect to MongoDB Atlas. Please verify that your IP address is whitelisted in MongoDB Atlas Network Access.',
             ]);
         }
 

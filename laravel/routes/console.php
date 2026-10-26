@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\DatabaseSetup;
+use App\Services\DemoDataSeeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -105,4 +106,13 @@ Artisan::command('guidance:demo', function () {
         $this->line("Seeded: {$acc['email']} ({$acc['role']}) - {$acc['full_name']}");
     }
     $this->info("Demo & Counselor accounts ready. Password for all: {$password}");
+
+    $this->line('Seeding realistic demo appointments, cases, testing requests, and alerts...');
+    app(DemoDataSeeder::class)->run(fn (string $msg) => $this->line(" - {$msg}"));
+    $this->info('Full realistic demo dataset ready for demonstration.');
 })->purpose('Seed ready-to-use demo and counselor accounts in development');
+
+Artisan::command('guidance:demo-data', function () {
+    app(DemoDataSeeder::class)->run(fn (string $msg) => $this->line(" - {$msg}"));
+    $this->info('Realistic demo data seeded successfully.');
+})->purpose('Seed realistic appointments, cases, testing requests, and alerts for demo');
