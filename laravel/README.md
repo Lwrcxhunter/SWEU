@@ -51,14 +51,14 @@ Official runtime documentation: [MongoDB PHP installation](https://www.mongodb.c
 |---|---|
 | Student | Register/login; complete intake and both declarations; request face-to-face, online, or telecounseling sessions; join the walk-in queue; request testing; view own status and notifications. |
 | Faculty | Submit testing requests and track their statuses. No intake narratives or counseling notes are returned. |
-| Staff / psychometrician | View the active queue; assess urgency; alert and assign counselors; manage the counselor availability calendar; process testing requests; export aggregate CSV reports. |
+| Staff / psychometrician | View the active queue; assign counselors; manage the counselor availability calendar; process testing requests; export aggregate CSV reports. |
 | Counselor | View assigned appointments and case folders; accept/reschedule/complete sessions; record encrypted notes; manage case closure and follow-up sessions; plan weekly availability, class blocks, and leave; review private workload analytics; export their own case/session summaries; receive in-app alerts. |
 | Head counselor | Read case notes in the audit workspace after each access is recorded; cannot edit notes or view intake narratives. |
 | Administrator | Create/disable accounts, change roles, map multiple colleges per counselor, and restrict role permissions. Administrators have no clinical note access. |
 
 Online appointments use 30-minute start times and Philippine calendar dates. Mapped available counselors are selected deterministically. If mapped counselors are all booked for that slot, the request is rejected; if no mapped available counselor exists, it remains pending for front-desk coordination. MongoDB's unique partial slot index resolves races at the database level.
 
-Urgent walk-ins bypass ordinary slot reservation and alert all active, on-duty, available counselors. The front desk makes the assignment. In-app notifications refresh every 15 seconds while an authenticated workspace is open. They are not an emergency dispatch service and are not email/SMS delivery.
+Walk-ins follow regular availability and slot-reservation rules. The front desk makes the assignment. In-app notifications refresh every 45 seconds while the tab is visible. They are not an emergency dispatch service and are not email/SMS delivery.
 
 Testing progresses through `pending → approved → completed`. Appointment updates enforce valid state transitions and an optimistic version to reject stale actions.
 
@@ -66,7 +66,7 @@ Appointment confirmation is a two-step process: staff assignment moves a request
 
 Accepting an assigned appointment opens a counselor-owned case with an atomic `CASE-YYYY-NNNN` number and its first scheduled session. The counselor can open a case folder containing the permitted student/intake summary and chronological session history; session notes remain individually permission-checked. Counselors can close a case with a `completed/stable` outcome or schedule a face-to-face or virtual follow-up at an available 30-minute time under the same case. Follow-up appointments reserve the counselor's slot and remain pending student confirmation. Case numbering, appointment slots, and per-case session numbers have database uniqueness constraints.
 
-Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. The weekly calendar distinguishes those recurring periods from actual appointments and provides appointment links. Schedule overlaps and conflicts are rejected; changing availability is blocked when it would invalidate an active appointment, until the booking is resolved. Regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Urgent assignments can occur outside regular availability but cannot overlap leave. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
+Counselors manage weekly counseling availability, recurring class blocks, and dated planned or official leave from their schedule workspace. The weekly calendar distinguishes those recurring periods from actual appointments and provides appointment links. Schedule overlaps and conflicts are rejected; changing availability is blocked when it would invalidate an active appointment, until the booking is resolved. Regular assignments and follow-up bookings must fit availability and avoid class/leave periods. Staff can view availability and leave type for assignment decisions, but not private leave reasons. Existing counselors without a saved schedule retain the previous assignment behavior until they configure one.
 
 New case closures record the closing counselor's ObjectId in `closed_by` alongside the closure date. Historical closed cases are not rewritten; records without that field display the closure actor as unrecorded. These enhancements use the existing MongoDB collections and require no collection migration.
 
@@ -128,7 +128,15 @@ npm run test:browser
 
 Re-seed the browser-test database before rerunning its stateful end-to-end workflow. Screenshots are written to `laravel/test-results/` and ignored by Git. Clear the temporary `MONGODB_DATABASE` environment override before starting the normal application.
 
+## Query performance
+
+Role grants are memoized per role within each HTTP request, including missing grants. Every new request reads current permissions; administrator updates also clear the current request snapshot. A five-minute shared authorization cache is deliberately avoided so raw database revocations cannot leave stale grants active.
+
+Appointment lists batch-load students and all referenced users in at most two related-record queries per page. Missing records stay missing during serialization instead of triggering per-row fallback queries. Single-appointment rendering still resolves its own relations.
+
 ## Deployment boundary
+
+For concurrent testing or Linux deployment, see the [Nginx and PHP-FPM templates](../deploy/README.md). They are prepared configuration, not an active deployment.
 
 No deployment was performed. For an institution-managed deployment, serve only `laravel/public` over HTTPS, set `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, and configure an authenticated, access-controlled MongoDB replica set. Do not expose the local unauthenticated MongoDB port or use `artisan serve` as a production server.
 

@@ -28,6 +28,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::patch('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::patch('/account/preferences', [AccountController::class, 'preferences'])->name('account.preferences');
     Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::patch('/alerts/mark-all-read', [AlertController::class, 'markAll'])->name('alerts.mark-all-read');
     Route::patch('/alerts/{alert}', [AlertController::class, 'update'])->name('alerts.update');
     Route::get('/notifications', fn () => redirect()->route('alerts.index'))->name('notifications.index');
 

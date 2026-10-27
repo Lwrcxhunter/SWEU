@@ -80,6 +80,7 @@ class AdminController extends Controller
             throw ValidationException::withMessages(['permissions' => 'Administrator recovery permissions must remain enabled.']);
         }
         RoleGrant::where('name', $role)->update(['permissions' => $data['permissions']]);
+        $request->attributes->remove('guidance.role_grants');
 
         return back()->with('success', 'Role permissions updated.');
     }

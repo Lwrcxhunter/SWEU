@@ -3,8 +3,10 @@
 namespace App\Support;
 
 use App\Models\Appointment;
+use App\Models\OfficeAlert;
 use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use MongoDB\BSON\ObjectId;
 
@@ -25,9 +27,11 @@ class Views
         ];
     }
 
-    public static function student(Student $student, ?User $user = null): array
+    public static function student(Student $student, ?User $user = null, bool $userLoaded = false): array
     {
-        $user = $user ?? ($student->user_id ? User::find($student->user_id) : null);
+        if (! $userLoaded) {
+            $user = $user ?? ($student->user_id ? User::find($student->user_id) : null);
+        }
 
         return [
             'id' => (string) $student->id,
@@ -46,15 +50,18 @@ class Views
         ?User $studentUser = null,
         ?User $counselor = null,
         bool $includeReassignmentNote = false,
+        bool $relationsLoaded = false,
     ): array {
-        $student = $student ?? ($appointment->student_id ? Student::find($appointment->student_id) : null);
-        $studentUser = $studentUser ?? ($student && $student->user_id ? User::find($student->user_id) : null);
-        $counselor = $counselor ?? ($appointment->counselor_id ? User::find($appointment->counselor_id) : null);
+        if (! $relationsLoaded) {
+            $student = $student ?? ($appointment->student_id ? Student::find($appointment->student_id) : null);
+            $studentUser = $studentUser ?? ($student && $student->user_id ? User::find($student->user_id) : null);
+            $counselor = $counselor ?? ($appointment->counselor_id ? User::find($appointment->counselor_id) : null);
+        }
 
         return [
             'id' => (string) $appointment->id,
             'case_id' => $appointment->case_id ? (string) $appointment->case_id : null,
-            'student' => $student ? self::student($student, $studentUser) : null,
+            'student' => $student ? self::student($student, $studentUser, userLoaded: true) : null,
             'counselor_id' => $appointment->counselor_id ? (string) $appointment->counselor_id : null,
             'counselor_name' => $counselor?->full_name,
             'counselor' => $counselor ? [
@@ -130,7 +137,7 @@ class Views
             $studentUser = $student && $student->user_id ? $users->get((string) $student->user_id) : null;
             $counselor = $appointment->counselor_id ? $users->get((string) $appointment->counselor_id) : null;
 
-            return self::appointment($appointment, $student, $studentUser, $counselor, $includeReassignmentNote);
+            return self::appointment($appointment, $student, $studentUser, $counselor, $includeReassignmentNote, relationsLoaded: true);
         };
 
         if ($isPaginator) {
@@ -138,5 +145,104 @@ class Views
         }
 
         return collect($items)->map($transformer)->all();
+    }
+
+    public static function alert(OfficeAlert $alert, ?User $user = null): array
+    {
+        $role = $user?->role ?? 'student';
+        $kind = (string) ($alert->kind ?? 'status');
+        $message = (string) ($alert->message ?? '');
+        $lowerMsg = strtolower($message);
+        $hasAppointmentId = ! empty($alert->appointment_id);
+
+        $category = 'general';
+        if ($kind === 'testing' || str_contains($lowerMsg, 'test') || str_contains($lowerMsg, 'gama') || str_contains($lowerMsg, 'iq')) {
+            $category = 'testing';
+        } elseif ($kind === 'appointment' || $hasAppointmentId || str_contains($lowerMsg, 'appoint') || str_contains($lowerMsg, 'session') || str_contains($lowerMsg, 'counselor') || str_contains($lowerMsg, 'follow-up') || str_contains($lowerMsg, 'schedule')) {
+            $category = 'appointment';
+        } elseif ($kind === 'urgent') {
+            $category = 'urgent';
+        }
+
+        if ($category === 'testing') {
+            $title = 'Testing & Assessment';
+            if (str_contains($lowerMsg, 'approved')) {
+                $title = 'Testing Request Approved';
+            } elseif (str_contains($lowerMsg, 'scheduled')) {
+                $title = 'Testing Scheduled';
+            } elseif (str_contains($lowerMsg, 'completed')) {
+                $title = 'Testing Results Ready';
+            }
+        } elseif ($category === 'urgent') {
+            $title = 'Urgent Notice';
+        } elseif ($category === 'appointment') {
+            if (str_contains($lowerMsg, 'follow-up') || str_contains($lowerMsg, 'follow up')) {
+                $title = 'Follow-up Session';
+            } elseif (str_contains($lowerMsg, 'cancel')) {
+                $title = 'Appointment Cancelled';
+            } elseif (str_contains($lowerMsg, 'reschedul')) {
+                $title = 'Appointment Rescheduled';
+            } elseif (str_contains($lowerMsg, 'confirmed') || str_contains($lowerMsg, 'accepted') || str_contains($lowerMsg, 'confirm your schedule')) {
+                $title = 'Appointment Confirmed';
+            } elseif (str_contains($lowerMsg, 'reassignment')) {
+                $title = 'Reassignment Requested';
+            } elseif (str_contains($lowerMsg, 'assigned')) {
+                $title = 'Counselor Assigned';
+            } elseif (str_contains($lowerMsg, 'declined')) {
+                $title = 'Session Declined';
+            } else {
+                $title = 'Appointment Update';
+            }
+        } else {
+            $title = 'Office Notification';
+        }
+
+        $actionUrl = match ($category) {
+            'testing' => '/testing',
+            'appointment' => match ($role) {
+                'counselor' => '/counselor',
+                'staff' => '/queue',
+                'faculty' => '/testing',
+                default => '/appointments',
+            },
+            default => '/alerts',
+        };
+
+        $createdAt = $alert->created_at;
+        $createdAtHuman = 'Recently';
+        $createdAtIso = null;
+        if ($createdAt instanceof \DateTimeInterface) {
+            $createdAtHuman = $createdAt->diffForHumans();
+            $createdAtIso = $createdAt->toISOString();
+        } elseif (! empty($createdAt)) {
+            try {
+                $carbon = Carbon::parse($createdAt);
+                $createdAtHuman = $carbon->diffForHumans();
+                $createdAtIso = $carbon->toISOString();
+            } catch (\Throwable) {
+                $createdAtHuman = (string) $createdAt;
+            }
+        }
+
+        $readAt = $alert->read_at;
+        $readAtIso = null;
+        if ($readAt instanceof \DateTimeInterface) {
+            $readAtIso = $readAt->toISOString();
+        } elseif (! empty($readAt)) {
+            $readAtIso = (string) $readAt;
+        }
+
+        return [
+            'id' => (string) $alert->id,
+            'message' => $message,
+            'kind' => $kind,
+            'category' => $category,
+            'title' => $title,
+            'read' => ! empty($alert->read_at),
+            'read_at' => $readAtIso,
+            'created_at' => $createdAtIso,
+            'created_at_human' => $createdAtHuman,
+            'action_url' => $actionUrl,
+        ];
     }
 }

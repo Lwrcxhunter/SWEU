@@ -28,7 +28,7 @@ class User extends Document implements AuthenticatableContract, AuthorizableCont
     }
 
     // Single-role MongoDB adapter for Spatie RoleMiddleware and PermissionRegistrar.
-    // Grants are read afresh, so a revoked permission cannot survive a stale cache.
+    // Grants are reused within each request and refreshed on the next request.
     public function hasAnyRole(...$roles): bool
     {
         $roles = count($roles) === 1 && is_array($roles[0]) ? $roles[0] : $roles;
@@ -50,9 +50,8 @@ class User extends Document implements AuthenticatableContract, AuthorizableCont
         if (! in_array($permission, $allowed, true)) {
             return false;
         }
-        $grants = RoleGrant::where('name', $this->role)->first();
 
-        return $grants && in_array($permission, $grants->permissions ?? [], true);
+        return in_array($permission, RoleGrant::permissionsFor($this->role), true);
     }
 
     public function hasAnyPermission(...$permissions): bool

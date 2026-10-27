@@ -59,7 +59,7 @@ class HandleInertiaRequests extends Middleware
                 }
                 try {
                     return OfficeAlert::where('kind', '!=', 'urgent')->where('user_id', Ids::object($user->id))
-                        ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => ['id' => (string) $a->id, 'kind' => $a->kind, 'message' => $a->message]);
+                        ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => Views::alert($a, $user));
                 } catch (\Throwable $e) {
                     report($e);
                     return [];
