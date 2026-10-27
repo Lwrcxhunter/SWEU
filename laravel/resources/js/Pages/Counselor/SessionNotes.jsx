@@ -33,6 +33,7 @@ export default function SessionNotes({
     const followUp = useForm({
         targetDate: "",
         scheduledTime: "",
+        timeSlot: "AM",
         mode: ["virtual", "online", "telecounseling"].includes(
             appointment.channel,
         )
@@ -114,9 +115,9 @@ export default function SessionNotes({
     };
     return (
         <Office
-            title="A private space for care."
-            eyebrow="Counseling record"
-            description="Session notes are visible only to you as the assigned counselor."
+            title="Session notes"
+            eyebrow="Counseling case"
+            description="Record observations and next steps for this confidential student session."
         >
             <div className="grid gap-6 xl:grid-cols-[330px_1fr]">
                 <div className="space-y-6">

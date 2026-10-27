@@ -1,48 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @source "../js";
 @source "../views";
+
 @theme {
-    --font-sans: "Segoe UI", system-ui, sans-serif;
-    --font-serif: Georgia, "Times New Roman", serif;
-    --color-powder-50: #f0f9ff;
-    --color-powder-100: #e0f2fe;
-    --color-powder-200: #b0e0e6;
-    --color-powder-500: #0284c7;
-    --color-powder-600: #0369a1;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Lora", serif;
 }
+
 .font-sans {
     font-family: var(--font-sans);
 }
-@layer base {
-    body {
-        margin: 0;
-        font-family: var(--font-sans);
-        background-color: #f0f9ff;
-        color: #1e293b;
-    }
-    button,
-    a {
-        -webkit-tap-highlight-color: transparent;
-    }
-    button:not(:disabled) {
-        cursor: pointer;
-    }
-    :focus-visible {
-        outline: 2px solid #0284c7;
-        outline-offset: 3px;
-    }
+
+:root {
+    --color-primary: #315C52;
+    --color-primary-soft: #DDEBE5;
+    --color-background: #F7F5EF;
+    --color-surface: #FFFFFF;
+    --color-secondary: #6F9D91;
+    --color-pending: #E8C98A;
+    --color-text: #263B36;
+    --color-muted: #6D7974;
+    --color-border: #E3E5DF;
 }
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--color-background);
+    color: var(--color-text);
+}
+
+.wellness-quote {
+    font-family: 'Lora', serif;
+    font-style: italic;
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled) {
+    cursor: pointer;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
+}
+
 @layer components {
     .control {
-        @apply block w-full rounded-lg border border-sky-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-400 focus:outline-none;
+        @apply block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-[var(--color-text)] shadow-none transition focus:border-[var(--color-secondary)] focus:ring-2 focus:ring-[var(--color-secondary)]/20 focus:outline-none;
     }
 }
+
 @layer utilities {
     .scrollbar-none {
         scrollbar-width: none;
         -ms-overflow-style: none;
     }
+
     .scrollbar-none::-webkit-scrollbar {
         display: none;
     }

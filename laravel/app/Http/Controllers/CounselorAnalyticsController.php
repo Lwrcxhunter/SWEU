@@ -36,6 +36,17 @@ class CounselorAnalyticsController extends Controller
         $appointments = (clone $appointmentScope)
             ->whereBetween('scheduled_date', [$from->toDateString(), $to->toDateString()])
             ->get(['scheduled_date', 'status']);
+        $serviceBreakdown = (clone $appointmentScope)
+            ->whereBetween('scheduled_date', [$from->toDateString(), $to->toDateString()])
+            ->get(['type'])
+            ->groupBy('type')
+            ->map(fn ($records) => $records->count())
+            ->all();
+        $concernBreakdown = (clone $caseScope)
+            ->get(['category'])
+            ->groupBy('category')
+            ->map(fn ($records) => $records->count())
+            ->all();
         $firstUpcomingDate = $from->greaterThan(today()) ? $from->toDateString() : today()->toDateString();
         $upcomingAppointments = $firstUpcomingDate <= $to->toDateString()
             ? (clone $appointmentScope)
@@ -66,6 +77,8 @@ class CounselorAnalyticsController extends Controller
             ],
             'caseStatuses' => $caseStatuses,
             'trend' => $this->appointmentTrend($appointments, $from, $to),
+            'serviceBreakdown' => $serviceBreakdown,
+            'concernBreakdown' => $concernBreakdown,
         ]);
     }
 
