@@ -27,6 +27,12 @@
         "vite": "^6.0.11"
     },
     "dependencies": {
-        "lucide-react": "^1.52.0"
+        "@fullcalendar/core": "^6.1.22",
+        "@fullcalendar/daygrid": "^6.1.22",
+        "@fullcalendar/interaction": "^6.1.22",
+        "@fullcalendar/react": "^6.1.22",
+        "@fullcalendar/timegrid": "^6.1.22",
+        "lucide-react": "^1.52.0",
+        "recharts": "^3.10.1"
     }
 }

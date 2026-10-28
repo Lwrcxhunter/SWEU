@@ -1,4 +1,4 @@
-import { Head, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import Sidebar from "@/Components/Sidebar";
 import Header from "@/Components/Header";
@@ -10,7 +10,7 @@ export default function AuthenticatedLayout({
     children,
     action,
 }) {
-    const { auth, flash, unreadAlertCount = 0 } = usePage().props;
+    const { auth, flash, unreadAlerts = [], unreadAlertCount = 0 } = usePage().props;
 
     const [menu, setMenu] = useState(false);
     const refreshNotifications =

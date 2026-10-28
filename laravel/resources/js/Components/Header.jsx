@@ -63,8 +63,7 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
                 <Dropdown as="div" className="relative">
                     <MenuButton
                         aria-label={`Notifications, ${unreadCount} unread`}
-                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-sky-200 bg-sky-50/70 text-sky-700 hover:bg-sky-100 hover:text-sky-900 transition focus:outline-none focus:ring-2 focus:ring-sky-400"
-                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#DCE5DF] bg-white/60 text-[#315C52] transition hover:bg-white hover:text-[#315C52]"
+                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#DCE5DF] bg-white/60 text-[#315C52] transition hover:bg-white hover:text-[#315C52] focus:outline-none focus:ring-2 focus:ring-sky-400"
                     >
                         <Bell className="h-4 w-4" />
                         {unreadCount > 0 && (

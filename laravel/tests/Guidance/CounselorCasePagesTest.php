@@ -8,6 +8,44 @@ use App\Support\Ids;
 
 class CounselorCasePagesTest extends GuidanceTestCase
 {
+    public function test_appointment_history_includes_old_and_finished_records_only_for_the_counselor(): void
+    {
+        $counselor = $this->user('counselor');
+        $this->appointment($counselor)->update(['scheduled_date' => '2025-01-01']);
+        $this->appointment($counselor, status: 'completed');
+        $this->appointment($counselor, status: 'cancelled');
+        $this->appointment($counselor);
+        $this->appointment($this->user('counselor'), status: 'completed');
+
+        $this->actingAs($counselor)->get('/counselor/cases?tab=history')
+            ->assertOk()->assertInertia(fn ($page) => $page
+                ->where('tab', 'history')->where('history.total', 3)
+                ->missing('history.data.0.initial_visit_questionnaire')
+                ->missing('history.data.0.signature'));
+    }
+
+    public function test_calendar_range_loads_bookings_and_excludes_reserved_times_from_availability(): void
+    {
+        $counselor = $this->user('counselor');
+        $booking = $this->appointment($counselor);
+        $this->appointment($this->user('counselor'));
+        foreach (['2026-10-06', '2026-10-12', '2026-11-01'] as $end) {
+            $response = $this->actingAs($counselor)->get('/counselor/cases?start=2026-10-05&end='.$end);
+            $response->assertOk()->assertInertia(fn ($page) => $page
+                ->has('appointments', 1)
+                ->where('appointments.0.id', (string) $booking->id)
+                ->where('calendarRange.end', $end));
+            $slots = $response->viewData('page')['props']['availableSlots'];
+            $this->assertNotEmpty($slots);
+            foreach ($slots as $slot) {
+                $this->assertFalse($slot['start'] < '2026-10-05T10:30' && $slot['end'] > '2026-10-05T10:00');
+            }
+        }
+        $this->get('/counselor/cases?start=2026-10-06&end=2026-10-07')
+            ->assertInertia(fn ($page) => $page->has('appointments', 0));
+        $this->get('/counselor/cases?start=2026-01-01&end=2027-01-01')->assertStatus(422);
+    }
+
     public function test_case_folder_lists_only_the_assigned_counselors_cases(): void
     {
         $counselor = $this->user('counselor');

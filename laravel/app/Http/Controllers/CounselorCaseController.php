@@ -5,19 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\CounselingCase;
 use App\Models\CounselingSession;
+use App\Models\CounselorSchedule;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\CounselorAvailability;
 use App\Support\Ids;
 use App\Support\Views;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use MongoDB\BSON\UTCDateTime;
 
 class CounselorCaseController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, CounselorAvailability $availability)
     {
+        $request->validate([
+            'start' => ['nullable', 'date_format:Y-m-d'],
+            'end' => ['nullable', 'date_format:Y-m-d', 'after:start'],
+        ]);
+        $start = CarbonImmutable::parse($request->input('start', today()->startOfMonth()->startOfWeek(0)->toDateString()));
+        $end = CarbonImmutable::parse($request->input('end', $start->addDays(42)->toDateString()));
+        abort_if($start->diffInDays($end) > 42, 422, 'Choose a calendar range of up to 42 days.');
         $counselorId = Ids::object($request->user()->id);
         $cases = CounselingCase::where('counselor_id', $counselorId)
             ->orderByDesc('opened_at')
@@ -50,8 +59,8 @@ class CounselorCaseController extends Controller
         $appointments = Appointment::where('counselor_id', $counselorId)
             ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
             ->whereBetween('scheduled_date', [
-                today()->subDays(30)->toDateString(),
-                today()->addDays(90)->toDateString(),
+                $start->toDateString(),
+                $end->subDay()->toDateString(),
             ])
             ->orderBy('scheduled_date')
             ->orderBy('scheduled_time')
@@ -70,6 +79,45 @@ class CounselorCaseController extends Controller
             ->values()
             ->all();
 
+        $availableSlots = [];
+        $counselor = $request->user();
+        $counselor->setRelation('availabilitySchedule', CounselorSchedule::where('counselor_id', $counselorId)->first());
+        for ($date = $start; $date->lt($end); $date = $date->addDay()) {
+            if ($date->lt(CarbonImmutable::today())) {
+                continue;
+            }
+            foreach ($availability->day($counselor, $date->toDateString(), $appointments) as $blocks) {
+                foreach ($blocks as $block) {
+                    if ($block['available']) {
+                        $availableSlots[] = [
+                            'start' => $date->toDateString().'T'.$block['start'],
+                            'end' => $date->toDateString().'T'.$block['end'],
+                        ];
+                    }
+                }
+            }
+        }
+
+        $history = null;
+        if ($request->input('tab') === 'history') {
+            $history = Appointment::where('counselor_id', $counselorId)
+                ->where(function ($query) {
+                    $query->where('scheduled_date', '<', today()->toDateString())
+                        ->orWhereNotIn('status', CounselorAvailability::ACTIVE_STATUSES);
+                })
+                ->orderByDesc('scheduled_date')->orderByDesc('scheduled_time')
+                ->paginate(20, ['*'], 'history_page')->withQueryString();
+            $history->setCollection(collect(Views::appointments($history->items()))->map(fn (array $appointment) => [
+                'id' => $appointment['id'],
+                'case_id' => $appointment['case_id'],
+                'student' => ['full_name' => $appointment['student']['full_name'] ?? 'Unavailable account'],
+                'scheduled_date' => $appointment['scheduled_date'],
+                'scheduled_time' => $appointment['scheduled_time'],
+                'type' => $appointment['type'],
+                'status' => $appointment['status'],
+            ]));
+        }
+
         $caseStatusCounts = CounselingCase::where('counselor_id', $counselorId)
             ->get(['status'])
             ->countBy('status')
@@ -78,8 +126,11 @@ class CounselorCaseController extends Controller
         return Inertia::render('Counselor/Cases', [
             'cases' => $cases,
             'appointments' => $appointmentViews,
+            'availableSlots' => $availableSlots,
+            'calendarRange' => ['start' => $start->toDateString(), 'end' => $end->toDateString()],
+            'history' => $history,
             'caseStatusCounts' => $caseStatusCounts,
-            'tab' => in_array($request->string('tab')->toString(), ['schedule', 'ongoing', 'hold', 'closed'], true)
+            'tab' => in_array($request->string('tab')->toString(), ['schedule', 'history', 'ongoing', 'hold', 'closed'], true)
                 ? $request->string('tab')->toString()
                 : 'schedule',
         ]);

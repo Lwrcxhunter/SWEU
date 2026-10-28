@@ -39,7 +39,7 @@ export function Brand({ light = false }) {
                 </div>
                 <div
                     className={`text-[8.5px] font-semibold uppercase tracking-wider leading-tight ${
-                        light                         ? "text-[#c2d7cf]" : "text-slate-500"
+                        light ? "text-[#c2d7cf]" : "text-slate-500"
                     }`}
                 >
                     Student Welfare &amp; Engagement Unit
@@ -75,12 +75,14 @@ export default function Sidebar({ auth, menu, setMenu }) {
         if (can("notes.manage")) {
             navItems.push({
                 name: "counselor.cases.index",
-                label: "Caseload",
+                label: "Appointments",
                 icon: ClipboardList,
                 active:
                     route().current("counselor.cases.index") &&
-                    ["", "schedule"].includes(
-                        new URLSearchParams(url.split("?")[1] || "").get("tab") || "",
+                    ["", "schedule", "history"].includes(
+                        new URLSearchParams(url.split("?")[1] || "").get(
+                            "tab",
+                        ) || "",
                     ),
             });
             navItems.push({
@@ -91,7 +93,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
             navItems.push({
                 name: "counselor.cases.index",
                 href: `${route("counselor.cases.index")}?tab=ongoing`,
-                label: "Counseling Cases",
+                label: "Cases",
                 icon: Users,
                 active:
                     route().current("counselor.cases.index") &&
@@ -223,7 +225,10 @@ export default function Sidebar({ auth, menu, setMenu }) {
                             return (
                                 <Link
                                     key={item.label}
-                                    href={item.href || route(item.name, item.params)}
+                                    href={
+                                        item.href ||
+                                        route(item.name, item.params)
+                                    }
                                     aria-label={item.ariaLabel || item.label}
                                     aria-current={isActive ? "page" : undefined}
                                     onClick={() => setMenu(false)}
