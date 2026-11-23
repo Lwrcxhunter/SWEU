@@ -67,7 +67,7 @@ class StudentBookingPreferencesTest extends GuidanceTestCase
         $original = $this->appointment($counselor, $student);
         $case = app(CounselingCases::class)->createCaseFromAppointment($original);
         $this->actingAs($counselor)->postJson('/api/cases/'.$case->id.'/follow-up', [
-            'targetDate' => '2026-10-06', 'timeSlot' => 'PM', 'mode' => 'Virtual',
+            'targetDate' => '2026-10-06', 'scheduledTime' => '14:00', 'mode' => 'Virtual',
         ])->assertCreated();
         $followUp = Appointment::where('type', 'follow_up')->firstOrFail();
         $url = '/appointments/'.$followUp->id;

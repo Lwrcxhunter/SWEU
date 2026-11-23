@@ -22,8 +22,12 @@ class WalkInQueueController extends Controller
 {
     public function index(Request $request, CounselorAvailability $availability, CounselorSchedules $schedules)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Staff/WalkInQueue', ['appointments', 'counselors', 'filters', 'calendar', 'metrics', 'colleges'])) {
+            return Inertia::render('Staff/WalkInQueue', []);
+        }
+
         $filters = $request->validate([
-            'stage' => 'nullable|in:all,unassigned,waiting,student,confirmed,urgent,completed,cancelled',
+            'stage' => 'nullable|in:all,unassigned,waiting,student,confirmed,completed,cancelled',
             'search' => 'nullable|string|max:100',
             'appointment_date' => 'nullable|date_format:Y-m-d',
             'calendar_date' => 'nullable|date_format:Y-m-d',
@@ -44,7 +48,6 @@ class WalkInQueueController extends Controller
             'waiting' => $queue->whereNotNull('counselor_id')->whereIn('status', ['assigned', 'assigned_pending_accept', 'assigned_pending_counselor', 'rescheduled']),
             'student' => $queue->where('status', 'counselor_accepted_pending_student'),
             'confirmed' => $queue->whereIn('status', ['accepted', 'confirmed']),
-            'urgent' => $queue->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)->where('urgency_level', 'urgent'),
             'completed', 'cancelled' => $queue->where('status', $stage),
             default => null,
         };
@@ -62,6 +65,18 @@ class WalkInQueueController extends Controller
         $users = User::where('role', 'counselor')->where('active', true)->orderBy('full_name')->get();
         $counselorIds = $users->map(fn ($user) => Ids::object((string) $user->id))->all();
         $schedulesMap = CounselorSchedule::whereIn('counselor_id', $counselorIds)->get()->keyBy(fn ($s) => (string) $s->counselor_id);
+        // Reuse this request's snapshot, including counselors without saved schedules.
+        foreach ($users as $user) {
+            $user->setRelation('availabilitySchedule', $schedulesMap->get((string) $user->id));
+        }
+
+        $allAppointmentsSummary = Appointment::all(['status', 'counselor_id']);
+        $activeAppointmentsSummary = $allAppointmentsSummary->whereIn('status', CounselorAvailability::ACTIVE_STATUSES);
+        $activeSessionsByCounselor = $activeAppointmentsSummary
+            ->filter(fn ($a) => ! empty($a->counselor_id))
+            ->groupBy(fn ($a) => (string) $a->counselor_id)
+            ->map->count();
+
         $bookingDates = $dates
             ->concat(collect($appointments->items())->pluck('scheduled_date'))
             ->push(today()->toDateString())
@@ -84,37 +99,32 @@ class WalkInQueueController extends Controller
 
                     return $appointment;
                 }
-                $urgent = $appointment['urgency_level'] === 'urgent';
                 $appointmentsByCounselor = $byCounselor;
                 $appointment['assignment_options'] = $users->map(
-                    function ($user) use ($appointment, $urgent, $availability, $schedules, $appointmentsByCounselor, $schedulesMap) {
+                    function ($user) use ($appointment, $availability, $schedules, $appointmentsByCounselor, $schedulesMap) {
                         $counselorBookings = $appointmentsByCounselor->get((string) $user->id, collect());
-                        $scheduledDate = $urgent ? today()->toDateString() : $appointment['scheduled_date'];
-                        $scheduledTime = $urgent
-                            ? now()->format('H:i')
-                            : ($appointment['scheduled_time'] ?? null);
+                        $scheduledDate = $appointment['scheduled_date'];
+                        $scheduledTime = $appointment['scheduled_time'] ?? null;
                         $result = $availability->check(
                             $user,
                             $scheduledDate,
                             $scheduledTime,
-                            $urgent ? null : ($appointment['preferred_period'] ?? null),
+                            $appointment['preferred_period'] ?? null,
                             $counselorBookings,
                             $appointment['id'],
-                            $urgent,
                         );
                         $schedule = $schedulesMap->get((string) $user->id);
                         if ($result['available'] && $schedule) {
                             if ($scheduledTime) {
-                                $result['available'] = $schedules->allowsAppointment(
-                                    (string) $user->id,
+                                $result['available'] = $schedules->allowsWithSchedule(
+                                    $schedule->toArray(),
                                     ['scheduled_date' => $scheduledDate, 'scheduled_time' => $scheduledTime],
-                                    $urgent,
                                 );
                             } else {
                                 $result['times'] = array_values(array_filter(
                                     $result['times'],
-                                    fn ($time) => $schedules->allowsAppointment(
-                                        (string) $user->id,
+                                    fn ($time) => $schedules->allowsWithSchedule(
+                                        $schedule->toArray(),
                                         ['scheduled_date' => $scheduledDate, 'scheduled_time' => $time],
                                     ),
                                 ));
@@ -136,11 +146,8 @@ class WalkInQueueController extends Controller
             },
         );
 
-        $scheduleIds = $users->map(fn ($user) => Ids::object($user->id))->all();
-        $schedulesByCounselor = CounselorSchedule::whereIn('counselor_id', $scheduleIds)
-            ->get()
-            ->keyBy(fn ($schedule) => (string) $schedule->counselor_id);
-        $counselors = $users->map(function ($user) use ($dates, $availability, $schedules, $schedulesByCounselor, $byCounselor) {
+        $schedulesByCounselor = $schedulesMap;
+        $counselors = $users->map(function ($user) use ($dates, $availability, $schedules, $schedulesByCounselor, $byCounselor, $activeSessionsByCounselor) {
             $schedule = $schedulesByCounselor->get((string) $user->id);
             $calendar = $dates->mapWithKeys(function ($day) use ($user, $availability, $schedules, $schedule, $byCounselor) {
                 $periods = $availability->day($user, $day, $byCounselor->get((string) $user->id, collect()));
@@ -148,7 +155,7 @@ class WalkInQueueController extends Controller
                     foreach ($periods as &$blocks) {
                         foreach ($blocks as &$block) {
                             if ($block['status'] === 'available'
-                                && ! $schedules->allowsAppointment((string) $user->id, [
+                                && ! $schedules->allowsWithSchedule($schedule->toArray(), [
                                     'scheduled_date' => $day,
                                     'scheduled_time' => $block['start'],
                                 ])) {
@@ -183,9 +190,7 @@ class WalkInQueueController extends Controller
                         'type' => $leave['type'],
                     ])->all(),
                 ] : null,
-                'active_sessions_count' => Appointment::where('counselor_id', Ids::object($user->id))
-                    ->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)
-                    ->count(),
+                'active_sessions_count' => $activeSessionsByCounselor->get((string) $user->id, 0),
                 'calendar' => $calendar,
             ];
         });
@@ -202,14 +207,13 @@ class WalkInQueueController extends Controller
                 'today' => today()->toDateString(),
             ],
             'metrics' => [
-                'queue_total' => (clone $base)->count(),
-                'unassigned_count' => (clone $base)->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)->where(fn ($q) => $q->whereNull('counselor_id')->orWhere('status', 'reassignment_requested'))->count(),
-                'waiting_count' => (clone $base)->whereNotNull('counselor_id')->whereIn('status', ['assigned', 'assigned_pending_accept', 'assigned_pending_counselor', 'rescheduled'])->count(),
-                'student_count' => (clone $base)->where('status', 'counselor_accepted_pending_student')->count(),
-                'confirmed_count' => (clone $base)->whereIn('status', ['accepted', 'confirmed'])->count(),
-                'completed_count' => (clone $base)->where('status', 'completed')->count(),
-                'cancelled_count' => (clone $base)->where('status', 'cancelled')->count(),
-                'urgent_count' => (clone $base)->whereIn('status', CounselorAvailability::ACTIVE_STATUSES)->where('urgency_level', 'urgent')->count(),
+                'queue_total' => $allAppointmentsSummary->count(),
+                'unassigned_count' => $activeAppointmentsSummary->filter(fn ($a) => empty($a->counselor_id) || $a->status === 'reassignment_requested')->count(),
+                'waiting_count' => $allAppointmentsSummary->filter(fn ($a) => ! empty($a->counselor_id) && in_array($a->status, ['assigned', 'assigned_pending_accept', 'assigned_pending_counselor', 'rescheduled'], true))->count(),
+                'student_count' => $allAppointmentsSummary->where('status', 'counselor_accepted_pending_student')->count(),
+                'confirmed_count' => $allAppointmentsSummary->whereIn('status', ['accepted', 'confirmed'])->count(),
+                'completed_count' => $allAppointmentsSummary->where('status', 'completed')->count(),
+                'cancelled_count' => $allAppointmentsSummary->where('status', 'cancelled')->count(),
                 'open_testing_count' => TestingRequest::where('status', 'pending')->count(),
                 'counselors_on_duty' => $users->where('on_duty', true)->count(),
                 'counselors_total' => $users->count(),

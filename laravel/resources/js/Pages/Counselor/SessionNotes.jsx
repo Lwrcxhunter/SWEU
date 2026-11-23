@@ -30,6 +30,7 @@ export default function SessionNotes({
     const [slotsLoading, setSlotsLoading] = useState(false);
     const followUp = useForm({
         targetDate: "",
+        scheduledTime: "",
         timeSlot: "AM",
         mode: ["virtual", "online", "telecounseling"].includes(
             appointment.channel,

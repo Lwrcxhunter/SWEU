@@ -33,6 +33,10 @@ class SessionNoteController extends Controller
 
     public function dashboard(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Counselor/Dashboard', ['appointments', 'followups'])) {
+            return Inertia::render('Counselor/Dashboard', []);
+        }
+
         $id = Ids::object($request->user()->id);
 
         return Inertia::render('Counselor/Dashboard', [
@@ -235,7 +239,6 @@ class SessionNoteController extends Controller
                     'counselor_id' => Ids::object($case->counselor_id),
                     'channel' => $channel,
                     'type' => 'follow_up',
-                    'urgency_level' => 'normal',
                     'scheduled_date' => $data['targetDate'],
                     'scheduled_time' => $scheduledTime,
                     'status' => 'counselor_accepted_pending_student',
@@ -432,7 +435,6 @@ class SessionNoteController extends Controller
                         'counselor_id' => $counselorId,
                         'channel' => $record->channel ?? 'face_to_face',
                         'type' => 'follow_up',
-                        'urgency_level' => 'normal',
                         'scheduled_date' => $followupDate,
                         'scheduled_time' => $followupTime,
                         'status' => 'counselor_accepted_pending_student',

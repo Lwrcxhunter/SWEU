@@ -47,7 +47,7 @@ class HandleInertiaRequests extends Middleware
                     return 0;
                 }
                 try {
-                    return OfficeAlert::where('user_id', Ids::object($user->id))->whereNull('read_at')->count();
+                    return OfficeAlert::where('kind', '!=', 'urgent')->where('user_id', Ids::object($user->id))->whereNull('read_at')->count();
                 } catch (\Throwable $e) {
                     report($e);
                     return 0;
@@ -58,8 +58,8 @@ class HandleInertiaRequests extends Middleware
                     return [];
                 }
                 try {
-                    return OfficeAlert::where('user_id', Ids::object($user->id))
-                        ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => ['id' => (string) $a->id, 'kind' => $a->kind, 'message' => $a->message]);
+                    return OfficeAlert::where('kind', '!=', 'urgent')->where('user_id', Ids::object($user->id))
+                        ->whereNull('read_at')->latest()->limit(5)->get()->map(fn ($a) => Views::alert($a, $user));
                 } catch (\Throwable $e) {
                     report($e);
                     return [];

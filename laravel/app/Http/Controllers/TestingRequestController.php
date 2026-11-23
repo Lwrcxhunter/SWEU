@@ -18,6 +18,10 @@ class TestingRequestController extends Controller
 {
     public function index(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Student/RequestTesting', ['isStaff', 'filters', 'counts', 'colleges', 'programs', 'requests'])) {
+            return Inertia::render('Student/RequestTesting', []);
+        }
+
         $user = $request->user();
         $isStaff = $user->role === 'staff';
         $student = $isStaff ? null : Student::where('user_id', Ids::object($user->id))->first();

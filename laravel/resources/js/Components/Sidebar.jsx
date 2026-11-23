@@ -91,7 +91,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
             navItems.push({
                 name: "counselor.cases.index",
                 href: `${route("counselor.cases.index")}?tab=ongoing`,
-                label: "Counseling Cases",
+                label: "Cases",
                 icon: Users,
                 active:
                     route().current("counselor.cases.index") &&
@@ -214,7 +214,10 @@ export default function Sidebar({ auth, menu, setMenu }) {
                             return (
                                 <Link
                                     key={item.label}
-                                    href={item.href || route(item.name, item.params)}
+                                    href={
+                                        item.href ||
+                                        route(item.name, item.params)
+                                    }
                                     aria-label={item.ariaLabel || item.label}
                                     aria-current={isActive ? "page" : undefined}
                                     onClick={() => setMenu(false)}

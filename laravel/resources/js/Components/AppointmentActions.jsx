@@ -57,17 +57,7 @@ export default function AppointmentActions({
                         View intake & notes
                     </Link>
                 )}
-                {staff &&
-                    !closed &&
-                    item.type === "walk_in" &&
-                    item.urgency_level !== "urgent" && (
-                        <Button
-                            disabled={form.processing}
-                            onClick={() => perform("urgent")}
-                        >
-                            Flag urgent & alert counselors
-                        </Button>
-                    )}
+
                 {!closed && (
                     <Button
                         secondary
@@ -102,13 +92,7 @@ export default function AppointmentActions({
                                     Choose an available counselor
                                 </option>
                                 {counselors
-                                    .filter(
-                                        (c) =>
-                                            c.available &&
-                                            (item.urgency_level === "urgent"
-                                                ? c.on_duty
-                                                : true),
-                                    )
+                                    .filter((c) => c.available)
                                     .map((c) => {
                                         const isCollegeDesignate =
                                             item.student?.college?.code &&

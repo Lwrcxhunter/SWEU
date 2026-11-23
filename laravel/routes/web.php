@@ -36,6 +36,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/schedule', [ScheduleController::class, 'index'])
         ->middleware(['role:counselor', 'permission:appointments.manage'])
         ->name('schedule');
+    Route::patch('/alerts/mark-all-read', [AlertController::class, 'markAll'])->name('alerts.mark-all-read');
     Route::patch('/alerts/{alert}', [AlertController::class, 'update'])->name('alerts.update');
     Route::get('/notifications', fn () => redirect()->route('alerts.index'))->name('notifications.index');
 

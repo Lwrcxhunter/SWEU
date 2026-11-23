@@ -16,8 +16,12 @@ use Inertia\Inertia;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        if ($this->wantsOnlyGlobalProps($request, 'Admin/Users', ['users', 'roles', 'colleges', 'grants', 'allowedPermissions'])) {
+            return Inertia::render('Admin/Users', []);
+        }
+
         return Inertia::render('Admin/Users', ['users' => User::orderBy('full_name')->paginate(20)->through(fn ($u) => Views::user($u) + ['active' => $u->active]),
             'roles' => config('guidance.roles'), 'colleges' => config('guidance.colleges'),
             'grants' => RoleGrant::all()->map(fn ($r) => ['role' => $r->name, 'permissions' => $r->permissions]),
@@ -76,6 +80,7 @@ class AdminController extends Controller
             throw ValidationException::withMessages(['permissions' => 'Administrator recovery permissions must remain enabled.']);
         }
         RoleGrant::where('name', $role)->update(['permissions' => $data['permissions']]);
+        $request->attributes->remove('guidance.role_grants');
 
         return back()->with('success', 'Role permissions updated.');
     }

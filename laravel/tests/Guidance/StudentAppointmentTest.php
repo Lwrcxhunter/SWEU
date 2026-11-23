@@ -273,15 +273,15 @@ class StudentAppointmentTest extends GuidanceTestCase
         $this->assertSame('reassignment_requested', $appointment->status);
         $this->assertSame('This appointment conflicts with my approved leave.', $appointment->reassignment_note);
 
-        // Urgent appointment with non-standard time (e.g. 12:59) does not fail validation on reassignment
-        $urgentAppointment = $this->appointment($counselor, $student, 'assigned_pending_counselor');
-        $urgentAppointment->urgency_level = 'urgent';
-        $urgentAppointment->scheduled_time = '12:59';
-        $urgentAppointment->save();
+        // A historical appointment with a non-standard time can still request reassignment.
+        $legacyAppointment = $this->appointment($counselor, $student, 'assigned_pending_counselor');
+        $legacyAppointment->urgency_level = 'urgent';
+        $legacyAppointment->scheduled_time = '12:59';
+        $legacyAppointment->save();
 
-        $this->actingAs($counselor)->patch('/appointments/'.$urgentAppointment->id, [
+        $this->actingAs($counselor)->patch('/appointments/'.$legacyAppointment->id, [
             'action' => 'request_reassignment',
-            'version' => $urgentAppointment->version,
+            'version' => $legacyAppointment->version,
             'scheduled_time' => '12:59',
             'note' => 'I am currently in an emergency intake.',
         ])->assertRedirect()->assertSessionHasNoErrors();

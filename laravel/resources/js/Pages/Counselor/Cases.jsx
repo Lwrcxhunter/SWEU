@@ -3,7 +3,8 @@ import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, Clock3, FileText
 import { useMemo, useState } from "react";
 import Office, { Badge, Empty } from "@/Components/Office";
 
-const formatType = (value) => (value || "Individual Counseling").replaceAll("_", " ");
+const formatType = (value) =>
+    (value || "Individual Counseling").replaceAll("_", " ");
 const formatDate = (value) => {
     if (!value) return "Not assigned";
     const date = new Date(`${value}T12:00:00`);
@@ -17,32 +18,90 @@ const formatTime = (value) => {
 };
 
 function CaseList({ cases, tab }) {
-    const [activeTab, setActiveTab] = useState(["ongoing", "hold", "closed"].includes(tab) ? tab : "ongoing");
+    const [activeTab, setActiveTab] = useState(
+        ["ongoing", "hold", "closed"].includes(tab) ? tab : "ongoing",
+    );
     const [query, setQuery] = useState("");
     const [filter, setFilter] = useState("all");
-    const categories = [...new Set(cases.data.map((record) => record.category).filter(Boolean))];
-    const records = useMemo(() => cases.data.filter((record) => {
-        const statusMatch = activeTab === "closed" ? record.status === "closed" : activeTab === "hold" ? ["hold", "on_hold"].includes(record.status) : ["open", "follow_up"].includes(record.status);
-        const search = query.trim().toLowerCase();
-        const queryMatch = !search || [record.student_name, record.student_id_number, record.case_number, record.category].filter(Boolean).some((value) => value.toLowerCase().includes(search));
-        return statusMatch && (filter === "all" || record.category === filter) && queryMatch;
-    }), [activeTab, cases.data, filter, query]);
+    const categories = [
+        ...new Set(cases.data.map((record) => record.category).filter(Boolean)),
+    ];
+    const records = useMemo(
+        () =>
+            cases.data.filter((record) => {
+                const statusMatch =
+                    activeTab === "closed"
+                        ? record.status === "closed"
+                        : activeTab === "hold"
+                          ? ["hold", "on_hold"].includes(record.status)
+                          : ["open", "follow_up"].includes(record.status);
+                const search = query.trim().toLowerCase();
+                const queryMatch =
+                    !search ||
+                    [
+                        record.student_name,
+                        record.student_id_number,
+                        record.case_number,
+                        record.category,
+                    ]
+                        .filter(Boolean)
+                        .some((value) => value.toLowerCase().includes(search));
+                return (
+                    statusMatch &&
+                    (filter === "all" || record.category === filter) &&
+                    queryMatch
+                );
+            }),
+        [activeTab, cases.data, filter, query],
+    );
     return (
         <Office backgroundImage="/images/dashboardbg.png" title="Counseling Cases" eyebrow="Counselor workspace" description="Manage and track ongoing and closed counseling cases.">
-            <section className="rounded-xl border border-[#E3E5DF] bg-white p-3 shadow-[0_8px_24px_rgba(49,92,82,0.06)] md:p-4">
+            <section className="rounded-xl border border-[#E3E5DF] bg-white p-3 shadow-[0_8px_24px_rgba(49,92,82,0.06)] md:p-4 slide-up-slow">
                 <div className="flex items-center gap-2 border-b border-[#E3E5DF] px-2">
-                    {[["ongoing", "Ongoing"], ["hold", "On Hold"], ["closed", "Closed"]].map(([value, name]) => (
-                        <button key={value} type="button" onClick={() => { setActiveTab(value); setQuery(""); setFilter("all"); }} className={`border-b-2 px-3 py-3 text-xs font-semibold ${activeTab === value ? "border-[#315C52] text-[#263B36]" : "border-transparent text-[#6D7974]"}`}>{name}</button>
+                    {[
+                        ["ongoing", "Ongoing"],
+                        ["hold", "On Hold"],
+                        ["closed", "Closed"],
+                    ].map(([value, name]) => (
+                        <button
+                            key={value}
+                            type="button"
+                            onClick={() => {
+                                setActiveTab(value);
+                                setQuery("");
+                                setFilter("all");
+                            }}
+                            className={`border-b-2 px-3 py-3 text-xs font-semibold ${activeTab === value ? "border-[#315C52] text-[#263B36]" : "border-transparent text-[#6D7974]"}`}
+                        >
+                            {name}
+                        </button>
                     ))}
                 </div>
                 <div className="flex flex-wrap gap-2 px-2 py-4">
                     <label className="relative min-w-[220px] flex-1">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6F9D91]" />
-                        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by name, ID, or case number..." className="control pl-9 text-xs" />
+                        <input
+                            type="search"
+                            value={query}
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder="Search by name, ID, or case number..."
+                            className="control pl-9 text-xs"
+                        />
                     </label>
                     <label className="relative">
                         <SlidersHorizontal className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#315C52]" />
-                        <select value={filter} onChange={(event) => setFilter(event.target.value)} className="control min-w-[110px] pl-9 text-xs capitalize"><option value="all">Filter</option>{categories.map((category) => <option key={category} value={category}>{formatType(category)}</option>)}</select>
+                        <select
+                            value={filter}
+                            onChange={(event) => setFilter(event.target.value)}
+                            className="control min-w-[110px] pl-9 text-xs capitalize"
+                        >
+                            <option value="all">Filter</option>
+                            {categories.map((category) => (
+                                <option key={category} value={category}>
+                                    {formatType(category)}
+                                </option>
+                            ))}
+                        </select>
                     </label>
                 </div>
                 {records.length === 0 ? <Empty>No counseling cases match this view.</Empty> : <div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left text-xs"><thead className="border-y border-[#E3E5DF] bg-[#F7F5EF] text-[#6D7974]"><tr>{["Student Name", "Case Type", "Assigned Date", "Status", "Actions"].map((heading) => <th key={heading} className="px-3 py-3 font-semibold">{heading}</th>)}</tr></thead><tbody className="divide-y divide-[#E3E5DF]">{records.map((record) => <tr key={record.id}><td className="px-3 py-4 font-medium text-[#263B36]">{record.student_name}</td><td className="px-3 py-4 capitalize text-[#6D7974]">{formatType(record.category)}</td><td className="px-3 py-4 text-[#6D7974]">{formatDate(record.opened_at)}</td><td className="px-3 py-4">                <Badge value={record.status === "open" || record.status === "follow_up" ? "ongoing" : record.status} /></td><td className="px-3 py-4"><Link href={route("counselor.cases.show", record.id)} className="rounded-lg border border-[#DCE5DF] px-3 py-2 font-semibold text-[#2F6693]">View</Link></td></tr>)}</tbody></table></div>}
@@ -169,7 +228,7 @@ function AppointmentSchedule({ appointments = [], historyAppointments = [], tab 
                         Appointment History
                     </Link>
                 </div>
-                <section className="overflow-hidden rounded-2xl border border-[#DCE5E9] bg-white shadow-[0_16px_40px_rgba(45,76,92,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(45,76,92,0.18)]">
+                <section className="overflow-hidden rounded-2xl border border-[#DCE5E9] bg-white shadow-[0_16px_40px_rgba(45,76,92,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(45,76,92,0.18)] slide-up-slow">
                     {tab === "history" ? (
                         <AppointmentTable appointments={historyAppointments} emptyMessage="No completed or cancelled appointments have been recorded yet." />
                     ) : (

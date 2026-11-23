@@ -129,11 +129,37 @@ export default function Dashboard({ appointments, followups }) {
     ).length;
 
     useEffect(() => {
-        const timer = setInterval(
-            () => router.reload({ only: ["appointments", "followups"] }),
-            15000,
-        );
-        return () => clearInterval(timer);
+        let refreshing = false;
+        let cancelToken;
+        const poll = () => {
+            if (document.hidden || refreshing) return;
+            refreshing = true;
+            router.reload({
+                only: ["appointments", "followups"],
+                preserveScroll: true,
+                preserveState: true,
+                onCancelToken: (token) => {
+                    cancelToken = token;
+                },
+                onFinish: () => {
+                    refreshing = false;
+                },
+            });
+        };
+
+        const timer = setInterval(poll, 45000);
+
+        // Poll immediately when tab becomes visible again
+        const onVisibility = () => {
+            if (!document.hidden) poll();
+        };
+        document.addEventListener("visibilitychange", onVisibility);
+
+        return () => {
+            clearInterval(timer);
+            cancelToken?.cancel();
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
     }, []);
 
     const schedule = appointmentItems.slice(0, 5);

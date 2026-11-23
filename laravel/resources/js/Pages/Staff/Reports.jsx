@@ -9,7 +9,6 @@ import {
     Building2,
     Users,
     CheckCircle2,
-    AlertTriangle,
     FileText,
     Printer,
     RotateCcw,
@@ -52,7 +51,6 @@ export default function Reports({
         college: filters.college || "all",
         counselor_id: filters.counselor_id || "all",
         type: filters.type || "all",
-        urgency: filters.urgency || "all",
     });
 
     const activeFilterCount = [
@@ -62,7 +60,6 @@ export default function Reports({
         form.data.college !== "all",
         form.data.counselor_id !== "all",
         form.data.type !== "all",
-        form.data.urgency !== "all",
         form.data.preset === "custom",
     ].filter(Boolean).length;
 
@@ -443,30 +440,6 @@ export default function Reports({
                                 </select>
                             </div>
 
-                            {/* Urgency */}
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Urgency Level
-                                </label>
-                                <select
-                                    className="control w-full text-xs rounded-xl"
-                                    value={form.data.urgency}
-                                    onChange={(e) =>
-                                        form.setData("urgency", e.target.value)
-                                    }
-                                >
-                                    <option value="all">
-                                        All Urgency Levels
-                                    </option>
-                                    <option value="urgent">
-                                        Urgent / Immediate Crisis
-                                    </option>
-                                    <option value="standard">
-                                        Standard Routine
-                                    </option>
-                                </select>
-                            </div>
-
                             {/* Custom Dates: From */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
@@ -535,7 +508,7 @@ export default function Reports({
             </div>
 
             {/* Executive KPI Metric Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 mb-6">
                 {/* Total Appointments */}
                 <div className="rounded-2xl border border-sky-100 bg-white p-4 shadow-xs">
                     <div className="flex items-center justify-between text-slate-500 mb-2">
@@ -552,27 +525,6 @@ export default function Reports({
                     <div className="mt-1 text-[11px] text-slate-500 font-medium">
                         {kpis.walk_ins || 0} Walk-ins · {kpis.scheduled || 0}{" "}
                         Scheduled
-                    </div>
-                </div>
-
-                {/* Urgent Interventions */}
-                <div className="rounded-2xl border border-rose-100 bg-rose-50/40 p-4 shadow-xs">
-                    <div className="flex items-center justify-between text-rose-700 mb-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
-                            Urgent Cases
-                        </span>
-                        <div className="rounded-lg bg-rose-100 p-1.5 text-rose-700">
-                            <AlertTriangle size={16} />
-                        </div>
-                    </div>
-                    <div className="text-2xl font-black text-rose-900 tabular-nums flex items-center gap-2">
-                        <span>{kpis.urgent || 0}</span>
-                        {(kpis.urgent || 0) > 0 && (
-                            <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
-                        )}
-                    </div>
-                    <div className="mt-1 text-[11px] text-rose-700 font-medium">
-                        Immediate crisis triage
                     </div>
                 </div>
 
@@ -860,41 +812,6 @@ export default function Reports({
                                             className="h-full bg-slate-300 transition-all"
                                             style={{
                                                 width: `${100 - (analytics.typeRatio?.walk_in_pct || 0)}%`,
-                                            }}
-                                        ></div>
-                                    </div>
-                                </div>
-
-                                {/* Urgency: Crisis vs Routine */}
-                                <div className="pt-2 border-t border-slate-100">
-                                    <div className="flex justify-between text-xs font-semibold mb-1.5">
-                                        <span className="text-rose-700 flex items-center gap-1">
-                                            <AlertTriangle size={12} />
-                                            Urgent Crisis:{" "}
-                                            {analytics.urgencyRatio?.urgent ||
-                                                0}{" "}
-                                            (
-                                            {analytics.urgencyRatio
-                                                ?.urgent_pct || 0}
-                                            %)
-                                        </span>
-                                        <span className="text-slate-600">
-                                            Standard Routine:{" "}
-                                            {analytics.urgencyRatio?.standard ||
-                                                0}
-                                        </span>
-                                    </div>
-                                    <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
-                                        <div
-                                            className="h-full bg-rose-600 transition-all"
-                                            style={{
-                                                width: `${analytics.urgencyRatio?.urgent_pct || 0}%`,
-                                            }}
-                                        ></div>
-                                        <div
-                                            className="h-full bg-slate-300 transition-all"
-                                            style={{
-                                                width: `${100 - (analytics.urgencyRatio?.urgent_pct || 0)}%`,
                                             }}
                                         ></div>
                                     </div>
@@ -1231,7 +1148,7 @@ export default function Reports({
                                     </h3>
                                     <p className="text-xs text-slate-500">
                                         Active assignments, completed
-                                        consultations, and crisis interventions
+                                        consultations, and managed cases
                                     </p>
                                 </div>
                             </div>
@@ -1249,9 +1166,7 @@ export default function Reports({
                                             <th className="py-3 px-4 text-right">
                                                 Completed Sessions
                                             </th>
-                                            <th className="py-3 px-4 text-right">
-                                                Urgent Handled
-                                            </th>
+
                                             <th className="py-3 px-4 text-right">
                                                 Cases Managed
                                             </th>
@@ -1261,7 +1176,7 @@ export default function Reports({
                                         {counselorBreakdown.length === 0 ? (
                                             <tr>
                                                 <td
-                                                    colSpan="5"
+                                                    colSpan="4"
                                                     className="py-8 text-center text-xs text-slate-500"
                                                 >
                                                     No counselor records
@@ -1286,9 +1201,7 @@ export default function Reports({
                                                     <td className="py-3 px-4 text-right font-bold text-emerald-700 tabular-nums">
                                                         {cb.completed}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-bold text-rose-700 tabular-nums">
-                                                        {cb.urgent}
-                                                    </td>
+
                                                     <td className="py-3 px-4 text-right font-medium text-slate-800 tabular-nums">
                                                         {cb.cases}
                                                     </td>
@@ -1335,9 +1248,7 @@ export default function Reports({
                                             <th className="py-3 px-4">
                                                 Mode / Type
                                             </th>
-                                            <th className="py-3 px-4">
-                                                Urgency
-                                            </th>
+
                                             <th className="py-3 px-4">
                                                 Assigned To
                                             </th>
@@ -1350,7 +1261,7 @@ export default function Reports({
                                         {recentRecords.length === 0 ? (
                                             <tr>
                                                 <td
-                                                    colSpan="7"
+                                                    colSpan="6"
                                                     className="py-8 text-center text-xs text-slate-500"
                                                 >
                                                     No operational records match
@@ -1380,18 +1291,7 @@ export default function Reports({
                                                     <td className="py-3 px-4 text-slate-700">
                                                         {rec.type}
                                                     </td>
-                                                    <td className="py-3 px-4">
-                                                        {rec.urgency ===
-                                                        "urgent" ? (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[10px] font-bold text-rose-700 uppercase">
-                                                                Urgent
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-slate-500 font-medium">
-                                                                Standard
-                                                            </span>
-                                                        )}
-                                                    </td>
+
                                                     <td className="py-3 px-4 text-slate-700 font-medium">
                                                         {rec.counselor}
                                                     </td>
