@@ -8,7 +8,9 @@ From this project root on Windows:
 .\scripts\start-local.ps1
 ```
 
-Open http://127.0.0 .1:8000. Create the first administrator in a separate terminal with:
+Open http://127.0.0.1:8000. The launcher starts both Laravel and Vite, so React and CSS changes hot-reload immediately without rebuilding or a hard refresh. Press Ctrl+C in this terminal to stop both processes.
+
+Create the first administrator in a separate terminal with:
 
 ```powershell
 .\scripts\php.ps1 artisan guidance:admin

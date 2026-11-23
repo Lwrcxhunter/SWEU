@@ -90,7 +90,7 @@ export default function Analytics({
     };
 
     return (
-        <Office
+        <Office backgroundImage="/images/dashboardbg.png"
             title="Analytics"
             eyebrow="Counselor analytics"
             description="View insights and trends from your counseling activities."

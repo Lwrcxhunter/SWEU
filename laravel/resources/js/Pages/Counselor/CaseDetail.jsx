@@ -145,7 +145,7 @@ export default function CaseDetail({
         )[0];
 
     return (
-        <Office
+        <Office backgroundImage="/images/dashboardbg.png"
             title={caseRecord.case_number}
             eyebrow="Counseling case"
             description={`${student.name} · ${caseRecord.category.replaceAll("_", " ")}`}

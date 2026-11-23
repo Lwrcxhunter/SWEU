@@ -87,7 +87,7 @@ class LoginRequest extends FormRequest
                     'email' => trans('auth.failed'),
                 ]);
             }
-        } catch (\MongoDB\Driver\Exception\ConnectionTimeoutException|\MongoDB\Driver\Exception\ConnectionException $e) {
+        } catch (\MongoDB\Driver\Exception\InvalidArgumentException|\MongoDB\Driver\Exception\ConnectionTimeoutException|\MongoDB\Driver\Exception\ConnectionException $e) {
             report($e);
             throw ValidationException::withMessages([
                 'email' => 'Database connection timeout: Unable to connect to MongoDB Atlas. Please verify that your IP address is whitelisted in MongoDB Atlas Network Access.',

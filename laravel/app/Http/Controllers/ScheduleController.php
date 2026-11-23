@@ -33,8 +33,8 @@ class ScheduleController extends Controller
             ->orderBy('start_at')
             ->get();
 
-        $miniStart = $date->copy()->startOfMonth()->startOfWeek(self::WEEK_STARTS_ON);
-        $miniEnd = $date->copy()->endOfMonth()->endOfWeek(self::WEEK_STARTS_ON);
+        $miniStart = $date->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY);
+        $miniEnd = $date->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
         $miniEvents = ScheduleEvent::forCounselor(Ids::object($request->user()->id))
             ->whereIn('type', $types)
             ->where('start_at', '>=', $miniStart)
@@ -146,8 +146,8 @@ class ScheduleController extends Controller
 
     private function miniCalendar(Carbon $date, array $eventCounts): array
     {
-        $start = $date->copy()->startOfMonth()->startOfWeek(self::WEEK_STARTS_ON);
-        $end = $date->copy()->endOfMonth()->endOfWeek(self::WEEK_STARTS_ON);
+        $start = $date->copy()->startOfMonth()->startOfWeek(Carbon::SUNDAY);
+        $end = $date->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
         $days = [];
         while ($start->lte($end)) {
             $days[] = [

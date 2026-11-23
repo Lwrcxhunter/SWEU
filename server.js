@@ -90,7 +90,25 @@ function seedData() {
       role: 'Counseling Staff',
       passwordHash: hashPassword('Counselor123!'),
       createdAt: nowIso()
+    },
+    {
+      id: 2,
+      email: 'artemis.labrador@university.edu',
+      name: 'Artemis Shaun Xena Labrador',
+      role: 'Guidance Counselor',
+      passwordHash: hashPassword('Artemis123!'),
+      createdAt: nowIso()
     }];
+    writeJson(STAFF_FILE, staff);
+  } else if (!staff.find(s => s.email === 'artemis.labrador@university.edu')) {
+    staff.push({
+      id: staff.reduce((max, s) => Math.max(max, Number(s.id) || 0), 0) + 1,
+      email: 'artemis.labrador@university.edu',
+      name: 'Artemis Shaun Xena Labrador',
+      role: 'Guidance Counselor',
+      passwordHash: hashPassword('Artemis123!'),
+      createdAt: nowIso()
+    });
     writeJson(STAFF_FILE, staff);
   }
 
@@ -404,6 +422,85 @@ async function handleApi(req, res, url) {
     return json(res, 200, { user: current.session.staff });
   }
 
+  if (req.method === 'GET' && pathname === '/api/schedule') {
+    const current = requireStaff(req, res);
+    if (!current) return;
+    // Hardcoded schedule data for Artemis Shaun Xena Labrador
+    const scheduleData = [
+      // Week 1 - Oct 26-30, 2026
+      { id: 1, title: 'Individual Counseling - J. Dela Cruz', location: 'Counseling Room 1', day: 'Monday', date: '2026-10-26', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 2, title: 'Case Conference', location: 'Conference Room', day: 'Monday', date: '2026-10-26', startTime: '09:30', endTime: '10:30', type: 'case_conference', color: '#f3e5f5' },
+      { id: 3, title: 'Group Counseling (SHS)', location: 'Counseling Room 2', day: 'Monday', date: '2026-10-26', startTime: '11:00', endTime: '12:00', type: 'appointment', color: '#e3f2fd' },
+      { id: 4, title: 'Academic Guidance - M. Santos', location: 'Counseling Room 1', day: 'Monday', date: '2026-10-26', startTime: '13:00', endTime: '14:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 5, title: 'Faculty Consultation', location: 'Office 3', day: 'Monday', date: '2026-10-26', startTime: '14:00', endTime: '16:00', type: 'meeting', color: '#fff9c4' },
+      { id: 6, title: 'Individual Counseling - R. Garcia', location: 'Counseling Room 1', day: 'Tuesday', date: '2026-10-27', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 7, title: 'Workshop: Stress Management', location: 'Seminar Hall A', day: 'Tuesday', date: '2026-10-27', startTime: '09:30', endTime: '11:30', type: 'workshop', color: '#fff3e0' },
+      { id: 8, title: 'Individual Counseling - A. Reyes', location: 'Counseling Room 2', day: 'Tuesday', date: '2026-10-27', startTime: '13:00', endTime: '14:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 9, title: 'Department Meeting', location: 'Admin Office', day: 'Tuesday', date: '2026-10-27', startTime: '14:30', endTime: '15:30', type: 'meeting', color: '#f3e5f5' },
+      { id: 10, title: 'Career Counseling - L. Mendoza', location: 'Counseling Room 1', day: 'Wednesday', date: '2026-10-28', startTime: '08:30', endTime: '09:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 11, title: 'Peer Mediation Session', location: 'Conference Room', day: 'Wednesday', date: '2026-10-28', startTime: '10:00', endTime: '11:00', type: 'appointment', color: '#e3f2fd' },
+      { id: 12, title: 'Individual Counseling - K. Pascual', location: 'Counseling Room 2', day: 'Wednesday', date: '2026-10-28', startTime: '13:00', endTime: '14:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 13, title: 'Report Writing', location: 'Office', day: 'Wednesday', date: '2026-10-28', startTime: '15:00', endTime: '17:00', type: 'other', color: '#eceff1' },
+      { id: 14, title: 'Group Counseling (College)', location: 'Counseling Room 1', day: 'Thursday', date: '2026-10-29', startTime: '08:00', endTime: '09:30', type: 'appointment', color: '#e3f2fd' },
+      { id: 15, title: 'Individual Counseling - P. Torres', location: 'Counseling Room 2', day: 'Thursday', date: '2026-10-29', startTime: '10:00', endTime: '11:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 16, title: 'Seminar: Mental Health Awareness', location: 'Auditorium', day: 'Thursday', date: '2026-10-29', startTime: '13:00', endTime: '15:00', type: 'workshop', color: '#fff3e0' },
+      { id: 17, title: 'Parent Consultation - Mr. & Mrs. Cruz', location: 'Conference Room', day: 'Thursday', date: '2026-10-29', startTime: '15:30', endTime: '16:30', type: 'meeting', color: '#f3e5f5' },
+      { id: 18, title: 'Follow-up Session - J. Dela Cruz', location: 'Counseling Room 1', day: 'Friday', date: '2026-10-30', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 19, title: 'Intake Review Session', location: 'Office', day: 'Friday', date: '2026-10-30', startTime: '09:30', endTime: '10:30', type: 'other', color: '#eceff1' },
+      { id: 20, title: 'Individual Counseling - S. Villanueva', location: 'Counseling Room 2', day: 'Friday', date: '2026-10-30', startTime: '11:00', endTime: '12:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 21, title: 'Staff Development Meeting', location: 'Admin Conference', day: 'Friday', date: '2026-10-30', startTime: '14:00', endTime: '16:00', type: 'meeting', color: '#f3e5f5' },
+      // Week 2 - Nov 2-6, 2026
+      { id: 22, title: 'Individual Counseling - B. Aquino', location: 'Counseling Room 1', day: 'Monday', date: '2026-11-02', startTime: '08:30', endTime: '09:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 23, title: 'Crisis Intervention Training', location: 'Seminar Hall B', day: 'Monday', date: '2026-11-02', startTime: '10:00', endTime: '12:00', type: 'workshop', color: '#fff3e0' },
+      { id: 24, title: 'Academic Guidance - T. Ramos', location: 'Counseling Room 2', day: 'Monday', date: '2026-11-02', startTime: '13:30', endTime: '14:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 25, title: 'Individual Counseling - M. Santos', location: 'Counseling Room 1', day: 'Tuesday', date: '2026-11-03', startTime: '09:00', endTime: '10:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 26, title: 'Workshop: Study Skills', location: 'Room 204', day: 'Tuesday', date: '2026-11-03', startTime: '10:30', endTime: '12:00', type: 'workshop', color: '#fff3e0' },
+      { id: 27, title: 'Case Conference - Complex Cases', location: 'Conference Room', day: 'Tuesday', date: '2026-11-03', startTime: '14:00', endTime: '15:30', type: 'case_conference', color: '#f3e5f5' },
+      { id: 28, title: 'Follow-up - R. Garcia', location: 'Counseling Room 1', day: 'Wednesday', date: '2026-11-04', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 29, title: 'Career Aptitude Testing - Group B', location: 'Testing Room', day: 'Wednesday', date: '2026-11-04', startTime: '10:00', endTime: '12:00', type: 'appointment', color: '#e3f2fd' },
+      { id: 30, title: 'Individual Counseling - A. Reyes', location: 'Counseling Room 2', day: 'Wednesday', date: '2026-11-04', startTime: '13:30', endTime: '14:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 31, title: 'Group Counseling (Peer Support)', location: 'Counseling Room 1', day: 'Thursday', date: '2026-11-05', startTime: '09:00', endTime: '10:30', type: 'appointment', color: '#e3f2fd' },
+      { id: 32, title: 'Faculty Consultation - Prof. Navarro', location: 'Faculty Office', day: 'Thursday', date: '2026-11-05', startTime: '11:00', endTime: '12:00', type: 'meeting', color: '#fff9c4' },
+      { id: 33, title: 'Individual Counseling - K. Pascual', location: 'Counseling Room 2', day: 'Thursday', date: '2026-11-05', startTime: '13:00', endTime: '14:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 34, title: 'Orientation Talk - Freshmen Batch 2', location: 'Auditorium', day: 'Friday', date: '2026-11-06', startTime: '08:00', endTime: '10:00', type: 'workshop', color: '#fff3e0' },
+      { id: 35, title: 'Individual Counseling - L. Mendoza', location: 'Counseling Room 1', day: 'Friday', date: '2026-11-06', startTime: '10:30', endTime: '11:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 36, title: 'Weekly Report Compilation', location: 'Office', day: 'Friday', date: '2026-11-06', startTime: '14:00', endTime: '16:00', type: 'other', color: '#eceff1' },
+      // Week 3 - Nov 9-13, 2026
+      { id: 37, title: 'Individual Counseling - J. Dela Cruz', location: 'Counseling Room 1', day: 'Monday', date: '2026-11-09', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 38, title: 'Workshop: Conflict Resolution', location: 'Seminar Hall A', day: 'Monday', date: '2026-11-09', startTime: '10:00', endTime: '12:00', type: 'workshop', color: '#fff3e0' },
+      { id: 39, title: 'Academic Guidance - F. Lim', location: 'Counseling Room 2', day: 'Monday', date: '2026-11-09', startTime: '13:30', endTime: '14:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 40, title: 'Individual Counseling - P. Torres', location: 'Counseling Room 1', day: 'Tuesday', date: '2026-11-10', startTime: '08:30', endTime: '09:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 41, title: 'Case Conference', location: 'Conference Room', day: 'Tuesday', date: '2026-11-10', startTime: '10:00', endTime: '11:00', type: 'case_conference', color: '#f3e5f5' },
+      { id: 42, title: 'Group Counseling (SHS)', location: 'Counseling Room 2', day: 'Tuesday', date: '2026-11-10', startTime: '13:00', endTime: '14:30', type: 'appointment', color: '#e3f2fd' },
+      { id: 43, title: 'Follow-up - S. Villanueva', location: 'Counseling Room 1', day: 'Wednesday', date: '2026-11-11', startTime: '09:00', endTime: '10:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 44, title: 'Parent-Teacher Consultation', location: 'Admin Office', day: 'Wednesday', date: '2026-11-11', startTime: '10:30', endTime: '12:00', type: 'meeting', color: '#f3e5f5' },
+      { id: 45, title: 'Individual Counseling - B. Aquino', location: 'Counseling Room 2', day: 'Wednesday', date: '2026-11-11', startTime: '14:00', endTime: '15:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 46, title: 'Seminar: Anti-Bullying Campaign', location: 'Auditorium', day: 'Thursday', date: '2026-11-12', startTime: '08:00', endTime: '10:00', type: 'workshop', color: '#fff3e0' },
+      { id: 47, title: 'Individual Counseling - T. Ramos', location: 'Counseling Room 1', day: 'Thursday', date: '2026-11-12', startTime: '10:30', endTime: '11:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 48, title: 'Department Planning Session', location: 'Conference Room', day: 'Thursday', date: '2026-11-12', startTime: '14:00', endTime: '16:00', type: 'meeting', color: '#f3e5f5' },
+      { id: 49, title: 'Follow-up - A. Reyes', location: 'Counseling Room 1', day: 'Friday', date: '2026-11-13', startTime: '08:30', endTime: '09:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 50, title: 'Intake Review & Documentation', location: 'Office', day: 'Friday', date: '2026-11-13', startTime: '10:00', endTime: '12:00', type: 'other', color: '#eceff1' },
+      { id: 51, title: 'Individual Counseling - M. Santos', location: 'Counseling Room 2', day: 'Friday', date: '2026-11-13', startTime: '13:00', endTime: '14:00', type: 'appointment', color: '#e8f5e9' },
+      // Week 4 - Nov 16-20, 2026
+      { id: 52, title: 'Individual Counseling - K. Pascual', location: 'Counseling Room 1', day: 'Monday', date: '2026-11-16', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 53, title: 'Workshop: Time Management', location: 'Room 204', day: 'Monday', date: '2026-11-16', startTime: '10:00', endTime: '11:30', type: 'workshop', color: '#fff3e0' },
+      { id: 54, title: 'Faculty Consultation', location: 'Faculty Lounge', day: 'Monday', date: '2026-11-16', startTime: '13:00', endTime: '14:00', type: 'meeting', color: '#fff9c4' },
+      { id: 55, title: 'Individual Counseling - R. Garcia', location: 'Counseling Room 2', day: 'Tuesday', date: '2026-11-17', startTime: '09:00', endTime: '10:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 56, title: 'Group Counseling (College)', location: 'Counseling Room 1', day: 'Tuesday', date: '2026-11-17', startTime: '10:30', endTime: '12:00', type: 'appointment', color: '#e3f2fd' },
+      { id: 57, title: 'Case Conference - Monthly Review', location: 'Conference Room', day: 'Tuesday', date: '2026-11-17', startTime: '14:00', endTime: '16:00', type: 'case_conference', color: '#f3e5f5' },
+      { id: 58, title: 'Career Counseling - D. Evangelista', location: 'Counseling Room 1', day: 'Wednesday', date: '2026-11-18', startTime: '08:30', endTime: '09:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 59, title: 'Individual Counseling - J. Dela Cruz', location: 'Counseling Room 2', day: 'Wednesday', date: '2026-11-18', startTime: '10:00', endTime: '11:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 60, title: 'Monthly Program Evaluation', location: 'Admin Office', day: 'Wednesday', date: '2026-11-18', startTime: '14:00', endTime: '16:00', type: 'meeting', color: '#f3e5f5' },
+      { id: 61, title: 'Individual Counseling - L. Mendoza', location: 'Counseling Room 1', day: 'Thursday', date: '2026-11-19', startTime: '08:00', endTime: '09:00', type: 'appointment', color: '#e8f5e9' },
+      { id: 62, title: 'Peer Mediation Follow-up', location: 'Conference Room', day: 'Thursday', date: '2026-11-19', startTime: '10:00', endTime: '11:00', type: 'appointment', color: '#e3f2fd' },
+      { id: 63, title: 'Workshop: Self-Care for Students', location: 'Seminar Hall B', day: 'Thursday', date: '2026-11-19', startTime: '13:00', endTime: '15:00', type: 'workshop', color: '#fff3e0' },
+      { id: 64, title: 'End-of-Month Summary & Reporting', location: 'Office', day: 'Friday', date: '2026-11-20', startTime: '08:00', endTime: '10:00', type: 'other', color: '#eceff1' },
+      { id: 65, title: 'Individual Counseling - P. Torres', location: 'Counseling Room 1', day: 'Friday', date: '2026-11-20', startTime: '10:30', endTime: '11:30', type: 'appointment', color: '#e8f5e9' },
+      { id: 66, title: 'Staff Development & Wellness', location: 'Conference Room', day: 'Friday', date: '2026-11-20', startTime: '14:00', endTime: '16:00', type: 'meeting', color: '#f3e5f5' },
+    ];
+    return json(res, 200, { schedule: scheduleData });
+  }
+
   if (req.method === 'POST' && pathname === '/api/intakes') {
     try {
       const body = await readRequestBody(req);
@@ -568,5 +665,6 @@ server.listen(PORT, () => {
   console.log(`Staff login:    http://localhost:${PORT}/staff-login`);
   console.log(`Staff office:   http://localhost:${PORT}/office`);
   console.log('Demo staff: counselor@university.edu / Counselor123!');
+  console.log('Demo staff: artemis.labrador@university.edu / Artemis123!');
   console.log(`Data files: ${DATA_DIR}`);
 });

@@ -35,18 +35,18 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
     ];
 
     return (
-        <header className="workspace-header sticky top-0 z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-[#DCE5DF] bg-[#F7F5EF]/90 px-4 backdrop-blur-md sm:px-6 lg:px-10">
+        <header className="workspace-header sticky top-0 z-30 flex h-[62px] shrink-0 items-center justify-between border-b border-[#E3E8EB] bg-white px-4 sm:px-6 lg:px-7 shadow-[0_8px_24px_rgba(49,92,82,0.12)]">
             {/* Mobile / Compact Sidebar Toggle */}
             <div className="flex items-center gap-3">
                 <button
                     type="button"
                     onClick={onToggleMenu}
-                    className="rounded-xl border border-[#cbd9d0] p-2 text-[#245b54] transition hover:bg-[#edf4ef] lg:hidden"
+                    className="rounded-lg p-2 text-[#2F6693] transition hover:bg-[#EEF5F9] lg:hidden"
                     aria-label="Menu"
                 >
                     <MenuIcon className="h-5 w-5" />
                 </button>
-                <div className="hidden sm:block text-xs font-medium text-slate-500">
+                <div className="hidden text-[12px] font-medium text-[#3F505B] sm:block">
                     Bukidnon State University &bull; SWEU Guidance System
                 </div>
             </div>
@@ -57,13 +57,13 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
                 <Dropdown as="div" className="relative">
                     <MenuButton
                         aria-label={`Notifications, ${unreadCount} unread`}
-                        className="relative grid h-10 w-10 place-items-center rounded-xl border border-[#DCE5DF] bg-white/60 text-[#315C52] transition hover:bg-white hover:text-[#315C52]"
+                        className="relative grid h-9 w-9 place-items-center rounded-full text-[#344C58] transition hover:bg-[#F1F6F8]"
                     >
                         <Bell className="h-4 w-4" />
                         {unreadCount > 0 && (
                             <span
                                 aria-hidden="true"
-                                className="absolute -right-1 -top-1 min-w-[20px] h-5 rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-5 text-white ring-2 ring-white"
+                                className="absolute right-1 top-1 h-2.5 min-w-2.5 rounded-full bg-[#3E9B70] px-0.5 text-center text-[8px] font-bold leading-[10px] text-white ring-2 ring-white"
                             >
                                 {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
@@ -125,20 +125,20 @@ export default function Header({ auth, unreadCount = 0, onToggleMenu }) {
                 <Dropdown as="div" className="relative">
                     <MenuButton
                         aria-label="Open profile menu"
-                        className="flex items-center gap-2 rounded-xl border border-[#DCE5DF] bg-white/60 p-1.5 pr-2.5 transition hover:bg-white"
+                        className="flex items-center gap-2 rounded-full px-1.5 py-1 transition hover:bg-[#F5F8F9]"
                     >
-                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#315C52] font-bold text-xs text-white shadow-sm">
+                        <span className="grid h-8 w-8 place-items-center rounded-full bg-[#44565B] font-medium text-[13px] text-white">
                             {initial}
                         </span>
                         <div className="hidden sm:block text-left">
-                            <div className="text-xs font-bold text-slate-800 leading-tight">
+                            <div className="text-[11px] font-semibold leading-tight text-[#263B43]">
                                 {user.full_name}
                             </div>
-                            <div className="text-[10px] capitalize text-sky-700 font-medium">
+                            <div className="text-[10px] capitalize leading-tight text-[#66849A]">
                                 {user.role}
                             </div>
                         </div>
-                        <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                        <ChevronDown className="h-3.5 w-3.5 text-[#71838D]" />
                     </MenuButton>
 
                     <MenuItems className="absolute right-0 z-50 mt-3 w-72 max-w-[calc(100vw-2rem)] origin-top-right rounded-2xl border border-sky-100 bg-white p-2 shadow-xl shadow-sky-950/10 focus:outline-none">

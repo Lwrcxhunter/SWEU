@@ -10,7 +10,7 @@ From the project root:
 .\scripts\start-local.ps1
 ```
 
-Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and the MongoDB Atlas connection configured in `.env`. It does not start a local MongoDB process, install a Windows service, or edit machine-wide PHP settings. Keep that terminal open while using the application. The Laravel development server runs on loopback port 8000.
+Open **http://127.0.0.1:8000**. The launcher uses the project-local PHP configuration and the MongoDB Atlas connection configured in `.env`. It also starts Vite on loopback port 5173, so React and CSS edits hot-reload automatically. It does not start a local MongoDB process, install a Windows service, or edit machine-wide PHP settings. Keep that terminal open while using the application. The Laravel development server runs on loopback port 8000.
 
 In another terminal, create the first administrator:
 

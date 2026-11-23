@@ -10,6 +10,91 @@
     :root{--primary:#174a5b;--primary-dark:#123b49;--sidebar:#153f4d;--bg:#f4f7f9;--border:#e2eaed;--text:#263238;--muted:#6c7b82}
     body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
     .layout{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:260px;background:var(--sidebar);color:#fff;z-index:1050;display:flex;flex-direction:column;transition:.25s}.sidebar-header{padding:24px;border-bottom:1px solid rgba(255,255,255,.12)}.brand-icon{width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:20px}.brand-title{font-weight:700;font-size:1rem}.brand-sub{font-size:.72rem;color:rgba(255,255,255,.62)}.nav-area{padding:22px 14px}.nav-label{font-size:.7rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;padding:0 11px;margin-bottom:8px}.nav-link-staff{display:flex;gap:12px;align-items:center;color:rgba(255,255,255,.78);padding:11px 12px;border-radius:9px;margin-bottom:4px;cursor:pointer}.nav-link-staff:hover,.nav-link-staff.active{background:rgba(255,255,255,.13);color:#fff}.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid rgba(255,255,255,.12)}.avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-weight:700}.main{margin-left:260px;min-height:100vh}.topbar{height:72px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:1000}.page{padding:28px}.mobile-menu{display:none}.welcome h1{font-size:1.65rem;font-weight:700;margin:0 0 4px}.welcome p{color:var(--muted);margin:0}.metric-card,.panel{background:#fff;border:1px solid var(--border);border-radius:14px}.metric-card{padding:20px;height:100%}.metric-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:15px}.metric-icon.pending{background:#fff3cd;color:#856404}.metric-icon.today{background:#cff4fc;color:#055160}.metric-icon.clients{background:#d1e7dd;color:#146c43}.metric-label{font-size:.8rem;color:var(--muted)}.metric-number{font-weight:700;font-size:1.75rem}.panel{overflow:hidden}.panel-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;gap:15px;align-items:center;justify-content:space-between}.panel-title{font-weight:650}.panel-sub{color:var(--muted);font-size:.78rem}.table-wrap{overflow:auto}.table{margin:0;min-width:900px}.table thead th{font-size:.72rem;text-transform:uppercase;color:#718188;letter-spacing:.03em;background:#f7f9fa;padding:13px 16px;border-bottom:1px solid var(--border)}.table tbody td{font-size:.84rem;padding:15px 16px;vertical-align:middle;border-bottom:1px solid #eef2f4}.student-name{font-weight:650}.student-email{color:var(--muted);font-size:.73rem}.status{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:30px;font-size:.7rem;font-weight:650;white-space:nowrap}.status.pending{background:#fff3cd;color:#856404}.status.scheduled{background:#d1e7dd;color:#146c43}.status.reviewed{background:#cff4fc;color:#055160}.dot{width:6px;height:6px;border-radius:50%;background:currentColor}.review-btn{border:1px solid #cad8dd;background:#fff;color:var(--primary);border-radius:8px;padding:7px 11px;font-size:.77rem}.review-btn:hover{background:var(--primary);color:#fff}.client-summary{background:#eef6f8;border-radius:12px;padding:18px}.detail-title{font-size:.9rem;color:var(--primary);font-weight:700;border-bottom:1px solid var(--border);padding-bottom:9px;margin:24px 0 14px}.detail-label{font-size:.7rem;color:#7b8b92;text-transform:uppercase;letter-spacing:.03em}.detail-value{font-size:.85rem;margin-bottom:13px}.condition{display:inline-block;background:#edf5f7;color:var(--primary);padding:6px 10px;border-radius:20px;font-size:.73rem;margin:0 5px 5px 0}.highlight{background:#f8fafb;border-left:4px solid var(--primary);padding:13px;border-radius:0 8px 8px 0;margin-bottom:12px}.highlight-title{font-size:.7rem;text-transform:uppercase;color:#7b8b92;margin-bottom:5px}.highlight-text{font-size:.84rem;line-height:1.6}.substance{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #edf1f3;font-size:.82rem}.substance:last-child{border-bottom:0}.modal-footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.action-row{display:flex;gap:8px;flex-wrap:wrap}.btn-primary-custom{background:var(--primary);border-color:var(--primary);color:#fff}.btn-primary-custom:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff}.btn-secondary-custom{background:#edf2f4;border-color:#edf2f4;color:#40545c}.sidebar-overlay{display:none}
+    /* Schedule page styles */
+    .schedule-layout{display:grid;grid-template-columns:280px 1fr;gap:24px}
+    .schedule-sidebar-panel{display:flex;flex-direction:column;gap:18px}
+    .schedule-main-panel{min-width:0}
+    .schedule-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:22px}
+    .schedule-header h1{font-size:1.65rem;font-weight:700;margin:0}
+    .schedule-header p{color:var(--muted);margin:4px 0 0;font-size:.88rem}
+    .schedule-nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .schedule-nav .btn-today{background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 18px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--text)}
+    .schedule-nav .btn-today:hover{background:#f0f4f6}
+    .schedule-nav .nav-arrows{display:flex;gap:4px}
+    .schedule-nav .nav-arrows button{background:#fff;border:1px solid var(--border);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);font-size:1rem}
+    .schedule-nav .nav-arrows button:hover{background:#f0f4f6}
+    .schedule-date-display{font-size:1.1rem;font-weight:600}
+    .view-toggle{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#f0f4f6}
+    .view-toggle button{border:none;background:transparent;padding:9px 22px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
+    .view-toggle button.active{background:var(--primary);color:#fff}
+    .view-toggle button:hover:not(.active){background:#e2eaed}
+    .mini-calendar{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+    .mini-calendar .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .mini-calendar .cal-header h3{font-size:.9rem;font-weight:700;margin:0}
+    .mini-calendar .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+    .mini-calendar .cal-day-label{font-size:.65rem;color:var(--muted);padding:4px 0;font-weight:600}
+    .mini-calendar .cal-day{font-size:.78rem;padding:6px 2px;border-radius:50%;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+    .mini-calendar .cal-day:hover{background:#e8f5e9}
+    .mini-calendar .cal-day.today{background:var(--primary);color:#fff;font-weight:700}
+    .mini-calendar .cal-day.selected{outline:2px solid var(--primary);outline-offset:-2px}
+    .mini-calendar .cal-day.other-month{color:#c5cdd1}
+    .quick-filters{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px}
+    .quick-filters h3{font-size:.9rem;font-weight:700;margin:0 0 14px}
+    .quick-filters .filter-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .quick-filters .clear-all{font-size:.75rem;color:var(--primary);cursor:pointer;border:none;background:none;text-decoration:underline}
+    .filter-item{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:.84rem}
+    .filter-item input[type=checkbox]{width:18px;height:18px;accent-color:var(--primary);border-radius:4px}
+    .schedule-content{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:400px}
+    /* Day view */
+    .day-timeline{padding:0}
+    .day-slot{display:grid;grid-template-columns:120px 1fr;min-height:60px;border-bottom:1px solid #f0f3f5}
+    .day-slot:last-child{border-bottom:none}
+    .day-slot-time{padding:16px 20px;font-size:.78rem;color:var(--muted);font-weight:500;border-right:1px solid #f0f3f5;display:flex;align-items:flex-start}
+    .day-slot-event{padding:12px 16px}
+    .event-card{border-radius:10px;padding:14px 16px;margin-bottom:8px;border-left:4px solid;position:relative}
+    .event-card:last-child{margin-bottom:0}
+    .event-card .event-time{font-size:.72rem;color:#5a6d75;font-weight:600;margin-bottom:4px}
+    .event-card .event-title{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:3px}
+    .event-card .event-location{font-size:.76rem;color:var(--muted)}
+    .event-card.type-appointment{background:#e8f5e9;border-color:#4caf50}
+    .event-card.type-meeting{background:#e3f2fd;border-color:#2196f3}
+    .event-card.type-case_conference{background:#f3e5f5;border-color:#9c27b0}
+    .event-card.type-workshop{background:#fff3e0;border-color:#ff9800}
+    .event-card.type-other{background:#eceff1;border-color:#607d8b}
+    /* Week view */
+    .week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0}
+    .week-column{border-right:1px solid #f0f3f5;min-height:300px}
+    .week-column:last-child{border-right:none}
+    .week-column-header{background:#f7f9fa;padding:14px 16px;text-align:center;border-bottom:1px solid var(--border);font-weight:700;font-size:.88rem;color:var(--primary)}
+    .week-column-body{padding:10px}
+    .week-event-pill{border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid;font-size:.82rem}
+    .week-event-pill .pill-title{font-weight:650;margin-bottom:2px;color:var(--text)}
+    .week-event-pill.type-appointment{background:#e8f5e9;border-color:#4caf50}
+    .week-event-pill.type-meeting{background:#e3f2fd;border-color:#2196f3}
+    .week-event-pill.type-case_conference{background:#f3e5f5;border-color:#9c27b0}
+    .week-event-pill.type-workshop{background:#fff3e0;border-color:#ff9800}
+    .week-event-pill.type-other{background:#eceff1;border-color:#607d8b}
+    /* Month view */
+    .month-weeks{padding:0}
+    .month-week-row{border-bottom:1px solid #f0f3f5}
+    .month-week-row:last-child{border-bottom:none}
+    .month-week-header{background:#f7f9fa;padding:14px 20px;font-weight:700;font-size:.92rem;color:var(--primary);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+    .month-week-header .week-date-range{font-weight:400;font-size:.78rem;color:var(--muted)}
+    .month-week-body{padding:14px 20px;display:flex;flex-wrap:wrap;gap:8px}
+    .month-event-chip{border-radius:8px;padding:8px 14px;font-size:.8rem;border-left:3px solid;display:inline-flex;align-items:center;gap:6px}
+    .month-event-chip .chip-title{font-weight:600}
+    .month-event-chip.type-appointment{background:#e8f5e9;border-color:#4caf50}
+    .month-event-chip.type-meeting{background:#e3f2fd;border-color:#2196f3}
+    .month-event-chip.type-case_conference{background:#f3e5f5;border-color:#9c27b0}
+    .month-event-chip.type-workshop{background:#fff3e0;border-color:#ff9800}
+    .month-event-chip.type-other{background:#eceff1;border-color:#607d8b}
+    .wellness-card{background:linear-gradient(135deg,#f0f7f4 0%,#e8f0ed 100%);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px}
+    .wellness-card .wellness-icon{font-size:2.2rem;opacity:.7}
+    .wellness-card .wellness-text h4{font-size:.88rem;font-weight:650;margin:0 0 2px}
+    .wellness-card .wellness-text p{font-size:.78rem;color:var(--muted);margin:0}
+    .wellness-card .wellness-heart{margin-left:auto;font-size:1.2rem;color:var(--primary)}
+    .no-events-msg{padding:40px;text-align:center;color:var(--muted);font-size:.9rem}
+    @media(max-width:991px){.schedule-layout{grid-template-columns:1fr}.schedule-sidebar-panel{order:2}.week-grid{grid-template-columns:1fr}}
     @media(max-width:991px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sidebar-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1040}.main{margin-left:0}.mobile-menu{display:inline-flex}.page{padding:20px}.topbar{padding:0 18px}}
     @media(max-width:575px){.panel-header{align-items:flex-start;flex-direction:column}.modal-footer{flex-direction:column}.action-row{width:100%}.action-row button{width:100%}}
     @media print{.sidebar,.topbar,.modal-footer{display:none!important}.main{margin-left:0}.page{padding:0}.modal{position:static!important}.modal-dialog{max-width:none!important;margin:0!important}.modal-content{border:0!important}}
@@ -28,6 +113,7 @@
       <div class="nav-label">Workspace</div>
       <div class="nav-link-staff active" data-view="dashboard"><i class="bi bi-grid-1x2"></i>Dashboard</div>
       <div class="nav-link-staff" data-view="intakes"><i class="bi bi-clipboard2-check"></i>Intake Submissions</div>
+      <div class="nav-link-staff" data-view="my-schedule"><i class="bi bi-calendar-week"></i>My Schedule</div>
       <div class="nav-link-staff" data-view="appointments"><i class="bi bi-calendar3"></i>Appointments</div>
       <div class="nav-link-staff" data-view="clients"><i class="bi bi-people"></i>Active Clients</div>
       <div class="nav-label mt-4">Administration</div>
@@ -79,6 +165,59 @@
               <thead><tr><th>Date Submitted</th><th>Student Name</th><th>Course & Year</th><th>Visit Type</th><th>Status</th><th class="text-end">Action</th></tr></thead>
               <tbody id="intakeBody"></tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="scheduleView" class="d-none">
+        <div class="schedule-header">
+          <div>
+            <h1>My Schedule</h1>
+            <p>View your daily, weekly, and monthly schedule of appointments and activities.</p>
+          </div>
+        </div>
+        <div class="schedule-nav mb-3">
+          <button class="btn-today" id="todayBtn">Today</button>
+          <div class="nav-arrows">
+            <button id="prevBtn"><i class="bi bi-chevron-left"></i></button>
+            <button id="nextBtn"><i class="bi bi-chevron-right"></i></button>
+          </div>
+          <span class="schedule-date-display" id="scheduleDateDisplay">October 27, 2026</span>
+          <div style="margin-left:auto">
+            <div class="view-toggle" id="viewToggle">
+              <button class="active" data-view="day">Day</button>
+              <button data-view="week">Week</button>
+              <button data-view="month">Month</button>
+            </div>
+          </div>
+        </div>
+        <div class="schedule-layout">
+          <div class="schedule-sidebar-panel">
+            <div class="mini-calendar" id="miniCalendar"></div>
+            <div class="quick-filters">
+              <div class="filter-header">
+                <h3>Quick Filters</h3>
+                <button class="clear-all" id="clearFilters">Clear All</button>
+              </div>
+              <div class="filter-item"><input type="checkbox" id="filterAppointments" checked><label for="filterAppointments">Appointments</label></div>
+              <div class="filter-item"><input type="checkbox" id="filterMeetings" checked><label for="filterMeetings">Meetings</label></div>
+              <div class="filter-item"><input type="checkbox" id="filterWorkshops" checked><label for="filterWorkshops">Workshops / Seminars</label></div>
+              <div class="filter-item"><input type="checkbox" id="filterCaseConferences" checked><label for="filterCaseConferences">Case Conferences</label></div>
+              <div class="filter-item"><input type="checkbox" id="filterOther" checked><label for="filterOther">Other</label></div>
+            </div>
+          </div>
+          <div class="schedule-main-panel">
+            <div class="schedule-content" id="scheduleContent">
+              <div class="no-events-msg">Loading schedule...</div>
+            </div>
+            <div class="wellness-card mt-4">
+              <div class="wellness-icon">🌿</div>
+              <div class="wellness-text">
+                <h4>Take care of yourself.</h4>
+                <p>Your well-being matters too.</p>
+              </div>
+              <div class="wellness-heart"><i class="bi bi-heart-fill"></i></div>
+            </div>
           </div>
         </div>
       </section>
@@ -471,17 +610,313 @@
   $('menuButton').addEventListener('click', () => { sidebar.classList.add('open'); overlay.classList.add('show'); });
   overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); });
 
+  // ═══════════════════════ SCHEDULE VIEW LOGIC ═══════════════════════
+  let scheduleData = [];
+  let currentScheduleView = 'day'; // 'day', 'week', 'month'
+  let currentScheduleDate = new Date();
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS_SHORT = ['S','M','T','W','T','F','S'];
+  const WEEKDAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+
+  function formatTime12(time24) {
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return m === 0 ? `${h12}:00 ${ampm}` : `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+  }
+
+  function getActiveFilters() {
+    const filters = [];
+    if ($('filterAppointments').checked) filters.push('appointment');
+    if ($('filterMeetings').checked) filters.push('meeting');
+    if ($('filterWorkshops').checked) filters.push('workshop');
+    if ($('filterCaseConferences') && $('filterCaseConferences').checked) filters.push('case_conference');
+    if ($('filterOther').checked) filters.push('other');
+    return filters;
+  }
+
+  function filterEvents(events) {
+    const active = getActiveFilters();
+    return events.filter(e => active.includes(e.type));
+  }
+
+  function getDateString(d) {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function getMonday(d) {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    date.setDate(date.getDate() + diff);
+    return date;
+  }
+
+  function getMonthStart(d) {
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }
+
+  function updateScheduleDateDisplay() {
+    const display = $('scheduleDateDisplay');
+    if (currentScheduleView === 'day') {
+      display.textContent = `${MONTHS[currentScheduleDate.getMonth()]} ${currentScheduleDate.getDate()}, ${currentScheduleDate.getFullYear()}`;
+    } else if (currentScheduleView === 'week') {
+      const mon = getMonday(currentScheduleDate);
+      const fri = new Date(mon); fri.setDate(mon.getDate() + 4);
+      display.textContent = `${MONTHS[mon.getMonth()]} ${mon.getDate()} – ${MONTHS[fri.getMonth()]} ${fri.getDate()}, ${fri.getFullYear()}`;
+    } else {
+      display.textContent = `${MONTHS[currentScheduleDate.getMonth()]} ${currentScheduleDate.getFullYear()}`;
+    }
+  }
+
+  function renderMiniCalendar() {
+    const container = $('miniCalendar');
+    const year = currentScheduleDate.getFullYear();
+    const month = currentScheduleDate.getMonth();
+    const today = new Date();
+    const todayStr = getDateString(today);
+    const selectedStr = getDateString(currentScheduleDate);
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrev = new Date(year, month, 0).getDate();
+
+    let html = `<div class="cal-header"><h3>${MONTHS[month]} ${year}</h3></div>`;
+    html += '<div class="cal-grid">';
+    DAYS_SHORT.forEach(d => html += `<div class="cal-day-label">${d}</div>`);
+
+    // Previous month days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+    }
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      let cls = 'cal-day';
+      if (dateStr === todayStr) cls += ' today';
+      if (dateStr === selectedStr) cls += ' selected';
+      html += `<div class="${cls}" data-date="${dateStr}">${d}</div>`;
+    }
+    // Next month days
+    const total = firstDay + daysInMonth;
+    const remaining = (7 - (total % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      html += `<div class="cal-day other-month">${d}</div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.cal-day:not(.other-month)').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.dataset.date) {
+          currentScheduleDate = new Date(el.dataset.date + 'T00:00:00');
+          renderSchedule();
+        }
+      });
+    });
+  }
+
+  function renderDayView() {
+    const dateStr = getDateString(currentScheduleDate);
+    const events = filterEvents(scheduleData.filter(e => e.date === dateStr));
+    events.sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+    if (!events.length) {
+      return '<div class="no-events-msg"><i class="bi bi-calendar-x fs-3 d-block mb-2"></i>No activities scheduled for this day.</div>';
+    }
+
+    let html = '<div class="day-timeline">';
+    events.forEach(evt => {
+      html += `
+        <div class="day-slot">
+          <div class="day-slot-time">${formatTime12(evt.startTime)} – ${formatTime12(evt.endTime)}</div>
+          <div class="day-slot-event">
+            <div class="event-card type-${evt.type}">
+              <div class="event-time">${formatTime12(evt.startTime)} – ${formatTime12(evt.endTime)}</div>
+              <div class="event-title">${escapeHtml(evt.title)}</div>
+              <div class="event-location">${escapeHtml(evt.location)}</div>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderWeekView() {
+    const mon = getMonday(currentScheduleDate);
+    let html = '<div class="week-grid">';
+
+    WEEKDAYS.forEach((dayName, i) => {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      const dateStr = getDateString(d);
+      const events = filterEvents(scheduleData.filter(e => e.date === dateStr));
+      events.sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+      html += `<div class="week-column">`;
+      html += `<div class="week-column-header">${dayName}<br><span style="font-weight:400;font-size:.75rem;color:var(--muted)">${MONTHS[d.getMonth()]} ${d.getDate()}</span></div>`;
+      html += '<div class="week-column-body">';
+      if (events.length === 0) {
+        html += '<div style="text-align:center;color:var(--muted);font-size:.78rem;padding:20px 0;">No activities</div>';
+      } else {
+        events.forEach(evt => {
+          html += `
+            <div class="week-event-pill type-${evt.type}">
+              <div class="pill-title">${escapeHtml(evt.title)}</div>
+            </div>`;
+        });
+      }
+      html += '</div></div>';
+    });
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderMonthView() {
+    const year = currentScheduleDate.getFullYear();
+    const month = currentScheduleDate.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const lastOfMonth = new Date(year, month + 1, 0);
+
+    // Find weeks in this month
+    const weeks = [];
+    let weekStart = getMonday(firstOfMonth);
+    // Make sure we start from a Monday that covers this month
+    if (weekStart.getMonth() !== month && weekStart.getDate() > 7) {
+      weekStart = getMonday(firstOfMonth);
+    }
+    let weekNum = 1;
+    while (weekStart <= lastOfMonth || (weekStart.getMonth() === month)) {
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 4); // Friday
+      weeks.push({ num: weekNum, start: new Date(weekStart), end: new Date(weekEnd) });
+      weekNum++;
+      weekStart.setDate(weekStart.getDate() + 7);
+      if (weekNum > 6) break; // Safety
+    }
+
+    let html = '<div class="month-weeks">';
+    weeks.forEach(week => {
+      // Collect events for this week (Monday-Friday)
+      const events = [];
+      for (let d = new Date(week.start); d <= week.end; d.setDate(d.getDate() + 1)) {
+        const dateStr = getDateString(d);
+        const dayEvents = scheduleData.filter(e => e.date === dateStr);
+        events.push(...dayEvents);
+      }
+      const filtered = filterEvents(events);
+      const startLabel = `${MONTHS[week.start.getMonth()]} ${week.start.getDate()}`;
+      const endLabel = `${MONTHS[week.end.getMonth()]} ${week.end.getDate()}`;
+
+      html += `<div class="month-week-row">`;
+      html += `<div class="month-week-header">Week ${week.num} <span class="week-date-range">${startLabel} – ${endLabel}</span></div>`;
+      html += '<div class="month-week-body">';
+      if (filtered.length === 0) {
+        html += '<span style="color:var(--muted);font-size:.82rem;">No activities this week</span>';
+      } else {
+        filtered.forEach(evt => {
+          html += `<div class="month-event-chip type-${evt.type}"><span class="chip-title">${escapeHtml(evt.title)}</span></div>`;
+        });
+      }
+      html += '</div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderSchedule() {
+    updateScheduleDateDisplay();
+    renderMiniCalendar();
+    const content = $('scheduleContent');
+    if (currentScheduleView === 'day') {
+      content.innerHTML = renderDayView();
+    } else if (currentScheduleView === 'week') {
+      content.innerHTML = renderWeekView();
+    } else {
+      content.innerHTML = renderMonthView();
+    }
+  }
+
+  async function loadScheduleData() {
+    try {
+      const result = await api('/api/schedule');
+      scheduleData = result.schedule || [];
+      renderSchedule();
+    } catch (err) {
+      console.error('Failed to load schedule:', err);
+      $('scheduleContent').innerHTML = '<div class="no-events-msg">Failed to load schedule data.</div>';
+    }
+  }
+
+  // View toggle
+  $('viewToggle').querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('viewToggle').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentScheduleView = btn.dataset.view;
+      renderSchedule();
+    });
+  });
+
+  // Navigation buttons
+  $('todayBtn').addEventListener('click', () => {
+    currentScheduleDate = new Date();
+    renderSchedule();
+  });
+
+  $('prevBtn').addEventListener('click', () => {
+    if (currentScheduleView === 'day') {
+      currentScheduleDate.setDate(currentScheduleDate.getDate() - 1);
+    } else if (currentScheduleView === 'week') {
+      currentScheduleDate.setDate(currentScheduleDate.getDate() - 7);
+    } else {
+      currentScheduleDate.setMonth(currentScheduleDate.getMonth() - 1);
+    }
+    renderSchedule();
+  });
+
+  $('nextBtn').addEventListener('click', () => {
+    if (currentScheduleView === 'day') {
+      currentScheduleDate.setDate(currentScheduleDate.getDate() + 1);
+    } else if (currentScheduleView === 'week') {
+      currentScheduleDate.setDate(currentScheduleDate.getDate() + 7);
+    } else {
+      currentScheduleDate.setMonth(currentScheduleDate.getMonth() + 1);
+    }
+    renderSchedule();
+  });
+
+  // Quick filter changes
+  ['filterAppointments','filterMeetings','filterWorkshops','filterCaseConferences','filterOther'].forEach(id => {
+    if ($(id)) $(id).addEventListener('change', renderSchedule);
+  });
+  $('clearFilters').addEventListener('click', () => {
+    ['filterAppointments','filterMeetings','filterWorkshops','filterCaseConferences','filterOther'].forEach(id => {
+      if ($(id)) $(id).checked = true;
+    });
+    renderSchedule();
+  });
+
+  // ═══════════════════════ NAV SWITCHING ═══════════════════════
   document.querySelectorAll('.nav-link-staff').forEach(link => {
     link.addEventListener('click', () => {
       document.querySelectorAll('.nav-link-staff').forEach(x => x.classList.remove('active'));
       link.classList.add('active');
       const view = link.dataset.view;
+      // Hide all views
+      $('dashboardView').classList.add('d-none');
+      $('scheduleView').classList.add('d-none');
+      $('placeholderView').classList.add('d-none');
+
       if (view === 'dashboard' || view === 'intakes') {
         $('dashboardView').classList.remove('d-none');
-        $('placeholderView').classList.add('d-none');
         if (view === 'intakes') document.querySelector('.panel').scrollIntoView({behavior:'smooth'});
+      } else if (view === 'my-schedule') {
+        $('scheduleView').classList.remove('d-none');
+        loadScheduleData();
       } else {
-        $('dashboardView').classList.add('d-none');
         $('placeholderView').classList.remove('d-none');
         const titles = {appointments:'Appointments',clients:'Active Clients',reports:'Reports',settings:'Settings'};
         const texts = {appointments:'Use this section later for counselor availability, assigned appointments, rescheduling, and cancellations.',clients:'Use this section for the active-client view and counseling status records.',reports:'Use this section for administrative reports and non-identifying office statistics.',settings:'Use this section for office settings and staff configuration.'};

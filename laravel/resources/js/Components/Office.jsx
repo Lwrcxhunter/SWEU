@@ -11,6 +11,8 @@ export default function Office({
     description,
     children,
     action,
+    hero,
+    backgroundImage,
 }) {
     return (
         <AuthenticatedLayout
@@ -18,6 +20,8 @@ export default function Office({
             eyebrow={eyebrow}
             description={description}
             action={action}
+            hero={hero}
+            backgroundImage={backgroundImage}
         >
             {children}
         </AuthenticatedLayout>
@@ -35,7 +39,7 @@ export function Card({ title, description, children, className = "" }) {
                 </h2>
             )}
             {description && (
-                <p className="mt-1 text-xs leading-5 text-[#6F9D91]">
+                <p className="mt-1 text-xs leading-5 text-[#7398B4]">
                     {description}
                 </p>
             )}
@@ -139,8 +143,8 @@ export function Button({
             aria-busy={isBusy}
             className={`office-button ${secondary ? "office-button-secondary" : "office-button-primary"} ${
                 secondary
-                    ?                                         "border border-[#DCE5DF] bg-white text-[#315C52] hover:bg-[#DDEBE5] focus:ring-[#6F9D91]/30"
-                    : "bg-[#315C52] hover:bg-[#24483F] text-white font-medium focus:ring-[#6F9D91]/30"
+                    ? "border border-[#DCE5DF] bg-white text-[#2F6693] hover:bg-[#DCEAF3] focus:ring-[#7398B4]/30"
+                    : "bg-[#2F6693] hover:bg-[#275887] text-white font-medium focus:ring-[#7398B4]/30"
             } inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
             {...props}
         >

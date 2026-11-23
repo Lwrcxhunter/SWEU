@@ -105,7 +105,7 @@ export default function SessionNotes({
         }
     };
     return (
-        <Office
+        <Office backgroundImage="/images/dashboardbg.png"
             title="Session notes"
             eyebrow="Counseling case"
             description="Record observations and next steps for this confidential student session."

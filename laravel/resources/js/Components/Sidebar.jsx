@@ -12,37 +12,37 @@ import {
     X,
 } from "lucide-react";
 
-export function Brand({ light = false }) {
+export function Brand({ light = true }) {
     return (
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
             <img
                 src="/images/sweu-logo.png"
                 alt="BukSU SWEU Logo"
-                className="h-10 w-10 object-contain drop-shadow-sm shrink-0"
+                className="h-14 w-14 object-contain drop-shadow-sm shrink-0"
             />
             <div className="min-w-0">
                 <div
-                    className={`text-[15px] font-bold tracking-tight leading-tight ${
+                    className={`text-[15px] font-bold tracking-tight leading-[1.15] ${
                         light ? "text-white" : "text-slate-800"
                     }`}
                 >
-                    BukSU{" "}
+                    <span className="block">BukSU</span>
                     <span
                         className={
                             light
-                                ? "text-[#a8d7c8] font-semibold"
-                                : "text-[#2f7168] font-semibold"
+                                    ? "text-white font-semibold"
+                                    : "text-[#d8e8f2] font-semibold"
                         }
                     >
                         Guidance
                     </span>
                 </div>
                 <div
-                    className={`text-[8.5px] font-semibold uppercase tracking-wider leading-tight ${
-                        light                         ? "text-[#c2d7cf]" : "text-slate-500"
+                    className={`mt-1 text-[9px] font-medium leading-[1.2] ${
+                        light ? "text-white" : "text-slate-500"
                     }`}
                 >
-                    Student Welfare &amp; Engagement Unit
+                    Student Welfare and Engagement Unit
                 </div>
             </div>
         </div>
@@ -185,14 +185,14 @@ export default function Sidebar({ auth, menu, setMenu }) {
 
             {/* Sidebar Element */}
             <aside
-                className={`workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col bg-[#315C52] text-white transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 ${
+                className={`workspace-sidebar fixed inset-y-0 left-0 z-50 flex w-[224px] flex-col bg-[#2F6693] text-white transition-transform duration-200 ease-in-out lg:z-40 lg:h-dvh lg:translate-x-0 font-['Poppins'] ${
                     menu
                         ? "translate-x-0 shadow-2xl"
                         : "-translate-x-full lg:translate-x-0"
                 }`}
             >
                 {/* Header / Brand */}
-                <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
+                <div className="flex min-h-[104px] shrink-0 items-center justify-between border-b border-white/10 px-4 py-4">
                     <Brand />
                     <button
                         type="button"
@@ -205,16 +205,7 @@ export default function Sidebar({ auth, menu, setMenu }) {
                 </div>
 
                 {/* Scrollable Navigation */}
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 scrollbar-none">
-                    <p
-                        className={
-                            role === "staff"
-                                ? "px-3 pb-3 text-[10px] font-bold uppercase tracking-[.16em] text-white/50"
-                                : "px-3 pb-3 text-[10px] font-bold uppercase tracking-[.16em] text-white/50"
-                        }
-                    >
-                        {role === "staff" ? "Staff workspace" : "Workspace"}
-                    </p>
+                <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5 scrollbar-none">
                     <nav aria-label="Main navigation" className="space-y-1">
                         {navItems.map((item) => {
                             const Icon = item.icon;
@@ -227,14 +218,14 @@ export default function Sidebar({ auth, menu, setMenu }) {
                                     aria-label={item.ariaLabel || item.label}
                                     aria-current={isActive ? "page" : undefined}
                                     onClick={() => setMenu(false)}
-                                    className={`workspace-nav-link flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-xs font-medium transition ${
+                                    className={`workspace-nav-link flex items-center gap-2.5 rounded-lg px-3 py-3 text-[13px] font-medium transition ${
                                         isActive
-                                            ? "bg-[#DDEBE5] text-[#315C52] font-semibold shadow-sm shadow-black/10"
+                                            ? "bg-[#DCEAF3] text-[#2F6693] font-semibold shadow-md shadow-black/20 ring-1 ring-[#A9C3BA]"
                                             : "text-white/70 hover:bg-white/10 hover:text-white"
                                     }`}
                                 >
                                     <Icon
-                                        className={`h-4 w-4 shrink-0 ${isActive ? "text-[#315C52]" : "text-white/60"}`}
+                                        className={`h-4 w-4 shrink-0 ${isActive ? "text-[#2F6693]" : "text-white/60"}`}
                                     />
                                     <span className="truncate">
                                         {item.label}

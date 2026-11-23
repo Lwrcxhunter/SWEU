@@ -9,6 +9,8 @@ export default function AuthenticatedLayout({
     description,
     children,
     action,
+    hero,
+    backgroundImage,
 }) {
     const {
         auth,
@@ -38,14 +40,27 @@ export default function AuthenticatedLayout({
     }, [refreshNotifications]);
 
     return (
-        <div className="min-h-screen bg-[#F7F5EF] text-[#315C52] font-sans antialiased">
+        <div
+            className="min-h-screen text-[#315C52] font-sans antialiased"
+            style={
+                backgroundImage
+                    ? {
+                          backgroundImage: `url('${backgroundImage}')`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat",
+                          backgroundAttachment: "fixed",
+                      }
+                    : { backgroundColor: "#F7F5EF" }
+            }
+        >
             <Head title={title} />
 
             {/* Sidebar Navigation */}
             <Sidebar auth={auth} menu={menu} setMenu={setMenu} />
 
             {/* Main App Layout */}
-            <div className="lg:pl-[248px] flex flex-col min-h-screen transition-all">
+            <div className="lg:pl-[224px] flex flex-col min-h-screen transition-all">
                 {/* Global Header */}
                 <Header
                     auth={auth}
@@ -54,32 +69,36 @@ export default function AuthenticatedLayout({
                 />
 
                 {/* Main Content Area */}
-                <main className="workspace-main flex-1 mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
-                    {(title || eyebrow || action) && (
-                        <div className="mb-7 flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
-                            <div className="max-w-3xl space-y-1">
-                                {eyebrow && (
-                                    <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#6F9D91]">
-                                        {eyebrow}
-                                    </span>
-                                )}
-                                {title && (
-                                    <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#315C52] md:text-[30px]">
-                                        {title}
-                                    </h1>
-                                )}
-                                {description && (
-                                    <p className="text-sm leading-relaxed text-[#6F9D91]">
-                                        {description}
-                                    </p>
+                <main className="workspace-main flex-1 mx-auto w-full max-w-[1440px] px-4 py-4 sm:px-6 sm:py-5 lg:px-7">
+                    {hero ? (
+                        hero
+                    ) : (
+                        (title || eyebrow || action) && (
+                            <div className="mb-7 flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
+                                <div className="max-w-3xl space-y-1">
+                                    {eyebrow && (
+                                        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#7398B4]">
+                                            {eyebrow}
+                                        </span>
+                                    )}
+                                    {title && (
+                                        <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#315C52] md:text-[30px]">
+                                            {title}
+                                        </h1>
+                                    )}
+                                    {description && (
+                                        <p className="text-sm leading-relaxed text-[#7398B4]">
+                                            {description}
+                                        </p>
+                                    )}
+                                </div>
+                                {action && (
+                                    <div className="shrink-0">
+                                        {action}
+                                    </div>
                                 )}
                             </div>
-                            {action && (
-                                <div className="shrink-0">
-                                    {action}
-                                </div>
-                            )}
-                        </div>
+                        )
                     )}
 
                     {/* Urgent Alert Banner */}
@@ -126,13 +145,7 @@ export default function AuthenticatedLayout({
                     {/* Page Body */}
                     {children}
 
-                    {/* App Footer */}
-                    <footer className="mt-16 flex flex-wrap items-center justify-between gap-2 border-t border-[#e1e4dc] pt-6 text-[11px] text-[#80908a]">
-                        <span>
-                            Bukidnon State University &bull; Student Welfare and
-                            Engagement Unit (SWEU)
-                        </span>
-                    </footer>
+
                 </main>
             </div>
         </div>

@@ -52,7 +52,7 @@ Artisan::command('guidance:demo', function () {
             'available' => true,
         ],
         [
-            'full_name' => 'Maam Artemis Shaun Xena Labrador',
+            'full_name' => 'Artemis Shaun Xena Labrador',
             'email' => 'artemis.labrador@buksu.edu.ph',
             'role' => 'counselor',
             'college_codes' => ['CON', 'COT'],
